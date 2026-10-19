@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shipvera — Dispatch Intelligence & COD Verification</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="assets/shipvera_icon.png">
+    <link rel="stylesheet" href="dashboard.css?v=3.0">
+</head>
+<body class="dashboard-body">
+
+    <!-- Top Navigation Header -->
+    <header class="dash-header">
+        <div class="dash-header-inner">
+            <div class="dash-brand-wrap">
+                <a href="/" class="dash-logo" aria-label="Shipvera Home">
+                    <img src="assets/shipvera_logo_transparent.png" alt="Shipvera" class="dash-brand-logo">
+                </a>
+
+                <div class="header-divider"></div>
+
+                <!-- Multi-Tenant Brand Switcher -->
+                <div class="dash-store-badge-wrap">
+                    <button class="dash-store-badge" onclick="toggleStoreDropdown()" id="storeBadgeBtn" aria-haspopup="true">
+                        <img src="assets/logos/shopify.svg" alt="Shopify" class="store-platform-icon">
+                        <span class="store-name" id="storeName">Snitch Apparel & Streetwear</span>
+                        <svg class="store-caret" width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        <span class="store-status-dot" title="Store Connected"></span>
+                    </button>
+                    <div class="store-dropdown-menu" id="storeDropdownMenu">
+                        <div class="sdm-item active" onclick="switchStore('Snitch Apparel & Streetwear', 'snitch.myshopify.com')">
+                            <div class="sdm-item-header">
+                                <strong>Snitch Apparel & Streetwear</strong>
+                                <span class="sdm-tag-active">Active</span>
+                            </div>
+                            <span class="sdm-meta">snitch.myshopify.com • Webhook v2024.10</span>
+                        </div>
+                        <div class="sdm-item" onclick="switchStore('The Souled Store', 'souledstore.myshopify.com')">
+                            <div class="sdm-item-header">
+                                <strong>The Souled Store</strong>
+                                <span class="sdm-tag-standby">Standby</span>
+                            </div>
+                            <span class="sdm-meta">souledstore.myshopify.com</span>
+                        </div>
+                        <div class="sdm-item" onclick="switchStore('Urban Monkey', 'urbanmonkey.myshopify.com')">
+                            <div class="sdm-item-header">
+                                <strong>Urban Monkey</strong>
+                                <span class="sdm-tag-standby">Standby</span>
+                            </div>
+                            <span class="sdm-meta">urbanmonkey.myshopify.com</span>
+                        </div>
+                        <div class="sdm-item add-store" onclick="openAddStoreAlert()">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            <span>Connect Another Store</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dash-header-actions">
+                <!-- TRAI Regulatory SLA Status -->
+                <div class="dash-trai-pill" id="traiWindowPill" title="TRAI Commercial Calling Hours: 8:30 AM to 9:30 PM IST">
+                    <span class="trai-dot" id="traiDot"></span>
+                    <span class="trai-text" id="traiWindowText">TRAI Window: Active (8:30 AM – 9:30 PM)</span>
+                </div>
+
+                <!-- Voice Engine Telephony Pill -->
+                <div class="dash-engine-pill">
+                    <span class="engine-pulse-dot"></span>
+                    <div class="engine-info">
+                        <span class="engine-title">Bolna Telephony</span>
+                        <span class="engine-sub" id="liveCallDesc">Standby • 40s Guardrail Active</span>
+                    </div>
+                </div>
+
+                <!-- Wallet Card (Strict Pay-As-You-Go) -->
+                <div class="dash-wallet-pill">
+                    <div class="dwp-balance-wrap">
+                        <span class="dwp-label">Wallet Balance</span>
+                        <span class="dwp-amount" id="walletBalance">₹0.00</span>
+                    </div>
+                    <button class="dwp-recharge-btn" onclick="openRechargeModal()">Add Credits</button>
+                </div>
+
+                <a href="/" class="dash-exit-btn">Exit to Site</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Dashboard Container -->
+    <main class="dash-container">
+        
+        <!-- Action Header -->
+        <section class="dash-action-bar">
+            <div class="dab-headline">
+                <div class="dab-headline-row">
+                    <h1 class="dab-title">Dispatch Operations & Address Verification</h1>
+                    <span class="dab-badge">Bolna Voice AI • Sarvam TTS</span>
+                </div>
+                <p class="dab-subtitle">Autonomous phone verification, local landmark extraction, and courier shipping label sync.</p>
+            </div>
+            <div class="dab-buttons">
+                <button class="btn-dab btn-primary" onclick="openTestLiveCallModal()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                    <span>Test Outbound Call</span>
+                </button>
+                <button class="btn-dab btn-secondary" onclick="openQuickPasteModal()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+                    <span>Quick-Paste Order</span>
+                </button>
+                <button class="btn-dab btn-ghost" onclick="simulateShopifyOrder()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    <span>Simulate Shopify Webhook</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- Zero Balance Alert Banner -->
+        <div class="dash-alert-banner" id="zeroBalanceAlert" style="display: none;">
+            <div class="dab-alert-left">
+                <div class="dab-alert-icon-wrap">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                </div>
+                <div>
+                    <strong>Wallet Balance: ₹0.00 (Pay-As-You-Go Mode)</strong>
+                    <p>Verification calls are paused. Recharge your wallet to resume automated 60-second address verification.</p>
+                </div>
+            </div>
+            <button class="btn-recharge-urgent" onclick="openRechargeModal()">Recharge Wallet (₹999) →</button>
+        </div>
+
+        <!-- 4 Key Institutional Metric Cards -->
+        <section class="dash-metrics-grid">
+            <div class="dash-metric-card">
+                <div class="dmc-top">
+                    <span class="dmc-label">Orders Evaluated</span>
+                    <span class="dmc-pill">100% Inspected</span>
+                </div>
+                <div class="dmc-value" id="metricTotalOrders">0</div>
+                <div class="dmc-sub" id="metricOrdersSub">Assessed before courier label printing</div>
+            </div>
+
+            <div class="dash-metric-card">
+                <div class="dmc-top">
+                    <span class="dmc-label">Freight Loss Prevented</span>
+                    <span class="dmc-pill highlight-green">+₹180 / Order</span>
+                </div>
+                <div class="dmc-value dmc-highlight" id="metricMoneySaved">₹0</div>
+                <div class="dmc-sub">Cumulative forward and reverse logistics savings</div>
+            </div>
+
+            <div class="dash-metric-card">
+                <div class="dmc-top">
+                    <span class="dmc-label">RTO Reduction Rate</span>
+                    <span class="dmc-pill">Verified Cohort</span>
+                </div>
+                <div class="dmc-value" id="metricRtoCut">70%</div>
+                <div class="dmc-sub">Drop vs. 38.2% historical COD baseline</div>
+            </div>
+
+            <div class="dash-metric-card">
+                <div class="dmc-top">
+                    <span class="dmc-label">Cost Per Order</span>
+                    <span class="dmc-pill">Zero Waste Cap</span>
+                </div>
+                <div class="dmc-value">₹6.00</div>
+                <div class="dmc-sub">Billed only on completed phone connections</div>
+            </div>
+        </section>
+
+        <!-- Analytics & Performance Section -->
+        <section class="dash-charts-grid">
+            <!-- Chart 1: RTO Reduction Curve -->
+            <div class="dash-chart-card">
+                <div class="dcc-header">
+                    <div>
+                        <h3 class="dcc-title">RTO Rate Progression</h3>
+                        <p class="dcc-sub">Weekly COD return reduction across address-verified orders</p>
+                    </div>
+                    <span class="dcc-badge highlight">31x Net ROI</span>
+                </div>
+                <div class="dcc-body">
+                    <div class="chart-svg-wrap" id="rtoChartWrap"></div>
+                    <div class="chart-legend-row">
+                        <div class="clr-item">
+                            <span class="clr-dot" style="background: #EF4444;"></span>
+                            <span>Historical Baseline (38.2%)</span>
+                        </div>
+                        <div class="clr-item">
+                            <span class="clr-dot" style="background: #058A5E;"></span>
+                            <span>Shipvera Autopilot (11.2%)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chart 2: Address Intelligence Breakdown -->
+            <div class="dash-chart-card">
+                <div class="dcc-header">
+                    <div>
+                        <h3 class="dcc-title">Address Resolution Breakdown</h3>
+                        <p class="dcc-sub">Distribution of courier shipping label repairs</p>
+                    </div>
+                    <span class="dcc-badge">88.6% First Attempt</span>
+                </div>
+                <div class="dcc-body">
+                    <div class="resolution-breakdown-list" id="resolutionList"></div>
+
+                    <div class="courier-efficiency-box">
+                        <div class="ceb-item">
+                            <span class="ceb-val">1.8 Days</span>
+                            <span class="ceb-label">Faster Transit</span>
+                        </div>
+                        <div class="ceb-item">
+                            <span class="ceb-val">+₹180</span>
+                            <span class="ceb-label">Saved Per Cancel</span>
+                        </div>
+                        <div class="ceb-item">
+                            <span class="ceb-val">24 Sec</span>
+                            <span class="ceb-label">Avg. Call Duration</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Orders Table & Filter Tabs -->
+        <section class="dash-orders-section">
+            <div class="dos-header">
+                <div class="dos-title-wrap">
+                    <h2 class="dos-title">Live Dispatch Stream</h2>
+                    <span class="dos-badge" id="orderCountBadge">0 Orders</span>
+                </div>
+
+                <!-- Status Filter Tabs -->
+                <div class="dos-filter-tabs">
+                    <button class="tab-btn active" data-filter="all" onclick="filterOrders('all')">All</button>
+                    <button class="tab-btn" data-filter="verified_cleaned" onclick="filterOrders('verified_cleaned')">Verified & Cleaned</button>
+                    <button class="tab-btn" data-filter="cancelled_fake" onclick="filterOrders('cancelled_fake')">Buyer Cancelled</button>
+                    <button class="tab-btn" data-filter="trust_lock_sent" onclick="filterOrders('trust_lock_sent')">₹19 Token Pending</button>
+                    <button class="tab-btn" data-filter="calling" onclick="filterOrders('calling')">Dialing / Queued</button>
+                </div>
+            </div>
+
+            <!-- Orders Table -->
+            <div class="dos-table-card">
+                <div class="table-responsive">
+                    <table class="dash-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 32px;"></th>
+                                <th>Order ID</th>
+                                <th>Customer</th>
+                                <th>Risk Tier</th>
+                                <th>Customer Address Input</th>
+                                <th style="width: 24px;"></th>
+                                <th>Verified Courier Label (Shopify)</th>
+                                <th>Status</th>
+                                <th style="text-align: right;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ordersTableBody">
+                            <tr>
+                                <td colspan="9" class="table-loading">Loading dispatch orders...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal 1: Quick-Paste Order -->
+    <div class="dash-modal" id="quickPasteModal">
+        <div class="modal-backdrop" onclick="closeQuickPasteModal()"></div>
+        <div class="modal-window">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title">Quick-Paste Order</h3>
+                    <p class="modal-subtitle">Paste unformatted customer WhatsApp or Instagram chat text. Shipvera extracts details and queues verification.</p>
+                </div>
+                <button class="modal-close-btn" onclick="closeQuickPasteModal()" aria-label="Close modal">×</button>
+            </div>
+            <div class="modal-body">
+                <label class="modal-label" for="quickPasteInput">Customer Chat Message:</label>
+                <textarea id="quickPasteInput" class="modal-textarea" rows="4" placeholder="e.g. Rahul 9876543210, sector 15 noida near metro station, black hoodie L size COD 799"></textarea>
+                
+                <div class="quick-paste-samples">
+                    <span class="qps-label">Presets:</span>
+                    <button class="qps-btn" onclick="fillSample(1)">Indore (Missing Landmark)</button>
+                    <button class="qps-btn" onclick="fillSample(2)">Rohtak (Missing House No)</button>
+                    <button class="qps-btn" onclick="fillSample(3)">Jaipur (Keyboard Smash)</button>
+                </div>
+
+                <div id="quickPasteResult" class="qp-result-box" style="display: none;"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-modal btn-cancel" onclick="closeQuickPasteModal()">Cancel</button>
+                <button class="btn-modal btn-confirm" id="btnRunQuickPaste" onclick="submitQuickPaste()">
+                    <span>Extract & Dial Call →</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 2: Call Transcript & Audio Player -->
+    <div class="dash-modal" id="transcriptModal">
+        <div class="modal-backdrop" onclick="closeTranscriptModal()"></div>
+        <div class="modal-window modal-window-wide">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title" id="transcriptModalTitle">Call Recording & Dialogue</h3>
+                    <p class="modal-subtitle" id="transcriptModalSub">Shipvera AI Dispatch Verification</p>
+                </div>
+                <button class="modal-close-btn" onclick="closeTranscriptModal()" aria-label="Close modal">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="mini-audio-bar">
+                    <div class="mab-left">
+                        <button class="mab-play-btn" id="mabPlayBtn" onclick="toggleModalAudio()">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                        </button>
+                        <div class="mab-meta">
+                            <span class="mab-call-title" id="mabCallTitle">Call Recording // Shipvera AI & Buyer</span>
+                            <span class="mab-call-time" id="mabCallDuration">0:24 • Sarvam Bulbul Audio</span>
+                        </div>
+                    </div>
+                    <div class="mab-status-tag" id="mabStatusTag">Verified & Logged</div>
+                </div>
+
+                <div class="transcript-stream-wrap" id="transcriptStream"></div>
+
+                <div class="extracted-summary-box" id="extractedSummaryBox">
+                    <div class="esb-header">
+                        <span class="esb-tag">COURIER LABEL PAYLOAD</span>
+                        <span class="esb-badge">Shopify & Shiprocket Synced</span>
+                    </div>
+                    <div class="esb-content" id="esbContent"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-modal btn-cancel" onclick="closeTranscriptModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 3: Wallet Recharge -->
+    <div class="dash-modal" id="rechargeModal">
+        <div class="modal-backdrop" onclick="closeRechargeModal()"></div>
+        <div class="modal-window">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title">Wallet Recharge</h3>
+                    <p class="modal-subtitle">Pay-As-You-Go. ₹6.00 deducted only on completed phone connections.</p>
+                </div>
+                <button class="modal-close-btn" onclick="closeRechargeModal()" aria-label="Close modal">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="recharge-cards-grid">
+                    <div class="recharge-card" onclick="selectRechargePack('starter', 999)">
+                        <div class="rc-radio-row">
+                            <input type="radio" name="rechargePack" id="packStarter" value="starter">
+                            <label for="packStarter" class="rc-title">Starter Pack</label>
+                        </div>
+                        <div class="rc-price">₹999</div>
+                        <div class="rc-desc">180 Verified Orders (Effective <strong>₹5.50/Order</strong>)</div>
+                    </div>
+
+                    <div class="recharge-card selected" onclick="selectRechargePack('growth', 2999)">
+                        <div class="rc-popular-tag">MOST POPULAR</div>
+                        <div class="rc-radio-row">
+                            <input type="radio" name="rechargePack" id="packGrowth" value="growth" checked>
+                            <label for="packGrowth" class="rc-title">Growth Pack</label>
+                        </div>
+                        <div class="rc-price">₹2,999</div>
+                        <div class="rc-desc">600 Verified Orders (Effective <strong>₹5.00/Order</strong>)</div>
+                    </div>
+                </div>
+
+                <div class="recharge-trust-notes">
+                    <span>• Failed carrier connections = ₹0.00 charge</span>
+                    <span>• Balance never expires</span>
+                    <span>• Automated GST invoice issued</span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-modal btn-cancel" onclick="closeRechargeModal()">Cancel</button>
+                <button class="btn-modal btn-confirm" id="btnConfirmRecharge" onclick="executeRecharge()">
+                    <span>Pay ₹2,999 & Activate Credits →</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 4: Bolna Voice AI Outbound Calling Station -->
+    <div class="dash-modal" id="liveCallModal">
+        <div class="modal-backdrop" onclick="closeLiveCallModal()"></div>
+        <div class="modal-window">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title">Outbound Voice AI Calling Station</h3>
+                    <p class="modal-subtitle">Dispatch an automated phone verification call via Bolna.ai and Sarvam AI telephony gateway.</p>
+                </div>
+                <button class="modal-close-btn" onclick="closeLiveCallModal()" aria-label="Close modal">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="lcm-order-summary">
+                    <div class="lcm-summary-row">
+                        <span>Order Reference: <strong id="lcmOrderId">#UK-1092</strong></span>
+                        <span>COD Total: <strong id="lcmCodAmount">₹1,299</strong></span>
+                    </div>
+                    <div class="lcm-summary-row">
+                        <span>Customer: <strong id="lcmBuyerName">Rahul Verma</strong></span>
+                        <span>Brand Identity: <strong id="lcmBrandName">Snitch Apparel</strong></span>
+                    </div>
+                    <div class="lcm-address-box">
+                        <span class="lcm-addr-label">Address Flagged for Verification:</span>
+                        <p id="lcmRawAddress">56 Dukan, MG Road, Indore</p>
+                        <span class="lcm-missing-tag" id="lcmMissingTag">Missing Landmark or House Number</span>
+                    </div>
+                </div>
+
+                <div class="lcm-dial-form">
+                    <label class="modal-label" for="lcmPhoneInput">Destination Mobile Number (E.164):</label>
+                    <div class="lcm-phone-input-wrap">
+                        <span class="lcm-phone-prefix">+91</span>
+                        <input type="tel" id="lcmPhoneInput" class="modal-input" placeholder="Enter 10-digit mobile number">
+                    </div>
+                    <span class="lcm-helper">Enter your personal mobile number to receive and audit the live AI call.</span>
+                </div>
+
+                <div class="lcm-guardrails-box">
+                    <div class="lcm-gb-item">
+                        <span class="lcm-gb-dot"></span>
+                        <span>Duration Hard Ceiling: <strong>40 Seconds</strong> (Zero credit waste)</span>
+                    </div>
+                    <div class="lcm-gb-item">
+                        <span class="lcm-gb-dot"></span>
+                        <span>Silence Disconnect: <strong>7 Seconds</strong></span>
+                    </div>
+                    <div class="lcm-gb-item">
+                        <span class="lcm-gb-dot"></span>
+                        <span>Speech Engine: <strong>Sarvam AI Bulbul (Shubh)</strong></span>
+                    </div>
+                </div>
+
+                <div id="lcmStatusBox" class="lcm-status-box" style="display: none;">
+                    <div class="lcm-status-header">
+                        <div class="lcm-spinner" id="lcmSpinner"></div>
+                        <span id="lcmStatusTitle">Connecting to Telephony Gateway...</span>
+                    </div>
+                    <div class="lcm-status-details" id="lcmStatusDetails"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-modal btn-cancel" onclick="closeLiveCallModal()">Cancel</button>
+                <button class="btn-modal btn-confirm" id="btnDispatchLiveCall" onclick="dispatchLiveCallFromModal()">
+                    <span>Trigger Outbound Call →</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 5: Feature 4 ₹19 Trust Token Modal -->
+    <div class="dash-modal" id="trustLockModal">
+        <div class="modal-backdrop" onclick="closeTrustLockModal()"></div>
+        <div class="modal-window">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title">₹19 Trust Token Recovery</h3>
+                    <p class="modal-subtitle">Automated fallback for unanswered calls to eliminate forward & reverse courier loss.</p>
+                </div>
+                <button class="modal-close-btn" onclick="closeTrustLockModal()" aria-label="Close modal">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="tl-whatsapp-preview">
+                    <div class="tl-wa-header">
+                        <span>WhatsApp Business Notification</span>
+                        <span class="tl-wa-verified">Meta Official WABA</span>
+                    </div>
+                    <div class="tl-wa-bubble">
+                        <p id="tlWaMessage">Hi Rahul, humne aapka ₹1,299 ka parcel dispatch karne ke liye call kiya tha par connect nahi hua. Parcel hold na ho isliye bas ₹19 ka chota token UPI karke apna address lock kar dein. Baaki ₹1,280 delivery pe hi dena hai!</p>
+                        <div class="tl-wa-button-preview">
+                            <span>Pay ₹19 via UPI to Confirm</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tl-details-grid">
+                    <div class="tl-detail-card">
+                        <span class="tl-dc-label">Dynamic Payment Link</span>
+                        <code id="tlRazorpayLink" class="tl-dc-link">https://rzp.io/l/shipvera_tl_9872</code>
+                    </div>
+                    <div class="tl-detail-card">
+                        <span class="tl-dc-label">Shopify Order Note</span>
+                        <span class="tl-dc-val" id="tlShopifyNote">Prepaid Token: ₹19 | Remaining COD: ₹1,280</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-modal btn-cancel" onclick="closeTrustLockModal()">Close</button>
+                <button class="btn-modal btn-confirm" id="btnSimulatePayment" onclick="simulateTrustLockPayment()">
+                    <span>Simulate Token Payment →</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="dashboard.js?v=3.0"></script>
+</body>
+</html>

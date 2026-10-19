@@ -1,0 +1,154 @@
+PART 1: Product Requirements Document (PRD)1.1 Product OverviewProduct Name: RTO ShieldTagline: Stop Shipping to Fake Buyers & Incomplete Addresses.Platform Architecture: Desktop-First SaaS Web Dashboard + Mobile-Responsive PWA (Progressive Web App) for phone users & Instagram sellers.Core Value Proposition: India’s first Conversational Hinglish Voice AI + Live Address Re-Writer that calls high-risk COD buyers within 60 seconds of placing an order, interrogates them for real local landmarks, automatically rewrites their courier shipping label on Shopify/Shiprocket, and locks dicey buyers with a ₹19 UPI Trust Token.1.2 Target User Personas & Core WorkflowsPersonaMonthly VolumePrimary DeviceCore Pain PointHow They Use RTO Shield1. The Shopify Dropshipper / D2C Brand500 – 10,000+ orders/moLaptop (70%) + Phone (30%)35–40% RTO rate burning ₹40k–₹2L/month in courier charges & ruining Meta Ad ROAS.Connects Shopify/Shiprocket in 1 click. Everything runs on autopilot in the background; checks dashboard for daily money saved.2. The Instagram / WhatsApp Reseller100 – 500 orders/moSmartphone (95% via Mobile PWA)Buyers send raw addresses on WhatsApp chat; zero tools exist for non-Shopify sellers.Opens RTO Shield PWA from home screen, taps "Quick Paste Order", pastes WhatsApp chat text, and AI verifies the buyer in 30 seconds.1.3 Core Functional Features (MVP Scope)Feature 1: Pre-Call "Address Geo-Sanitizer" & Risk EngineGoal: Don't waste ₹2 call cost on 100% clean prepaid orders; filter and prepare context before calling.Logic:When a COD order arrives via webhook, the AI parses the raw address string before dialing.Checks for Red Flags:Address length < 25 characters.Missing House/Flat/Shop number.Gibberish keyboard smash ("asdfghjkl"), repeated digits ("9999999999").Pincode-to-City mismatch (e.g., Pincode is Mumbai 400001, City says Jaipur).Generates a Dynamic Interrogation Prompt for the Voice AI: Tells the AI exactly what is missing (e.g., "Buyer wrote 'Rajiv Nagar Gali 2', ask specifically for house number, gate color, and a nearby shop in Gali 2").Feature 2: "The Landmark Interrogator" (25-Second Hinglish Voice AI)Goal: Separate real buyers from impulse/fake buyers through human-like conversation rather than "Press 1".Call Flow Script:0–5 sec (Hook): "Hello [Buyer Name] ji, main [Brand Name] ke dispatch desk se bol raha hoon. Aapka ₹[Amount] ka order pack ho gaya hai."5–15 sec (The Interrogation): "Bhaiya, aapne address mein '[Extracted Area]' likha hai par makan number ya exact landmark nahi hai. Wahan aas-paas konsi dukaan ya gate ka rang bata denge taaki Delhivery wala bhatke na?"15–25 sec (Resolution):Path A (Genuine Buyer): Gives specific details ("Bikaner Sweets ke upar 2nd floor, safed gate"). AI says "Perfect bhaiya, maine update kar diya hai, 3-4 din mein mil jayega. Dhanyawad!" -> Marks Verified & Cleaned.Path B (Fake/Time-Passer): Says "Cancel kar do" / "Galti se ho gaya" / Cuts the call immediately upon hearing landmark question. -> Marks High Risk / Cancelled.Path C (Dicey / Unreachable / Busy): Doesn't pick up after 2 attempts or sounds unsure. -> Triggers Feature 5 (₹19 Trust Lock).Feature 3: Live Address Re-Writer (Auto-Sync to Shopify/Shiprocket)Goal: Zero manual copy-pasting for the seller.Logic:Once the call ends, an LLM extraction step converts the buyer's spoken Hindi/Hinglish into clean English courier format:Raw Input: "sharma dairy ke piche gali 4 rohtak"Spoken Audio: "Haan bhaiya, Sharma Dairy se left leke pehla peela makan hai, plot 42"Updated Shopify shipping_address:address1: "Plot No. 42, Yellow House, 1st Left after Sharma Dairy"address2: "Gali No. 4, Behind Sharma Dairy"tags: ["RTO-Shield-Verified", "Address-Cleaned"]Feature 4: The "₹19 Trust Lock" (WhatsApp Audio + Micro-UPI Fallback)Goal: Save orders where the buyer didn't pick up the phone without risking a blind COD dispatch.Flow:Sends an automated WhatsApp message via official WABA API with a 5-second personalized voice note + Dynamic Razorpay UPI Intent Link for ₹19.Message Copy: "Hi [Name], humne aapka ₹999 ka parcel dispatch karne ke liye call kiya tha par connect nahi hua. Parcel hold na ho isliye bas ₹19 ka chota token UPI karke apna address lock kar dein. Baaki ₹980 delivery pe hi dena hai!"Once paid, Shopify order note updates with Prepaid Token: ₹19 | Remaining COD: ₹980.Feature 5: "Quick-Paste" Mode for Instagram & WhatsApp SellersGoal: Capture the massive non-Shopify reseller market via Mobile PWA.Flow:Seller copies a messy message from WhatsApp: "Rohan 9876543210, sector 15 noida near metro station, black hoodie L size COD 799".Pastes it into a single text box on the RTO Shield mobile web app.AI automatically extracts Name, Phone, Address, Item, and COD Amount and fires the verification call immediately.1.4 Pricing & Wallet ArchitecturePay-As-You-Go Wallet (Default for Fast Onboarding):Free Trial: 10 Free Verification Credits on signup (worth ₹60).Usage Deduction: ₹6 deducted ONLY when a call connects or WhatsApp Trust Lock is triggered (failed carrier connections = ₹0 charge).Recharge Packs:Starter: ₹999 (180 Credits — ₹5.50/order)Growth: ₹2,999 (600 Credits — ₹5.00/order)Monthly Subscription Tiers (Auto-Pilot Brands):Starter (₹1,499/mo): 250 Verified Orders + WhatsApp Paste Mode.Pro (₹3,999/mo): 800 Verified Orders + 1-Click Shopify & Shiprocket Auto-Sync + ₹19 UPI Lock.Scale (₹8,999/mo): 2,000 Verified Orders + Custom Brand Voice + Priority Calling Queue.PART 2: Premium UI/UX Design System (Zero Black, Zero Neon)2.1 Aesthetic Direction: "Warm Editorial Daylight"Inspiration: Stripe Dashboard + Shopify Polaris + Linear (Light Mode) + Wise.Vibe: Clean, breathable, trustworthy, tactile, with subtle, friendly animated elements that make the software feel alive without looking like a dark-mode crypto dashboard.2.2 Color Palette (Tailwind CSS Tokens)RoleColor NameHex CodeTailwind EquivalentUsageApp BackgroundWarm Alabaster#F8F7F4bg-[#F8F7F4]Main canvas background (easy on the eyes, never harsh pure white).Card SurfaceCrisp Ivory White#FFFFFFbg-whiteCards, tables, modals with border-[#E6E4DD] and soft shadow.Secondary SurfaceSoft Oatmeal#F1EFEAbg-[#F1EFEA]Input boxes, table headers, pill backgrounds, audio player bar.Primary TextDeep Espresso Slate#18181Btext-zinc-900Headings, numbers, primary labels (soft charcoal, not #000000).Secondary TextWarm Muted Grey#64645Etext-[#64645E]Subtitles, timestamps, metadata.Primary Brand AccentRoyal Trust Indigo#3B49DFbg-[#3B49DF]Primary CTA buttons, active states, brand highlights.Verified / Money SavedBotanical Emerald#0D9488 / #ECFDF5text-teal-700 bg-teal-50"Address Cleaned" badges, ROI saved counter, verified tags.Action / Trust LockWarm Amber Gold#D97706 / #FFFBEBtext-amber-700 bg-amber-50"₹19 UPI Pending", "Incomplete Address Detected" warnings.RTO Blocked / FraudSoft Terracotta Rose#E11D48 / #FFF1F2text-rose-700 bg-rose-50"Fake Buyer Cancelled", "High Risk Blocked" status pills.2.3 Typography & Visual HierarchyHeadings & Numbers: Plus Jakarta Sans (SemiBold / Bold, tight tracking -0.02em) — gives a modern, friendly fintech feel.Body UI: Inter or DM Sans — super legible on both laptop and phone screens.Addresses, Pincodes & Live Transcripts: JetBrains Mono — gives a structured "dispatch ticket" aesthetic when comparing Old vs. New addresses.2.4 Signature Interactive & Cute Micro-ComponentsThe "Dispatch Boy" Live Call Pill (Top Header):Whenever a live call is happening, a soft ivory floating pill appears at the top right with a cute, minimalist animated 3D/SVG parcel character wearing a headset and a gentle green soundwave: "Rohan (AI) is talking to Rahul in Indore... 0:14".The "Address Magic Diff" Card (Before -> After):Inside every order row, clicking it opens a smooth accordion:Left Box (Soft Rose tint): Raw messy address with missing parts highlighted ("Gali 2 Rajiv Nagar" — Missing House No).Center Animated Arrow: A cute sparkling morph animation.Right Box (Soft Mint Emerald tint): Clean, structured courier label ("Plot 14, White Gate, Above Bikaner Sweets, Gali 2, Rajiv Nagar"), plus a 1-click mini audio player (▶ Listen to 18s Call) right below it.Desktop vs. Mobile PWA Navigation:On Laptop: Clean left sidebar (240px width) with a prominent "₹ Saved This Month" emerald counter card at the bottom.On Phone (Mobile Responsive PWA): Sidebar disappears; replaced by a tactile Floating Bottom Navigation Bar (Home, Orders, + Paste Order, Wallet) with haptic-style spring animations (Framer Motion).PART 3: Technical Requirements Document (TRD)3.1 System Architecture & Tech Stack[Shopify / Shiprocket Webhook] OR [Mobile PWA Quick-Paste]
+                       │
+                       ▼
+        [Next.js 15 App Router API Routes]
+                       │
+                       ▼
+     [Upstash Redis + QStash (Call Queue & Delay)]
+       (Waits 45s after order so buyer puts phone down, then triggers)
+                       │
+                       ▼
+     [Address Geo-Sanitizer (GPT-4o-mini + Google Maps API)]
+                       │
+         ┌─────────────┴─────────────┐
+         │ (Needs Interrogation)     │ (100% Clean Address)
+         ▼                           ▼
+[Voice AI Orchestrator]      [Auto-Tag Verified]
+(Bolna.dev / Vapi / Retell)
+  + Deepgram Nova-2 (STT)
+  + Sarvam AI Bulbul (India-native Hindi TTS)
+  + Indian SIP Trunk (Exotel/Plivo)
+         │
+         ▼ (Webhook: call.completed)
+[Post-Call Address Extractor & Decision Engine]
+         │
+   ┌─────┴───────────────────┬──────────────────────┐
+   ▼ (Verified & Spoken)     ▼ (No Pickup/Dicey)    ▼ (Said Cancel/Fake)
+[Update Shopify Address]  [WhatsApp ₹19 UPI Link]  [Hold/Cancel Order]
+         │                   │                      │
+         └───────────────────┴──────────────────────┘
+                             │
+                             ▼
+            [Supabase PostgreSQL + Realtime UI]
+Frontend & Backend Framework: Next.js 15 (App Router, TypeScript), Tailwind CSS, Shadcn UI (customized to Warm Daylight theme), Framer Motion.Database & Auth: Supabase (PostgreSQL, Supabase Auth with Google + Phone OTP, Supabase Realtime for live transcript streaming on dashboard).Queue & Background Jobs: Upstash QStash / BullMQ (Crucial for handling call retries if buyer is busy and scheduling calls between 9 AM – 9 PM IST only).Voice AI Stack:Orchestration: Bolna.dev (India-native, built-in Exotel/Plivo telephony) OR Vapi.ai / Retell AI.STT (Speech-to-Text): Deepgram Nova-2 (language: hi-Latn / en-IN) for catching Indian landmarks accurately.LLM Brain: gpt-4o-mini (fast ~250ms TTFT, super cheap).TTS (Voice): Sarvam AI Bulbul (India-native Hinglish conversational voice — lowest latency for Hindi, best regional accent accuracy, ~₹0.02/sec vs ElevenLabs ₹0.18/sec).Payments & WhatsApp: Razorpay (for Seller Wallet Top-ups + Dynamic ₹19 UPI Payment Links) & Interakt / Meta Cloud WhatsApp API.3.2 Database Schema (Supabase PostgreSQL)SQL-- 1. Sellers / Workspaces Table
+CREATE TABLE sellers (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email TEXT UNIQUE NOT NULL,
+  brand_name TEXT NOT NULL,
+  phone TEXT,
+  shopify_domain TEXT UNIQUE,
+  shopify_access_token TEXT,
+  shiprocket_token TEXT,
+  wallet_balance_inr NUMERIC(10, 2) DEFAULT 60.00, -- 10 Free calls (Rs 60) on signup
+  plan_tier TEXT DEFAULT 'pay_as_you_go', -- 'pay_as_you_go', 'starter', 'pro', 'scale'
+  upi_trust_lock_amount INT DEFAULT 19,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 2. Orders & Verification Pipeline Table
+CREATE TABLE orders (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  seller_id UUID REFERENCES sellers(id) ON DELETE CASCADE,
+  external_order_id TEXT, -- Shopify Order ID or 'MANUAL-WA'
+  source TEXT NOT NULL, -- 'shopify', 'shiprocket', 'whatsapp_paste'
+  buyer_name TEXT NOT NULL,
+  buyer_phone TEXT NOT NULL,
+  cod_amount NUMERIC(10, 2) NOT NULL,
+  
+  -- Address Comparison
+  raw_address TEXT NOT NULL,
+  pincode TEXT,
+  city TEXT,
+  missing_fields JSONB, -- e.g. ["house_number", "landmark"]
+  cleaned_address_line1 TEXT,
+  cleaned_address_line2 TEXT,
+  cleaned_landmark TEXT,
+  
+  -- Status & Scoring
+  verification_status TEXT DEFAULT 'queued', 
+  -- 'queued', 'calling', 'verified_cleaned', 'trust_lock_sent', 'trust_lock_paid', 'cancelled_fake'
+  risk_score INT DEFAULT 50, -- 0 to 100
+  rto_money_saved NUMERIC(10, 2) DEFAULT 0.00, -- e.g. Rs 150 logged when fake order blocked/cleaned
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 3. AI Call Logs Table
+CREATE TABLE call_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  order_id UUID REFERENCES orders(id) ON DELETE CASCADE,
+  seller_id UUID REFERENCES sellers(id) ON DELETE CASCADE,
+  provider_call_id TEXT UNIQUE,
+  duration_seconds INT DEFAULT 0,
+  recording_url TEXT,
+  transcript JSONB, -- Array of {role: 'ai' | 'user', text: '...'}
+  extracted_landmark TEXT,
+  buyer_intent TEXT, -- 'genuine', 'hesitant', 'cancel_requested', 'no_answer'
+  call_cost_inr NUMERIC(6, 2) DEFAULT 6.00,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 4. Global Network Moat: India Pincode & Fraud Graph
+CREATE TABLE buyer_trust_graph (
+  phone_hash TEXT PRIMARY KEY, -- SHA-256 of normalized +91 phone number
+  total_cod_orders INT DEFAULT 1,
+  verified_count INT DEFAULT 0,
+  fake_cancel_count INT DEFAULT 0,
+  upi_trust_paid_count INT DEFAULT 0,
+  global_risk_level TEXT DEFAULT 'neutral', -- 'trusted', 'neutral', 'habitual_timepasser'
+  last_seen_at TIMESTAMPTZ DEFAULT NOW()
+);
+3.3 The Voice AI System Prompt & Function Calling SchemaYe prompt tere Voice AI (Vapi / Bolna / Retell) ke अंदर jayega. Isme latency kam rakhne ke liye chote sentences aur natural Hinglish filler words ("acha", "जी", "bhaiya") use kiye gaye hain:System Prompt (Landmark Interrogator v1)Markdown# Role & Persona
+You are Aman, a polite, street-smart, fast-talking dispatch coordinator calling from {{brand_name}}'s warehouse desk in India. You speak natural conversational Hinglish (70% Hindi, 30% English words written in Roman script). You NEVER sound like a robotic call center agent. Keep every response under 2 short sentences.
+
+# Context of Current Order
+- Buyer Name: {{buyer_name}}
+- Item Ordered: {{item_name}}
+- COD Amount: ₹{{cod_amount}}
+- Raw Address Provided: "{{raw_address}}, {{city}} - {{pincode}}"
+- Missing Details Detected: {{missing_fields}}
+
+# Your Exact Objective
+1. Greet {{buyer_name}} quickly and mention their ₹{{cod_amount}} parcel from {{brand_name}} is ready for dispatch.
+2. Point out the specific missing detail in "{{raw_address}}" (for example, no house/flat number or no nearby shop/landmark).
+3. Ask them casually: "Wahan aas-paas konsi mashhoor dukaan, mandir ya makan ka number/gate ka rang padta hai bata dijiye, taaki courier boy bina bhatke seedha deliver kar de?"
+4. Listen carefully:
+   - If they give a real landmark/house detail: Repeat the key landmark once to confirm ("Acha, {{landmark}} ke paas, note kar liya!"), thank them warmly, and end the call.
+   - If they say they ordered by mistake, don't want it, or sound like they are pranking: Say "Koi baat nahi ji, main abhi cancel kar deta hoon. Dhanyawad!" and end the call.
+
+# Strict Guardrails
+- Never speak long paragraphs.
+- Never ask them to "Press 1 or 2".
+- If interrupted, stop talking immediately and listen.
+Post-Call LLM Extraction Tool (extract_and_rewrite_address)Jab call khatam hota hai, webhook transcript ko gpt-4o-mini ke paas bhejta hai with this exact JSON schema:JSON{
+  "name": "process_call_outcome",
+  "description": "Extracts the cleaned courier address and buyer intent from the Hinglish call transcript.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "buyer_intent": {
+        "type": "string",
+        "enum": ["VERIFIED_GENUINE", "CANCEL_REQUESTED", "DICEY_HESITANT", "WRONG_NUMBER"],
+        "description": "Overall intent based on how the buyer answered the landmark question."
+      },
+      "cleaned_address_line1": {
+        "type": "string",
+        "description": "Formatted House/Flat No, Gate Color, Floor, Building Name in clean English."
+      },
+      "cleaned_address_line2": {
+        "type": "string",
+        "description": "Formatted Street/Gali, Sector/Colony, and Exact Spoken Landmark (e.g., Near Bikaner Sweets)."
+      },
+      "confidence_score": {
+        "type": "integer",
+        "description": "0 to 100 confidence that courier boy can find this house easily."
+      },
+      "summary_hinglish": {
+        "type": "string",
+        "description": "1-line summary for seller dashboard, e.g., 'Buyer confirmed White Gate 2nd Floor above Bikaner Sweets.'"
+      }
+    },
+    "required": ["buyer_intent", "cleaned_address_line1", "cleaned_address_line2", "confidence_score", "summary_hinglish"]
+  }
+}
+3.4 Key API Routes (Next.js App Router)POST /api/webhooks/shopify/orders-createVerifies X-Shopify-Hmac-Sha256.Checks if financial_status === 'pending' (COD order).Runs sanitizeAddress() check.Pushes job to Upstash QStash with a 45s delay (taaki buyer order place karne ke turant baad phone rakh chuka ho aur call uthaye).POST /api/calls/triggerChecks seller's wallet_balance_inr >= 6.Checks time window: If current time in IST is between 9:30 PM and 8:30 AM, schedules the call for 9:00 AM IST next morning (raat ko 2 baje kisi customer ko call nahi jayega!).Fires outbound call via Bolna/Vapi API.POST /api/webhooks/voice/call-completedReceives recording_url, transcript, and duration.Runs process_call_outcome LLM extraction.If VERIFIED_GENUINE: Calls Shopify Admin REST/GraphQL API (PUT /admin/api/2024-10/orders/{id}.json) to overwrite shipping_address and adds tag RTO-Shield-Cleaned. Deducts ₹6 from seller wallet.If DICEY_HESITANT or NO_ANSWER (after 2 retries): Calls Razorpay Payment Links API for ₹19 and triggers WhatsApp template message.If CANCEL_REQUESTED: Adds tag RTO-Shield-Fake-Cancelled on Shopify, logs ₹150 in rto_money_saved for seller's ROI dashboard.POST /api/orders/quick-paste (For Mobile PWA / Insta Sellers)Accepts { raw_text: "Rahul 9876543210..." }.Extracts fields using gpt-4o-mini in 800ms, inserts into orders table, and immediately triggers /api/calls/trigger.3.5 Important Indian Market Edge Cases (Jo Tujhe Handle Karne Hain)Night-Time Owl Orders (11 PM – 8 AM):40% impulse COD orders raat ko 11 baje se 3 baje ke beech aate hain. Agar AI raat ko 1:30 baje call karega toh asli customer bhi gaali deke order cancel kar dega.Solution: Queue system automatically holds night orders and shows status on dashboard as "Scheduled for 9:00 AM Morning Batch"—while optionally sending a silent WhatsApp confirmation link immediately at night.TRAI DND & Service Call Compliance:Kyunki buyer ne khud order place kiya hai, ye Transactional / Order Confirmation Call ki category mein aata hai (Promotional spam nahi). Exotel/Plivo ki regular 140 ya transactional virtual series use hogi.Truecaller Caller ID Branding:Jab buyer ke phone pe call jaye, toh Truecaller pe laal rang ka "SPAM" nahi aana chahiye. Number ko Truecaller Business / Verified Identity pe "Order Dispatch Desk" ke naam se register rakhna hoga—isse call pickup rate 45% se badh ke 78%+ ho jata hai.

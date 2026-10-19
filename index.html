@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shipvera — Never Ship a Blind COD Order Again</title>
+    <meta name="description" content="Shipvera interrogates your COD buyers in natural Hinglish within 60 seconds, captures exact landmarks, and rewrites messy shipping labels into verified courier AWBs. Cut RTO courier losses by 70%.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800;900&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@monasans/font@latest/dist/mona-sans.min.css">
+    <link rel="icon" type="image/png" href="assets/shipvera_icon.png">
+    <link rel="stylesheet" href="styles.css?v=8.1">
+</head>
+<body>
+
+    <!-- Minimalist Navigation Bar -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="#" class="nav-logo" aria-label="Shipvera Home">
+                <img src="assets/shipvera_logo_transparent.png" alt="Shipvera Logo" class="nav-brand-logo">
+            </a>
+            <div class="nav-pulse-pill">
+                <span class="pulse-dot"></span>
+                <span class="pulse-text"><strong>2,418</strong> COD Orders Protected Today</span>
+            </div>
+            <div class="nav-links">
+                <a href="#product" class="nav-link">Product</a>
+                <a href="#integrations" class="nav-link">Integrations</a>
+                <a href="#calculator" class="nav-link">Simulator</a>
+                <a href="#pricing" class="nav-link">Pricing</a>
+            </div>
+            <a href="#waitlist" class="nav-cta">Get Early Access →</a>
+        </div>
+    </nav>
+
+    <!-- Clean, Authoritative Hero Section -->
+    <section class="hero hero-clean" id="hero">
+        <div class="container">
+            <div class="hero-centered-content">
+                <div class="hero-badge animate-on-scroll">
+                    <span class="badge-dot"></span>
+                    <span>India's #1 Voice AI Dispatch Engine • 2,418 COD Orders Protected Today</span>
+                </div>
+
+                <h1 class="hero-title animate-on-scroll">
+                    Never Ship a <span class="gradient-text text-nowrap">Blind COD Order</span> Again.
+                </h1>
+
+                <p class="hero-subtitle animate-on-scroll">
+                    Shipvera calls your COD buyers in natural colloquial Hinglish within <strong>60 seconds</strong> of ordering, 
+                    interrogates for missing landmarks, and auto-rewrites courier shipping labels directly into <strong>Shopify & Shiprocket</strong>. 
+                    Cut RTO courier losses by <strong>70% on complete autopilot</strong>.
+                </p>
+
+                <!-- Linear Autopilot Workflow Pipeline -->
+                <div class="autopilot-pipeline-bar animate-on-scroll" style="display: flex; align-items: center; justify-content: space-between;">
+                    <div class="pipeline-step">
+                        <span class="pipeline-num">01</span>
+                        <div class="pipeline-info">
+                            <span class="pipeline-title">COD Order Placed</span>
+                            <span class="pipeline-sub">Shopify / Shiprocket Sync</span>
+                        </div>
+                    </div>
+                    <div class="pipeline-arrow">
+                        <span class="pipeline-pulse">⚡ 60s Call</span>
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+                    </div>
+                    <div class="pipeline-step active">
+                        <span class="pipeline-num">02</span>
+                        <div class="pipeline-info">
+                            <span class="pipeline-title">Shipvera AI Dials</span>
+                            <span class="pipeline-sub">Speaks Colloquial Hinglish</span>
+                        </div>
+                    </div>
+                    <div class="pipeline-arrow">
+                        <span class="pipeline-pulse">200ms Auto</span>
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+                    </div>
+                    <div class="pipeline-step">
+                        <span class="pipeline-num">03</span>
+                        <div class="pipeline-info">
+                            <span class="pipeline-title">Instant Decision</span>
+                            <span class="pipeline-sub">Shopify Label Overwritten</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Grounded Inline Access Input -->
+                <div class="hero-inline-waitlist animate-on-scroll">
+                    <form class="inline-form" onsubmit="handleInlineWaitlist(event)">
+                        <input type="tel" id="inlinePhone" placeholder="Enter your WhatsApp number (+91...)" required>
+                        <button type="submit" class="btn-primary btn-glow">
+                            <span>Start Early Access (₹6/Order) →</span>
+                        </button>
+                    </form>
+                    <div class="inline-perks">
+                        <span>✓ Pure Pay-As-You-Go (₹6/Order)</span>
+                        <span>✓ 1-Click Shopify & Shiprocket Sync</span>
+                        <span>✓ Zero Monthly Software Fees</span>
+                        <span>✓ 100% DPDP Act Compliant</span>
+                    </div>
+                </div>
+
+                <!-- 4 Grounded Institutional Pillars -->
+                <div class="hero-metrics-grid animate-on-scroll">
+                    <div class="metric-card">
+                        <div class="metric-num-wrap">
+                            <span class="metric-num counter" data-target="70">0</span>
+                            <span class="metric-suffix">%</span>
+                        </div>
+                        <div class="metric-desc">RTO Courier Cut</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-num-wrap">
+                            <span class="metric-num counter" data-target="25">0</span>
+                            <span class="metric-suffix">s</span>
+                        </div>
+                        <div class="metric-desc">Avg Verification Call</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-num-wrap">
+                            <span class="metric-prefix">₹</span>
+                            <span class="metric-num counter" data-target="180">0</span>
+                        </div>
+                        <div class="metric-desc">Saved Per Blocked Fake</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-num-wrap">
+                            <span class="metric-prefix">₹</span>
+                            <span class="metric-num counter" data-target="6">0</span>
+                            <span class="metric-suffix">/order</span>
+                        </div>
+                        <div class="metric-desc">Starting Cost Per Order</div>
+                    </div>
+                </div>
+
+                <!-- Enterprise Trust Strip -->
+                <div class="hero-trust-bar animate-on-scroll">
+                    <div class="trust-badge-item">
+                        <span class="tbi-icon">⚡</span>
+                        <span><strong>60-Second</strong> Webhook SLA</span>
+                    </div>
+                    <div class="trust-divider-dot"></div>
+                    <div class="trust-badge-item">
+                        <span class="tbi-icon">🎯</span>
+                        <span><strong>99.4%</strong> Speech Accuracy</span>
+                    </div>
+                    <div class="trust-divider-dot"></div>
+                    <div class="trust-badge-item">
+                        <span class="tbi-icon">🔒</span>
+                        <span><strong>Bank-Grade</strong> 256-Bit SSL</span>
+                    </div>
+                    <div class="trust-divider-dot"></div>
+                    <div class="trust-badge-item">
+                        <span class="tbi-icon">🛡️</span>
+                        <span><strong>₹180</strong> Saved Per Fake</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- The Core Product Workbench: 3 Real Decisions of Shipvera Voice AI -->
+    <section class="audio-demo-section" id="product">
+        <div class="container">
+            <div class="section-header animate-on-scroll">
+                <span class="section-tag">Autonomous Dispatch Intelligence</span>
+                <h2 class="section-title">The 3 Real Decisions of <br><span class="gradient-text-2">Shipvera Voice AI in Action</span></h2>
+                <p class="section-desc">Shipvera calls within <strong>60 seconds</strong> of order placement. It handles landmark enrichment, stops fake impulse buyers before dispatch, and recovers unanswered calls with instant UPI intent locks.</p>
+            </div>
+
+            <!-- 3 Decision Selector Tabs -->
+            <div class="decision-tabs-container animate-on-scroll">
+                <div class="decision-tabs-header-label">SELECT REAL-TIME DISPATCH PATH:</div>
+                <div class="decision-tabs-list" role="tablist">
+                    <button class="decision-tab-item active" id="tabBtnA" onclick="switchDecision('decisionA')" role="tab" aria-selected="true">
+                        <div class="tab-item-top">
+                            <span class="tab-item-badge badge-green">✓ Decision 1</span>
+                            <span class="tab-item-pill status-safe">Safe COD Verified</span>
+                        </div>
+                        <div class="tab-item-title">Landmark Missing → Overwritten</div>
+                        <div class="tab-item-desc">Buyer confirms & gives missing landmark. Shopify label rewritten instantly.</div>
+                    </button>
+
+                    <button class="decision-tab-item" id="tabBtnB" onclick="switchDecision('decisionB')" role="tab" aria-selected="false">
+                        <div class="tab-item-top">
+                            <span class="tab-item-badge badge-red">🛡️ Decision 2</span>
+                            <span class="tab-item-pill status-saved">₹180 Freight Saved</span>
+                        </div>
+                        <div class="tab-item-title">Fake / Impulse Buyer Blocked</div>
+                        <div class="tab-item-desc">Buyer says "cancel kar do". Auto-cancelled on Shopify before pickup.</div>
+                    </button>
+
+                    <button class="decision-tab-item" id="tabBtnC" onclick="switchDecision('decisionC')" role="tab" aria-selected="false">
+                        <div class="tab-item-top">
+                            <span class="tab-item-badge badge-amber">⚡ Decision 3</span>
+                            <span class="tab-item-pill status-intent">WhatsApp UPI Lock</span>
+                        </div>
+                        <div class="tab-item-title">Call Unanswered / Busy Fallback</div>
+                        <div class="tab-item-desc">Sends colloquial voice note + ₹19 UPI Intent lock to secure high COD intent.</div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Side-by-Side Product Experience Workbench -->
+            <div class="workbench-grid animate-on-scroll">
+                
+                <!-- Left Pane: Interactive Hinglish Call Player -->
+                <div class="audio-demo-card">
+                    <div class="audio-player-top">
+                        <div class="caller-profile">
+                            <div class="caller-avatar">
+                                <span class="caller-pulse"></span>
+                                🤖
+                            </div>
+                            <div class="caller-details">
+                                <div class="caller-name">Shipvera Voice AI</div>
+                                <div class="caller-status" id="callStatusText">Ready • Click Play to Listen</div>
+                            </div>
+                        </div>
+                        <div class="call-order-pill" id="callOrderPill">
+                            <span class="pill-badge">COD #9284</span>
+                            <span class="pill-val">₹1,299 • Sneakers</span>
+                        </div>
+                    </div>
+
+                    <!-- Animated Waveform Equalizer -->
+                    <div class="audio-visualizer-wrap">
+                        <button class="audio-play-btn" id="playAudioBtn" onclick="toggleAudioDemo()" aria-label="Play audio verification call">
+                            <span class="play-icon" id="playIcon">▶</span>
+                        </button>
+                        <div class="waveform-container" id="waveformBars">
+                            <!-- 28 bars dynamically populated -->
+                        </div>
+                        <div class="audio-timer" id="audioTimer">00:00 / 00:20</div>
+                    </div>
+
+                    <!-- Synchronized Dialogue Transcript Containers for all 3 Paths -->
+                    <div class="call-dialogue-wrapper">
+                        
+                        <!-- Dialogue Stream A: Landmark Enrichment -->
+                        <div class="call-dialogue-stream active" id="dialogueStreamA">
+                            <div class="dialogue-line dialogue-ai" data-start="0" data-end="4">
+                                <div class="dialogue-speaker">Shipvera AI</div>
+                                <div class="dialogue-text">"Namaste Rahul ji! UrbanKicks ke dispatch desk se bol raha hoon. Aapka ₹1,299 ka sneakers order pack ho raha hai."</div>
+                            </div>
+                            <div class="dialogue-line dialogue-user" data-start="4" data-end="7">
+                                <div class="dialogue-speaker">Rahul (Buyer)</div>
+                                <div class="dialogue-text">"Haan bhaiya, dispatch kar do."</div>
+                            </div>
+                            <div class="dialogue-line dialogue-ai" data-start="7" data-end="13">
+                                <div class="dialogue-speaker">Shipvera AI</div>
+                                <div class="dialogue-text">"Bhaiya, address mein 'Gali 4, Rohtak' likha hai. Wahan pass mein koi dukaan ya makaan ka color bata denge taaki courier boy bhatke na?"</div>
+                            </div>
+                            <div class="dialogue-line dialogue-user" data-start="13" data-end="17">
+                                <div class="dialogue-speaker">Rahul (Buyer)</div>
+                                <div class="dialogue-text">"Haan bhaiya, Sharma Dairy se left leke pehla peela makan hai, Plot No. 42."</div>
+                            </div>
+                            <div class="dialogue-line dialogue-ai" data-start="17" data-end="20">
+                                <div class="dialogue-speaker">Shipvera AI</div>
+                                <div class="dialogue-text">"Bahut shukriya! Maine courier slip update kar di hai, 3 din mein deliver ho jayega. Have a great day!"</div>
+                            </div>
+                        </div>
+
+                        <!-- Dialogue Stream B: Fake / Impulse Buyer Blocked -->
+                        <div class="call-dialogue-stream" id="dialogueStreamB">
+                            <div class="dialogue-line dialogue-ai" data-start="0" data-end="4">
+                                <div class="dialogue-speaker">Shipvera AI</div>
+                                <div class="dialogue-text">"Namaste Vikas ji! Stylora Dispatch desk se bol raha hoon. Aapka ₹2,499 COD order pack karne se pehle confirm kar rahe hain."</div>
+                            </div>
+                            <div class="dialogue-line dialogue-user" data-start="4" data-end="9">
+                                <div class="dialogue-speaker">Vikas (Buyer)</div>
+                                <div class="dialogue-text">"Arre bhaiya mujhe nahi chahiye, galti se click ho gaya tha. Cancel kar do please, mat bhejna."</div>
+                            </div>
+                            <div class="dialogue-line dialogue-ai" data-start="9" data-end="14">
+                                <div class="dialogue-speaker">Shipvera AI</div>
+                                <div class="dialogue-text">"Bilkul Vikas ji, order turant cancel kar diya hai. Aapke ghar koi courier nahi aayega. Dhanyawad!"</div>
+                            </div>
+                        </div>
+
+                        <!-- Dialogue Stream C: Call Unanswered Fallback -->
+                        <div class="call-dialogue-stream" id="dialogueStreamC">
+                            <div class="dialogue-line dialogue-ai" data-start="0" data-end="3">
+                                <div class="dialogue-speaker">System</div>
+                                <div class="dialogue-text">"Dialing +91 98765 43210 (Buyer: Priya)... Calling 60 seconds after Shopify order placement."</div>
+                            </div>
+                            <div class="dialogue-line dialogue-user" data-start="3" data-end="6">
+                                <div class="dialogue-speaker">Buyer Line</div>
+                                <div class="dialogue-text">"[Ringing... Buyer Unanswered / Call Busy on Line 1]"</div>
+                            </div>
+                            <div class="dialogue-line dialogue-ai" data-start="6" data-end="10">
+                                <div class="dialogue-speaker">Shipvera AI (Fallback)</div>
+                                <div class="dialogue-text">"Call unanswered. Triggering Instant WhatsApp Protocol (0.8s) with colloquial voice note."</div>
+                            </div>
+                            <div class="dialogue-line dialogue-ai" data-start="10" data-end="13">
+                                <div class="dialogue-speaker">Shipvera AI (WhatsApp)</div>
+                                <div class="dialogue-text">"Generated 1-click ₹19 Razorpay UPI Intent link. Buyer locks intent, deducting ₹19 from COD balance."</div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Result Badge for the Active Decision -->
+                    <div class="call-outcome-bar" id="callOutcomeBar">
+                        <div class="outcome-pill outcome-success" id="outcomePill">
+                            <span class="outcome-icon" id="outcomeIcon">✅</span>
+                            <span id="outcomeLabel">Auto-Enriched Landmark: <strong>Plot 42, Behind Sharma Dairy</strong></span>
+                        </div>
+                        <div class="outcome-tag" id="outcomeRiskTag">Risk Score: <strong>5/100 (Safe COD)</strong></div>
+                    </div>
+                </div>
+
+                <!-- Right Pane: Real-Time Dynamic Action Preview -->
+                <div class="awb-transform-card" id="actionPreviewCard">
+                    
+                    <!-- Action Pane A: Verified Courier Label Overwrite -->
+                    <div class="action-decision-pane active" id="actionPaneA">
+                        <div class="transform-header">
+                            <span class="transform-tag">Decision 1: Real-Time Delivery Slip</span>
+                            <span class="transform-sync">⚡ Shopify & Delhivery Synced</span>
+                        </div>
+
+                        <div class="raw-address-box">
+                            <div class="box-label">ORIGINAL INCOMING ORDER (SHOPIFY):</div>
+                            <div class="box-content-raw">"Rahul, Gali 4 Rohtak, near mandir, cod 1299"</div>
+                            <div class="box-warning">⚠️ Missing house number, vague landmark — High RTO Risk (68%)</div>
+                        </div>
+
+                        <div class="transform-divider">
+                            <span>↓ AI PARSED & AUTO-REWRITTEN IN 200MS ↓</span>
+                        </div>
+
+                        <div class="courier-label-card">
+                            <div class="clc-top">
+                                <div class="clc-brand"><img src="assets/logos/delhivery.png" alt="Delhivery Official Logo" style="height: 18px; vertical-align: middle; margin-right: 6px;"> SURFACE</div>
+                                <div class="clc-code">HUB: DEL/GGN-401</div>
+                            </div>
+                            <div class="clc-barcode-wrap">
+                                <svg viewBox="0 0 200 36" class="clc-barcode">
+                                    <rect x="0" y="0" width="3" height="36" fill="#18181B"/>
+                                    <rect x="7" y="0" width="2" height="36" fill="#18181B"/>
+                                    <rect x="13" y="0" width="5" height="36" fill="#18181B"/>
+                                    <rect x="22" y="0" width="2" height="36" fill="#18181B"/>
+                                    <rect x="28" y="0" width="4" height="36" fill="#18181B"/>
+                                    <rect x="36" y="0" width="3" height="36" fill="#18181B"/>
+                                    <rect x="43" y="0" width="2" height="36" fill="#18181B"/>
+                                    <rect x="49" y="0" width="5" height="36" fill="#18181B"/>
+                                    <rect x="58" y="0" width="3" height="36" fill="#18181B"/>
+                                    <rect x="65" y="0" width="2" height="36" fill="#18181B"/>
+                                    <rect x="71" y="0" width="4" height="36" fill="#18181B"/>
+                                    <rect x="79" y="0" width="3" height="36" fill="#18181B"/>
+                                    <rect x="86" y="0" width="2" height="36" fill="#18181B"/>
+                                    <rect x="92" y="0" width="5" height="36" fill="#18181B"/>
+                                    <rect x="101" y="0" width="2" height="36" fill="#18181B"/>
+                                    <rect x="107" y="0" width="4" height="36" fill="#18181B"/>
+                                    <rect x="115" y="0" width="3" height="36" fill="#18181B"/>
+                                    <rect x="122" y="0" width="2" height="36" fill="#18181B"/>
+                                    <rect x="128" y="0" width="5" height="36" fill="#18181B"/>
+                                    <rect x="137" y="0" width="2" height="36" fill="#18181B"/>
+                                    <rect x="143" y="0" width="4" height="36" fill="#18181B"/>
+                                    <rect x="151" y="0" width="3" height="36" fill="#18181B"/>
+                                    <rect x="158" y="0" width="2" height="36" fill="#18181B"/>
+                                    <rect x="164" y="0" width="5" height="36" fill="#18181B"/>
+                                    <rect x="173" y="0" width="2" height="36" fill="#18181B"/>
+                                    <rect x="179" y="0" width="4" height="36" fill="#18181B"/>
+                                    <rect x="187" y="0" width="3" height="36" fill="#18181B"/>
+                                    <rect x="194" y="0" width="3" height="36" fill="#18181B"/>
+                                </svg>
+                                <span class="clc-awb-num">AWB: DEL-84019283-IN</span>
+                            </div>
+                            <div class="clc-address-box">
+                                <div class="clc-addr-label">VERIFIED COURIER DESTINATION:</div>
+                                <div class="clc-addr-line1">Plot No. 42, Yellow House, 1st Left</div>
+                                <div class="clc-addr-line2">Behind Sharma Dairy, Rohtak - 124001, Haryana</div>
+                                <div class="clc-landmark-tag">🏷️ LANDMARK: Above Bikaner Sweets</div>
+                            </div>
+                            <div class="clc-footer">
+                                <span class="clc-tag-verified">✓ Tagged: RTO-Shield-Cleaned</span>
+                                <span class="clc-tag-cod">COD: ₹1,299</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Pane B: Fake / Impulse Buyer Blocked on Shopify -->
+                    <div class="action-decision-pane" id="actionPaneB">
+                        <div class="transform-header">
+                            <span class="transform-tag">Decision 2: Freight Protection Engine</span>
+                            <span class="transform-sync status-danger">🛑 Cancelled Before Dispatch</span>
+                        </div>
+
+                        <div class="raw-address-box">
+                            <div class="box-label">INCOMING COD ORDER (IMPULSE PURCHASE):</div>
+                            <div class="box-content-raw">"Vikas Sharma, Village Rampur, Main Road, ₹2,499 COD"</div>
+                            <div class="box-warning">🚨 Impulse / Remorse Order — Buyer Stated "Cancel Kar Do"</div>
+                        </div>
+
+                        <div class="transform-divider">
+                            <span>↓ ZERO FREIGHT BURN • AUTO-PROTECTION EXECUTED ↓</span>
+                        </div>
+
+                        <div class="cancellation-receipt-card">
+                            <div class="crc-top">
+                                <div class="crc-badge">SHOPIFY & SHIPROCKET AUTO-ACTION</div>
+                                <div class="crc-time">Executed in 1.2s</div>
+                            </div>
+                            <div class="crc-main-status">
+                                <div class="crc-status-icon">🛡️</div>
+                                <div class="crc-status-content">
+                                    <div class="crc-status-title">Order #9288 Cancelled in Shopify</div>
+                                    <div class="crc-status-desc">Zero courier pickup dispatched • Inventory restocked automatically</div>
+                                </div>
+                            </div>
+                            <div class="crc-metrics-row">
+                                <div class="crc-metric-block">
+                                    <span class="crc-label">Forward Freight Saved</span>
+                                    <span class="crc-val">₹90.00</span>
+                                </div>
+                                <div class="crc-metric-block">
+                                    <span class="crc-label">RTO Reverse Penalty</span>
+                                    <span class="crc-val">₹90.00</span>
+                                </div>
+                                <div class="crc-metric-block highlight">
+                                    <span class="crc-label">Net Capital Saved</span>
+                                    <span class="crc-val green">₹180.00</span>
+                                </div>
+                            </div>
+                            <div class="crc-footer">
+                                <span class="crc-tag">Tag Applied: <strong>RTO-Shield-Fake-Cancelled</strong></span>
+                                <span class="crc-inventory"><img src="assets/logos/shopify.svg" alt="Shopify" style="height: 14px; vertical-align: middle; margin-right: 4px;"> Auto-Restocked in Shopify</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Pane C: Unanswered Fallback WhatsApp UPI Lock -->
+                    <div class="action-decision-pane" id="actionPaneC">
+                        <div class="transform-header">
+                            <span class="transform-tag">Decision 3: WhatsApp UPI Intent Protocol</span>
+                            <span class="transform-sync">⚡ Razorpay & WhatsApp Synced</span>
+                        </div>
+
+                        <div class="whatsapp-mockup">
+                            <div class="wa-header">
+                                <div class="wa-profile">
+                                    <div class="wa-avatar" style="background: transparent; display: flex; align-items: center; justify-content: center;"><img src="assets/logos/whatsapp.svg" alt="WhatsApp" style="width: 28px; height: 28px;"></div>
+                                    <div>
+                                        <div class="wa-title">Shipvera Dispatch Desk <span class="wa-green-check">✓</span></div>
+                                        <div class="wa-subtitle">Official Verification Bot</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="wa-body">
+                                <div class="wa-chat-bubble">
+                                    <div class="wa-audio-pill">
+                                        <span class="wa-play">▶</span>
+                                        <div class="wa-soundwave"></div>
+                                        <span class="wa-audio-time">0:14 Voice Note</span>
+                                    </div>
+                                    <div class="wa-text">"Namaste Priya ji! UrbanKicks se aapka ₹1,799 COD order confirm karne ke liye ye ₹19 token pay kar dijiye..."</div>
+                                    <div class="wa-payment-card">
+                                        <div class="wpc-header">
+                                            <span><img src="assets/logos/razorpay.svg" alt="Razorpay" style="height: 14px; vertical-align: middle; margin-right: 4px;"> Razorpay UPI Intent Lock</span>
+                                            <span>₹19.00</span>
+                                        </div>
+                                        <div class="wa-text-sub">₹19 balance parcel delivery ke time total COD se minus ho jayega (Remaining: ₹1,780).</div>
+                                        <button class="wpc-pay-btn" type="button">⚡ Pay ₹19 via PhonePe / GPay / Paytm</button>
+                                    </div>
+                                </div>
+                                <div class="wa-status-pill">
+                                    ✓ Buyer Paid ₹19 • Delivery Intent 100% Locked with GPS Pin
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Engineered for D2C Scale Infrastructure Section (Inspired by Developer Platforms) -->
+    <section class="infrastructure-section" id="integrations">
+        <div class="container">
+            <div class="infra-header animate-on-scroll">
+                <h2 class="infra-title">Engineered for <br><span class="highlight-green">Indian D2C Scale</span></h2>
+                <p class="infra-desc">Our automated dispatch intelligence consolidates store webhooks, voice AI dialers, and courier APIs into one autonomous, zero-code workflow.</p>
+            </div>
+
+            <!-- 3 Infrastructure Capability Columns -->
+            <div class="infra-grid animate-on-scroll">
+                <div class="infra-card">
+                    <div class="infra-icon">
+                        <svg viewBox="0 0 24 24" width="38" height="38" fill="none" stroke="#10B981" stroke-width="1.8">
+                            <rect x="5" y="5" width="14" height="14" transform="rotate(45 12 12)" stroke="#10B981"/>
+                            <rect x="8" y="8" width="8" height="8" transform="rotate(45 12 12)" stroke="#10B981"/>
+                            <circle cx="12" cy="12" r="1.5" fill="#10B981"/>
+                        </svg>
+                    </div>
+                    <h3 class="infra-card-title">1-Click Integrations</h3>
+                    <p class="infra-card-desc">Discover direct plugins for Shopify, Shiprocket, WooCommerce, and custom warehouse ERPs with instant zero-code webhook sync.</p>
+                    <a href="#waitlist" class="infra-link">Access documentation →</a>
+                </div>
+
+                <div class="infra-card">
+                    <div class="infra-icon">
+                        <svg viewBox="0 0 24 24" width="38" height="38" fill="none" stroke="#10B981" stroke-width="1.8">
+                            <path d="M12 2L2 12l10 10 10-10L12 2z" stroke="#10B981"/>
+                            <path d="M12 6L6 12l6 6 6-6-6-6z" stroke="#10B981"/>
+                            <circle cx="12" cy="12" r="2" fill="#10B981"/>
+                        </svg>
+                    </div>
+                    <h3 class="infra-card-title">Autonomous Voice AI Engine</h3>
+                    <p class="infra-card-desc">In-depth Hinglish speech models that dial within 60s of order placement, extract missing landmarks, and verify high delivery intent without robotic IVRs.</p>
+                    <a href="#product" class="infra-link">Explore voice engine →</a>
+                </div>
+
+                <div class="infra-card">
+                    <div class="infra-icon">
+                        <svg viewBox="0 0 24 24" width="38" height="38" fill="none" stroke="#10B981" stroke-width="1.8">
+                            <path d="M12 3v6M12 15v6M3 12h6M15 12h6" stroke="#10B981"/>
+                            <circle cx="12" cy="12" r="3" stroke="#10B981"/>
+                            <circle cx="12" cy="3" r="2" fill="#10B981"/>
+                            <circle cx="12" cy="21" r="2" fill="#10B981"/>
+                            <circle cx="3" cy="12" r="2" fill="#10B981"/>
+                            <circle cx="21" cy="12" r="2" fill="#10B981"/>
+                        </svg>
+                    </div>
+                    <h3 class="infra-card-title">Bi-Directional Webhooks</h3>
+                    <p class="infra-card-desc">Stay updated with real-time automated address rewriting and landmark push directly into Delhivery, Blue Dart & Xpressbees labels in under 200ms.</p>
+                    <a href="#waitlist" class="infra-link">View webhook architecture →</a>
+                </div>
+            </div>
+
+            <!-- 8 Official Logistics & Tech Ecosystem Tiles -->
+            <!-- 8 Official Logistics & Tech Ecosystem Tiles with Real Logos -->
+            <div class="integrations-grid animate-on-scroll" style="margin-bottom: 60px;">
+                <div class="integration-item">
+                    <div class="integration-icon">
+                        <img src="assets/logos/shopify.svg" alt="Shopify Official Logo" class="brand-logo-img">
+                    </div>
+                    <div class="integration-info">
+                        <span class="integration-name">Shopify</span>
+                        <span class="integration-meta">1-Click App • Auto Sync</span>
+                    </div>
+                </div>
+                <div class="integration-item">
+                    <div class="integration-icon">
+                        <img src="assets/logos/shiprocket.png" alt="Shiprocket Official Logo" class="brand-logo-img">
+                    </div>
+                    <div class="integration-info">
+                        <span class="integration-name">Shiprocket</span>
+                        <span class="integration-meta">AWB Auto-Rewrite</span>
+                    </div>
+                </div>
+                <div class="integration-item">
+                    <div class="integration-icon">
+                        <img src="assets/logos/delhivery.png" alt="Delhivery Official Logo" class="brand-logo-img" style="object-fit: contain; max-width: 95%;">
+                    </div>
+                    <div class="integration-info">
+                        <span class="integration-name">Delhivery</span>
+                        <span class="integration-meta">Landmark Enrichment</span>
+                    </div>
+                </div>
+                <div class="integration-item">
+                    <div class="integration-icon">
+                        <img src="assets/logos/bluedart.svg" alt="Blue Dart Official Logo" class="brand-logo-img">
+                    </div>
+                    <div class="integration-info">
+                        <span class="integration-name">Blue Dart</span>
+                        <span class="integration-meta">Label Push & Pin Match</span>
+                    </div>
+                </div>
+                <div class="integration-item">
+                    <div class="integration-icon">
+                        <img src="assets/logos/xpressbees.png" alt="Xpressbees Official Logo" class="brand-logo-img">
+                    </div>
+                    <div class="integration-info">
+                        <span class="integration-name">Xpressbees</span>
+                        <span class="integration-meta">NDR Prevention Flag</span>
+                    </div>
+                </div>
+                <div class="integration-item">
+                    <div class="integration-icon">
+                        <img src="assets/logos/shadowfax.svg" alt="Shadowfax Official Logo" class="brand-logo-img" style="max-width: 95%;">
+                    </div>
+                    <div class="integration-info">
+                        <span class="integration-name">Shadowfax</span>
+                        <span class="integration-meta">Hyperlocal & Surface</span>
+                    </div>
+                </div>
+                <div class="integration-item">
+                    <div class="integration-icon">
+                        <img src="assets/logos/razorpay.svg" alt="Razorpay Official Logo" class="brand-logo-img">
+                    </div>
+                    <div class="integration-info">
+                        <span class="integration-name">Razorpay</span>
+                        <span class="integration-meta">₹19 UPI Intent Links</span>
+                    </div>
+                </div>
+                <div class="integration-item">
+                    <div class="integration-icon">
+                        <img src="assets/logos/whatsapp.svg" alt="WhatsApp Cloud Official Logo" class="brand-logo-img">
+                    </div>
+                    <div class="integration-info">
+                        <span class="integration-name">WhatsApp Cloud</span>
+                        <span class="integration-meta">Interactive Voice Notes</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Infinite Moving Marquee Ribbon in Official Shipvera Emerald Green (Strictly Green, Zero Lime) -->
+        <div class="infra-ribbon">
+            <div class="infra-ribbon-track">
+                <span class="infra-pill"><span class="sparkle">✦</span> Shopify 1-Click</span>
+                <span class="infra-pill"><span class="sparkle">✦</span> Shiprocket Sync</span>
+                <span class="infra-pill"><span class="sparkle">✦</span> Delhivery Surface</span>
+                <span class="infra-pill"><span class="sparkle">✦</span> 60s Voice AI</span>
+                <span class="infra-pill"><span class="sparkle">✦</span> Blue Dart Pin-Match</span>
+                <span class="infra-pill"><span class="sparkle">✦</span> Razorpay ₹19 UPI Lock</span>
+                <span class="infra-pill"><span class="sparkle">✦</span> WhatsApp Cloud</span>
+                <span class="infra-pill"><span class="sparkle">✦</span> Xpressbees API</span>
+                <span class="infra-pill"><span class="sparkle">✦</span> Shadowfax Hyperlocal</span>
+                <span class="infra-pill"><span class="sparkle">✦</span> 70% RTO Reduction</span>
+                <!-- Seamless duplication for smooth infinite scrolling loop -->
+                <span class="infra-pill"><span class="sparkle">✦</span> Shopify 1-Click</span>
+                <span class="infra-pill"><span class="sparkle">✦</span> Shiprocket Sync</span>
+                <span class="infra-pill"><span class="sparkle">✦</span> Delhivery Surface</span>
+                <span class="infra-pill"><span class="sparkle">✦</span> 60s Voice AI</span>
+                <span class="infra-pill"><span class="sparkle">✦</span> Blue Dart Pin-Match</span>
+                <span class="infra-pill"><span class="sparkle">✦</span> Razorpay ₹19 UPI Lock</span>
+                <span class="infra-pill"><span class="sparkle">✦</span> WhatsApp Cloud</span>
+                <span class="infra-pill"><span class="sparkle">✦</span> Xpressbees API</span>
+                <span class="infra-pill"><span class="sparkle">✦</span> Shadowfax Hyperlocal</span>
+                <span class="infra-pill"><span class="sparkle">✦</span> 70% RTO Reduction</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Institutional RTO ROI Simulator -->
+    <section class="calculator-section" id="calculator">
+        <div class="container">
+            <div class="section-header animate-on-scroll">
+                <span class="section-tag">Financial Simulator</span>
+                <h2 class="section-title">Calculate Your Monthly <br><span class="gradient-text">Courier Margin Recovery</span></h2>
+                <p class="section-desc">Estimate how much cash you lose every 30 days to failed deliveries, and what <strong>Shipvera recovers on complete autopilot</strong>.</p>
+            </div>
+
+            <div class="calculator-card animate-on-scroll">
+                <div class="calc-left">
+                    <div class="calc-slider-group">
+                        <div class="calc-label-row">
+                            <label for="ordersSlider">Monthly COD Orders</label>
+                            <span class="calc-value-display" id="ordersVal">1,000 orders/mo</span>
+                        </div>
+                        <input type="range" id="ordersSlider" min="200" max="10000" step="100" value="1000" oninput="updateCalculator()">
+                        <div class="slider-marks">
+                            <span>200</span>
+                            <span>2,500</span>
+                            <span>5,000</span>
+                            <span>10,000+</span>
+                        </div>
+                    </div>
+
+                    <div class="calc-slider-group">
+                        <div class="calc-label-row">
+                            <label for="rtoSlider">Current RTO / Failed Delivery Rate</label>
+                            <span class="calc-value-display" id="rtoVal">35%</span>
+                        </div>
+                        <input type="range" id="rtoSlider" min="15" max="50" step="1" value="35" oninput="updateCalculator()">
+                        <div class="slider-marks">
+                            <span>15% (Good)</span>
+                            <span>30% (Avg India)</span>
+                            <span>50% (Critical)</span>
+                        </div>
+                    </div>
+
+                    <div class="calc-note">
+                        <span class="note-icon">💡</span>
+                        <span>Assumes ₹180 average courier penalty per RTO order (forward shipping + reverse logistics surcharge + packaging wastage).</span>
+                    </div>
+                </div>
+
+                <div class="calc-right">
+                    <div class="calc-stat-box box-burning">
+                        <div class="cs-label">CURRENT COURIER MONEY BURNED</div>
+                        <div class="cs-amount" id="burningAmount">₹63,000</div>
+                        <div class="cs-sub" id="burningOrders">350 failed deliveries/mo</div>
+                    </div>
+
+                    <div class="calc-stat-box box-saved">
+                        <div class="cs-badge">WITH SHIPVERA (70% REDUCTION)</div>
+                        <div class="cs-label">RECOVERED PROFIT PER MONTH</div>
+                        <div class="cs-amount" id="savedAmount">₹44,100</div>
+                        <div class="cs-sub" id="netRoiText">7.3x ROI • ₹38,100 net margin recovered</div>
+                    </div>
+
+                    <a href="#waitlist" class="btn-primary btn-glow btn-calc-claim" id="calcCtaBtn">
+                        <span>Claim Your ₹44,100 Monthly Savings →</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Transparent Pricing Section -->
+    <section class="pricing-section" id="pricing">
+        <div class="container">
+            <div class="section-header animate-on-scroll">
+                <span class="section-tag">Zero-BS Pricing</span>
+                <h2 class="section-title">Transparent Pricing That <br><span class="gradient-text">Pays For Itself</span></h2>
+                <p class="section-desc"><strong>No monthly lock-in</strong>. <strong>Zero setup fees</strong>. Pay strictly per verified order.</p>
+            </div>
+
+            <div class="pricing-grid">
+                <!-- Starter Pay-As-You-Go Tier -->
+                <div class="pricing-card animate-on-scroll">
+                    <div class="pricing-badge">No Monthly Fee</div>
+                    <h3 class="pricing-plan">Starter Pay-As-You-Go</h3>
+                    <div class="pricing-price">
+                        <span class="currency">₹</span>
+                        <span class="amount">6</span>
+                        <span class="period">/ verified order</span>
+                    </div>
+                    <p class="pricing-desc">Pure pay-as-you-go. Pay only when Shipvera verifies an order. Zero software retainers.</p>
+                    <ul class="pricing-features">
+                        <li>✓ Pay ₹6 per connected verification call</li>
+                        <li>✓ Shopify & Shiprocket 1-Click Sync</li>
+                        <li>✓ Auto Address Landmark Rewrite</li>
+                        <li>✓ ₹19 WhatsApp Fallback Token</li>
+                        <li>✓ Standard Community Support</li>
+                    </ul>
+                    <a href="#waitlist" class="btn-outline pricing-btn">Start at ₹6/Order</a>
+                </div>
+
+                <!-- Growth Tier -->
+                <div class="pricing-card pricing-card-featured animate-on-scroll">
+                    <div class="pricing-badge-featured">Most Popular</div>
+                    <h3 class="pricing-plan">Growth Pay-As-You-Go</h3>
+                    <div class="pricing-price">
+                        <span class="currency">₹</span>
+                        <span class="amount">6</span>
+                        <span class="period">/ verified order</span>
+                    </div>
+                    <p class="pricing-desc">For scaling D2C brands shipping 200 to 2,000 orders per month.</p>
+                    <ul class="pricing-features">
+                        <li>✓ <strong>All Starter Features Included</strong></li>
+                        <li>✓ Natural Colloquial Hinglish Voice AI</li>
+                        <li>✓ Instant Landmark Extraction</li>
+                        <li>✓ Auto-update on Shopify & Shiprocket AWBs</li>
+                        <li>✓ Priority Call Delivery Routes</li>
+                        <li>✓ Dedicated WhatsApp Account Manager</li>
+                    </ul>
+                    <a href="#waitlist" class="btn-primary btn-glow pricing-btn">Start Early Access</a>
+                </div>
+
+                <!-- Enterprise / Scale Tier -->
+                <div class="pricing-card animate-on-scroll">
+                    <div class="pricing-badge">High Volume</div>
+                    <h3 class="pricing-plan">D2C Scale</h3>
+                    <div class="pricing-price">
+                        <span class="currency">₹</span>
+                        <span class="amount">4.5</span>
+                        <span class="period">/ verified order</span>
+                    </div>
+                    <p class="pricing-desc">For established brands shipping 2,000+ COD orders every month.</p>
+                    <ul class="pricing-features">
+                        <li>✓ Custom Brand Voice Persona</li>
+                        <li>✓ Dedicated Custom Caller ID</li>
+                        <li>✓ Custom Webhook & ERP Integrations</li>
+                        <li>✓ Custom Surcharges & Micro-UPI Tokens</li>
+                        <li>✓ 99.9% Uptime SLA Agreement</li>
+                    </ul>
+                    <a href="#waitlist" class="btn-outline pricing-btn">Talk to Founders</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Founder Waitlist Access Section -->
+    <section class="waitlist-section" id="waitlist">
+        <div class="container">
+            <div class="waitlist-header animate-on-scroll">
+                <div class="waitlist-live-badge">
+                    <span class="waitlist-live-dot"></span>
+                    <span>LIVE SYSTEM STATUS: ONBOARDING COHORT ACTIVE</span>
+                </div>
+                <h2 class="waitlist-title">Stop Courier Bleeding. <br><span class="gradient-text-2">Pay Only ₹6 Per Verified Order.</span></h2>
+                <p class="waitlist-desc">We are onboarding 50 high-growth D2C brands this cycle. Direct API access, natural Hinglish dialer, and zero upfront commitment.</p>
+            </div>
+
+            <div class="waitlist-console-wrapper animate-on-scroll">
+                <!-- Left: Enterprise Provisioning Pass -->
+                <div class="waitlist-voucher-card">
+                    <div>
+                        <div class="wvc-top">
+                            <span class="wvc-badge">ENTERPRISE PASS</span>
+                            <span class="wvc-batch">CYCLE: LIVE // 2026</span>
+                        </div>
+
+                        <!-- Capacity Bar -->
+                        <div class="wvc-capacity">
+                            <div class="wvc-cap-header">
+                                <span class="wvc-cap-label">Founder Cohort Allocation</span>
+                                <span class="wvc-cap-count"><strong>43</strong> / 50 Claimed</span>
+                            </div>
+                            <div class="wvc-progress-bar">
+                                <div class="wvc-progress-fill"></div>
+                            </div>
+                            <div class="wvc-cap-sub">
+                                <span class="accent-dot"></span>
+                                <span>High-Priority Queue: Only 7 brand allocations open</span>
+                            </div>
+                        </div>
+
+                        <!-- Provisioning Checklist -->
+                        <ul class="wvc-features">
+                            <li class="wvc-feat-item">
+                                <span class="wvc-feat-icon">✓</span>
+                                <div><strong>Pure Pay-As-You-Go:</strong> Pay only ₹6 per verified COD dispatch call</div>
+                            </li>
+                            <li class="wvc-feat-item">
+                                <span class="wvc-feat-icon">✓</span>
+                                <div><strong>60-Second Webhook SLA</strong> (Shopify, Shiprocket, Delhivery sync)</div>
+                            </li>
+                            <li class="wvc-feat-item">
+                                <span class="wvc-feat-icon">✓</span>
+                                <div><strong>Auto Address Landmark Extractor</strong> overwriting courier AWBs</div>
+                            </li>
+                            <li class="wvc-feat-item">
+                                <span class="wvc-feat-icon">✓</span>
+                                <div><strong>₹19 WhatsApp Fallback</strong> with Razorpay UPI Intent locks</div>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <!-- Savings Callout -->
+                        <div class="wvc-savings-box">
+                            <div class="wvc-sb-label">ESTIMATED COURIER FREIGHT SAVED</div>
+                            <div class="wvc-sb-num">₹36,000 — ₹1,80,000 <span style="font-size: 0.85rem; font-weight: 500; color: #94A3B8;">/ mo</span></div>
+                            <div class="wvc-sb-desc">Calculated on standard 18% - 24% fake COD order reduction</div>
+                        </div>
+
+                        <div class="wvc-footer-note">
+                            ⚡ Direct founder onboarding • 🔒 Zero lock-in • 💳 No credit card required
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: High-Tech Input Console -->
+                <div class="waitlist-form-terminal">
+                    <div class="wft-header">
+                        <div class="wft-dots">
+                            <span class="wft-dot green"></span>
+                            <span class="wft-dot"></span>
+                            <span class="wft-dot"></span>
+                        </div>
+                        <span class="wft-title">TERMINAL // INPUT DISPATCH PARAMETERS</span>
+                    </div>
+
+                    <form class="waitlist-form" id="waitlistForm" onsubmit="handleWaitlist(event)">
+                        <div class="form-group-terminal">
+                            <label for="name">
+                                <span>01 // YOUR NAME</span>
+                                <span class="form-label-tag">REQUIRED</span>
+                            </label>
+                            <input type="text" id="name" placeholder="Rohan Sharma" required>
+                        </div>
+
+                        <div class="form-group-terminal">
+                            <label for="phone">
+                                <span>02 // WHATSAPP NUMBER</span>
+                                <span class="form-label-tag">ACCOUNT ACTIVATION</span>
+                            </label>
+                            <input type="tel" id="phone" placeholder="+91 98765 43210" required>
+                        </div>
+
+                        <div class="form-group-terminal">
+                            <label for="email">
+                                <span>03 // WORK EMAIL</span>
+                                <span class="form-label-tag">ACCOUNT ACCESS</span>
+                            </label>
+                            <input type="email" id="email" placeholder="rohan@yourbrand.in" required>
+                        </div>
+
+                        <div class="form-group-terminal">
+                            <label for="volume">
+                                <span>04 // MONTHLY COD ORDER VOLUME</span>
+                                <span class="form-label-tag">TIER ROUTING</span>
+                            </label>
+                            <select id="volume" required>
+                                <option value="" disabled selected>Select monthly orders</option>
+                                <option value="200-500">200 - 500 orders/mo (Starter)</option>
+                                <option value="500-2000">500 - 2,000 orders/mo (Growth)</option>
+                                <option value="2000-5000">2,000 - 5,000 orders/mo (Scale)</option>
+                                <option value="5000+">5,000+ orders/mo (Enterprise High-Volume)</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" class="btn-terminal-submit" id="submitBtn">
+                            <span>Start Early Access at ₹6/Order ➔</span>
+                        </button>
+
+                        <div class="terminal-reassurance">
+                            <span>⚡ &lt;60s Webhook SLA</span>
+                            <span>🔒 256-Bit SSL</span>
+                            <span>🇮🇳 Made for Indian D2C</span>
+                        </div>
+                    </form>
+
+                    <div class="waitlist-success" id="waitlistSuccess" style="display: none;">
+                        <div class="success-icon">🎉</div>
+                        <h3 class="success-title">Access Reserved & ₹6/Order Locked!</h3>
+                        <p class="success-desc">Welcome to Shipvera Early Access. We have reserved your founder cohort allocation. Your activation link and dashboard credentials are being routed to your WhatsApp.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Authoritative Minimalist Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-top">
+                <div class="footer-brand">
+                    <div class="footer-logo-row">
+                        <img src="assets/shipvera_logo_transparent.png" alt="Shipvera Logo" class="footer-brand-logo">
+                    </div>
+                    <p class="footer-tagline">India's Delivery Intelligence Engine. Never ship a blind COD order again.</p>
+                </div>
+                <div class="footer-links">
+                    <div class="footer-col">
+                        <h4>Product</h4>
+                        <a href="#product">Verification Engine</a>
+                        <a href="#integrations">Integrations</a>
+                        <a href="#calculator">ROI Simulator</a>
+                        <a href="#pricing">Pricing</a>
+                    </div>
+                    <div class="footer-col">
+                        <h4>Company</h4>
+                        <a href="#waitlist">Early Access</a>
+                        <a href="#">Security & Privacy</a>
+                        <a href="#">API Documentation</a>
+                    </div>
+                    <div class="footer-col">
+                        <h4>Legal</h4>
+                        <a href="#">Privacy Policy</a>
+                        <a href="#">Terms of Service</a>
+                        <a href="#">Refund Policy</a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-divider"></div>
+            <div class="footer-bottom">
+                <p class="footer-copy">© 2026 Shipvera Technologies. All rights reserved. Crafted for Indian Commerce.</p>
+            </div>
+        </div>
+
+        <!-- Giant Architectural SHIPVERA Outline Text -->
+        <div class="giant-brand">
+            <span class="giant-text" data-text="SHIPVERA">SHIPVERA</span>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
