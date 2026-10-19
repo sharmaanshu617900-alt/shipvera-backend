@@ -6,11 +6,20 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const crypto = require('crypto');
 require('dotenv').config();
 
 const { db } = require('./db');
-const { requestTracer } = require('./middleware/security');
-const { queueEngine } = require('./services/queueEngine');
+
+// Safe loader for Queue Engine
+let queueEngine = { startWorker: () => {}, stopWorker: () => {} };
+try {
+  const qMod = require('./services/queueEngine');
+  if (qMod && qMod.queueEngine) queueEngine = qMod.queueEngine;
+} catch (e) {
+  console.warn('[SERVER] Running in direct mode:', e.message);
+}
+
 const webhooksRouter = require('./routes/webhooks');
 const ordersRouter = require('./routes/orders');
 const analyticsRouter = require('./routes/analytics');
@@ -19,8 +28,23 @@ const walletRouter = require('./routes/wallet');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Distributed Request ID & Telemetry Middleware
-app.use(requestTracer);
+// Distributed Request ID & Telemetry Middleware (Inlined for zero-dependency deployment)
+app.use((req, res, next) => {
+  const reqId = req.headers['x-request-id'] || `req_${crypto.randomBytes(6).toString('hex')}`;
+  req.id = reqId;
+  res.setHeader('X-Request-Id', reqId);
+
+  const startHr = process.hrtime();
+  res.on('finish', () => {
+    const diff = process.hrtime(startHr);
+    const durationMs = (diff[0] * 1000 + diff[1] / 1e6).toFixed(2);
+    if (req.path.startsWith('/api')) {
+      const level = res.statusCode >= 500 ? 'ERROR' : res.statusCode >= 400 ? 'WARN' : 'INFO';
+      console.log(`[${new Date().toISOString()}] [${level}] [${req.id}] ${req.method} ${req.originalUrl} ${res.statusCode} ${durationMs}ms`);
+    }
+  });
+  next();
+});
 
 // Security & Parsing Middleware
 app.use(cors());
