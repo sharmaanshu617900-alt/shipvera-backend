@@ -17,20 +17,24 @@
     <!-- Minimalist Navigation Bar -->
     <nav class="navbar" id="navbar">
         <div class="nav-container">
-            <a href="#" class="nav-logo" aria-label="Shipvera Home">
-                <img src="assets/shipvera_logo_transparent.png" alt="Shipvera Logo" class="nav-brand-logo">
+            <a href="/" class="nav-logo" aria-label="Shipvera Home" style="display: flex; align-items: center; gap: 10px; text-decoration: none;">
+                <img src="assets/shipvera_icon_transparent.png" alt="Shipvera Icon" width="34" height="34" style="border-radius: 8px; object-fit: contain;">
+                <span style="font-size: 1.35rem; font-weight: 800; letter-spacing: -0.03em; color: #0F172A; font-family: 'Plus Jakarta Sans', sans-serif;">ship<span style="color: #058A5E;">vera</span></span>
             </a>
-            <div class="nav-pulse-pill">
-                <span class="pulse-dot"></span>
-                <span class="pulse-text"><strong>2,418</strong> COD Orders Protected Today</span>
-            </div>
-            <div class="nav-links">
+            <div class="nav-links" id="navLinks">
                 <a href="#product" class="nav-link">Product</a>
                 <a href="#integrations" class="nav-link">Integrations</a>
                 <a href="#calculator" class="nav-link">Simulator</a>
                 <a href="#pricing" class="nav-link">Pricing</a>
+                <a href="/signup" class="nav-link" style="font-weight: 600;">Sign In</a>
+                <a href="/dashboard" class="nav-link" style="color: var(--primary-accent, #058A5E); font-weight: 600;">⚡ Console</a>
             </div>
-            <a href="#waitlist" class="nav-cta">Get Early Access →</a>
+            <div class="nav-actions" style="display: flex; align-items: center; gap: 12px;">
+                <a href="/signup" class="nav-cta">Create Workspace — ₹0 Upfront →</a>
+                <button class="nav-mobile-toggle" id="navMobileToggle" aria-label="Toggle Navigation" onclick="toggleMobileNav()">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0F172A" stroke-width="2.2" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
+                </button>
+            </div>
         </div>
     </nav>
 
@@ -54,7 +58,7 @@
                 </p>
 
                 <!-- Linear Autopilot Workflow Pipeline -->
-                <div class="autopilot-pipeline-bar animate-on-scroll" style="display: flex; align-items: center; justify-content: space-between;">
+                <div class="autopilot-pipeline-bar animate-on-scroll">
                     <div class="pipeline-step">
                         <span class="pipeline-num">01</span>
                         <div class="pipeline-info">
@@ -696,7 +700,7 @@
                         <div class="cs-sub" id="netRoiText">7.3x ROI • ₹38,100 net margin recovered</div>
                     </div>
 
-                    <a href="#waitlist" class="btn-primary btn-glow btn-calc-claim" id="calcCtaBtn">
+                    <a href="/signup" class="btn-primary btn-glow btn-calc-claim" id="calcCtaBtn">
                         <span>Claim Your ₹44,100 Monthly Savings →</span>
                     </a>
                 </div>
@@ -731,7 +735,7 @@
                         <li>✓ ₹19 WhatsApp Fallback Token</li>
                         <li>✓ Standard Community Support</li>
                     </ul>
-                    <a href="#waitlist" class="btn-outline pricing-btn">Start at ₹6/Order</a>
+                    <a href="/signup?plan=starter" class="btn-outline pricing-btn">Start at ₹6/Order</a>
                 </div>
 
                 <!-- Growth Tier -->
@@ -752,7 +756,7 @@
                         <li>✓ Priority Call Delivery Routes</li>
                         <li>✓ Dedicated WhatsApp Account Manager</li>
                     </ul>
-                    <a href="#waitlist" class="btn-primary btn-glow pricing-btn">Start Early Access</a>
+                    <a href="/signup?plan=growth" class="btn-primary btn-glow pricing-btn">Start Early Access</a>
                 </div>
 
                 <!-- Enterprise / Scale Tier -->
@@ -772,22 +776,22 @@
                         <li>✓ Custom Surcharges & Micro-UPI Tokens</li>
                         <li>✓ 99.9% Uptime SLA Agreement</li>
                     </ul>
-                    <a href="#waitlist" class="btn-outline pricing-btn">Talk to Founders</a>
+                    <a href="/signup?plan=scale" class="btn-outline pricing-btn">Talk to Founders</a>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Founder Waitlist Access Section -->
+    <!-- Founder Workspace Access Section -->
     <section class="waitlist-section" id="waitlist">
         <div class="container">
             <div class="waitlist-header animate-on-scroll">
                 <div class="waitlist-live-badge">
                     <span class="waitlist-live-dot"></span>
-                    <span>LIVE SYSTEM STATUS: ONBOARDING COHORT ACTIVE</span>
+                    <span>Immediate Merchant Access • Pure Pay-As-You-Go</span>
                 </div>
                 <h2 class="waitlist-title">Stop Courier Bleeding. <br><span class="gradient-text-2">Pay Only ₹6 Per Verified Order.</span></h2>
-                <p class="waitlist-desc">We are onboarding 50 high-growth D2C brands this cycle. Direct API access, natural Hinglish dialer, and zero upfront commitment.</p>
+                <p class="waitlist-desc">Zero upfront retainers. Direct Shopify & Shiprocket integration, natural colloquial Hinglish dialer, and instant rooftop landmark enrichment.</p>
             </div>
 
             <div class="waitlist-console-wrapper animate-on-scroll">
@@ -795,14 +799,14 @@
                 <div class="waitlist-voucher-card">
                     <div>
                         <div class="wvc-top">
-                            <span class="wvc-badge">ENTERPRISE PASS</span>
-                            <span class="wvc-batch">CYCLE: LIVE // 2026</span>
+                            <span class="wvc-badge">D2C DISPATCH PASS</span>
+                            <span class="wvc-batch">Pure Pay-As-You-Go</span>
                         </div>
 
                         <!-- Capacity Bar -->
                         <div class="wvc-capacity">
                             <div class="wvc-cap-header">
-                                <span class="wvc-cap-label">Founder Cohort Allocation</span>
+                                <span class="wvc-cap-label">Cohort Allocation Status</span>
                                 <span class="wvc-cap-count"><strong>43</strong> / 50 Claimed</span>
                             </div>
                             <div class="wvc-progress-bar">
@@ -810,7 +814,7 @@
                             </div>
                             <div class="wvc-cap-sub">
                                 <span class="accent-dot"></span>
-                                <span>High-Priority Queue: Only 7 brand allocations open</span>
+                                <span>High-Priority Onboarding: 7 brand allocations open</span>
                             </div>
                         </div>
 
@@ -857,21 +861,21 @@
                             <span class="wft-dot"></span>
                             <span class="wft-dot"></span>
                         </div>
-                        <span class="wft-title">TERMINAL // INPUT DISPATCH PARAMETERS</span>
+                        <span class="wft-title">Create Merchant Workspace</span>
                     </div>
 
                     <form class="waitlist-form" id="waitlistForm" onsubmit="handleWaitlist(event)">
                         <div class="form-group-terminal">
                             <label for="name">
-                                <span>01 // YOUR NAME</span>
+                                <span>Full Name</span>
                                 <span class="form-label-tag">REQUIRED</span>
                             </label>
-                            <input type="text" id="name" placeholder="Rohan Sharma" required>
+                            <input type="text" id="name" placeholder="Kunal Verma" required>
                         </div>
 
                         <div class="form-group-terminal">
                             <label for="phone">
-                                <span>02 // WHATSAPP NUMBER</span>
+                                <span>WhatsApp / Mobile Number</span>
                                 <span class="form-label-tag">ACCOUNT ACTIVATION</span>
                             </label>
                             <input type="tel" id="phone" placeholder="+91 98765 43210" required>
@@ -879,15 +883,15 @@
 
                         <div class="form-group-terminal">
                             <label for="email">
-                                <span>03 // WORK EMAIL</span>
+                                <span>Work Email</span>
                                 <span class="form-label-tag">ACCOUNT ACCESS</span>
                             </label>
-                            <input type="email" id="email" placeholder="rohan@yourbrand.in" required>
+                            <input type="email" id="email" placeholder="kunal@yourbrand.in" required>
                         </div>
 
                         <div class="form-group-terminal">
                             <label for="volume">
-                                <span>04 // MONTHLY COD ORDER VOLUME</span>
+                                <span>Monthly COD Order Volume</span>
                                 <span class="form-label-tag">TIER ROUTING</span>
                             </label>
                             <select id="volume" required>
@@ -900,7 +904,7 @@
                         </div>
 
                         <button type="submit" class="btn-terminal-submit" id="submitBtn">
-                            <span>Start Early Access at ₹6/Order ➔</span>
+                            <span>Create Workspace — ₹0 Upfront ➔</span>
                         </button>
 
                         <div class="terminal-reassurance">
@@ -912,8 +916,9 @@
 
                     <div class="waitlist-success" id="waitlistSuccess" style="display: none;">
                         <div class="success-icon">🎉</div>
-                        <h3 class="success-title">Access Reserved & ₹6/Order Locked!</h3>
-                        <p class="success-desc">Welcome to Shipvera Early Access. We have reserved your founder cohort allocation. Your activation link and dashboard credentials are being routed to your WhatsApp.</p>
+                        <h3 class="success-title">Allocation Secured & ₹6/Order Locked!</h3>
+                        <p class="success-desc">Welcome to Shipvera. Your workspace has been initialized in Pure Pay-As-You-Go mode.</p>
+                        <div id="waitlistActionRow" style="margin-top: 16px;"></div>
                     </div>
                 </div>
             </div>
@@ -964,6 +969,7 @@
         </div>
     </footer>
 
+    <script src="config.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

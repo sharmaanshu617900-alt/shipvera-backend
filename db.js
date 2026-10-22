@@ -231,8 +231,62 @@ class Database {
   }
 
   // --- Seller Operations ---
-  getSeller(id = 'sel_d2c_enterprise_001') {
-    return this.data.sellers.find(s => s.id === id) || this.data.sellers[0];
+  getAllSellers() {
+    return this.data.sellers.map(s => ({
+      id: s.id,
+      brand_name: s.brand_name,
+      name: s.name || s.brand_name,
+      email: s.email,
+      phone: s.phone,
+      shopify_domain: s.shopify_domain,
+      wallet_balance_inr: s.wallet_balance_inr,
+      plan_tier: s.plan_tier,
+      created_at: s.created_at
+    }));
+  }
+
+  getSellerByEmail(email) {
+    if (!email) return null;
+    return this.data.sellers.find(s => s.email && s.email.toLowerCase() === email.toLowerCase().trim());
+  }
+
+  getSellerByShopifyDomain(domain) {
+    if (!domain) return null;
+    const clean = domain.trim().toLowerCase();
+    return this.data.sellers.find(s => s.shopify_domain && s.shopify_domain.toLowerCase().includes(clean)) || null;
+  }
+
+  getSeller(id = null) {
+    if (id) {
+      const match = this.data.sellers.find(s => s.id === id);
+      if (match) return match;
+    }
+    return this.data.sellers[0] || null;
+  }
+
+  createSeller(sellerData) {
+    const id = sellerData.id || `sel_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+    const newSeller = {
+      id,
+      name: sellerData.name || sellerData.brand_name || 'Store Founder',
+      email: (sellerData.email || '').toLowerCase().trim(),
+      password: sellerData.password || '',
+      brand_name: (sellerData.brand_name || 'My Store').trim(),
+      phone: sellerData.phone || '',
+      shopify_domain: sellerData.shopify_domain || '',
+      shopify_access_token: null,
+      shiprocket_token: null,
+      wallet_balance_inr: 0.00, // Strictly ₹0.00 (Pure Pay-As-You-Go, Zero Free Credits)
+      plan_tier: 'pay_as_you_go',
+      upi_trust_lock_amount: 19,
+      total_orders_processed: 0,
+      rto_cut_percentage: 70,
+      created_at: sellerData.created_at || new Date().toISOString()
+    };
+
+    this.data.sellers.unshift(newSeller);
+    this.save();
+    return newSeller;
   }
 
   updateSellerWallet(sellerId, amountDelta) {
@@ -244,8 +298,12 @@ class Database {
   }
 
   // --- Order Operations ---
-  getOrders(sellerId = 'sel_d2c_enterprise_001') {
-    return this.data.orders.filter(o => o.seller_id === sellerId).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  getOrders(sellerId = null) {
+    const targetId = sellerId || this.data.sellers[0]?.id;
+    if (targetId) {
+      return this.data.orders.filter(o => o.seller_id === targetId).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    }
+    return [...this.data.orders].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
   }
 
   getOrderById(id) {
@@ -258,6 +316,7 @@ class Database {
       id,
       seller_id: orderData.seller_id || 'sel_d2c_enterprise_001',
       external_order_id: orderData.external_order_id || `MANUAL-${Date.now().toString().slice(-4)}`,
+      shopify_order_id: orderData.shopify_order_id ? String(orderData.shopify_order_id) : null,
       source: orderData.source || 'quick_paste',
       buyer_name: orderData.buyer_name || 'Valued Customer',
       buyer_phone: orderData.buyer_phone || '',
@@ -375,9 +434,9 @@ class Database {
   }
 
   // --- Analytics Overview ---
-  getAnalytics(sellerId = 'sel_d2c_enterprise_001') {
-    const orders = this.getOrders(sellerId);
+  getAnalytics(sellerId = null) {
     const seller = this.getSeller(sellerId);
+    const orders = this.getOrders(seller ? seller.id : null);
 
     const totalOrders = orders.length;
     const verifiedOrders = orders.filter(o => o.verification_status === 'verified_cleaned' || o.verification_status === 'trust_lock_paid').length;
@@ -385,18 +444,19 @@ class Database {
     const totalMoneySaved = orders.reduce((sum, o) => sum + (Number(o.rto_money_saved) || 0), 0);
     const pendingOrders = orders.filter(o => o.verification_status === 'queued' || o.verification_status === 'calling' || o.verification_status === 'trust_lock_sent').length;
 
-    const rtoReductionRate = totalOrders > 0 ? Math.round(((verifiedOrders + fakeBlockedOrders) / totalOrders) * 70) : 70;
+    const rtoReductionRate = totalOrders > 0 ? Math.min(74, Math.round(((verifiedOrders + fakeBlockedOrders) / totalOrders) * 70)) : 0;
 
     return {
-      seller_brand: seller.brand_name,
-      wallet_balance_inr: seller.wallet_balance_inr,
+      seller_id: seller ? seller.id : null,
+      seller_brand: seller ? seller.brand_name : 'My Store',
+      wallet_balance_inr: seller ? (Number(seller.wallet_balance_inr) || 0.00) : 0.00,
       total_orders_protected: totalOrders,
       verified_orders: verifiedOrders,
       fake_blocked_orders: fakeBlockedOrders,
       pending_orders: pendingOrders,
       rto_money_saved_inr: totalMoneySaved,
-      rto_reduction_rate_pct: Math.min(rtoReductionRate, 74),
-      avg_call_duration_seconds: 24,
+      rto_reduction_rate_pct: rtoReductionRate,
+      avg_call_duration_seconds: totalOrders > 0 ? 24 : 0,
       cost_per_verified_order_inr: 6.00
     };
   }

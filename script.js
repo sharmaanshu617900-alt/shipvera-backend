@@ -43,6 +43,14 @@ function initNavbarScroll() {
     }, { passive: true });
 }
 
+// Mobile Navigation Toggle
+function toggleMobileNav() {
+    const navLinks = document.getElementById('navLinks');
+    if (navLinks) {
+        navLinks.classList.toggle('nav-mobile-open');
+    }
+}
+
 // ---------- 3. Metric Counter Animations ----------
 function initNumberCounters() {
     const counters = document.querySelectorAll('.counter');
@@ -450,21 +458,15 @@ window.handleInlineWaitlist = function(event) {
     saveWaitlistEntry({ phone, source: 'hero_inline', date: new Date().toISOString() });
 
     // Send to live Shipvera backend
-    fetch('/api/waitlist', {
+    const waitlistUrl = (typeof window !== 'undefined' && window.getApiUrl) ? window.getApiUrl('/api/waitlist') : '/api/waitlist';
+    fetch(waitlistUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone, source: 'hero_inline' })
     }).catch(() => {});
 
-    const form = phoneInput.closest('form');
-    if (form) {
-        form.innerHTML = `
-            <div class="inline-success-pill">
-                <span>🎉</span>
-                <span>You're on early access! <strong>₹6/Order Access</strong> reserved for ${phone}.</span>
-            </div>
-        `;
-    }
+    const cleanPhone = phone.replace(/[^\d]/g, '').slice(-10);
+    window.location.href = `/signup?phone=${encodeURIComponent(cleanPhone)}`;
 };
 
 window.handleWaitlist = function(event) {
@@ -477,7 +479,8 @@ window.handleWaitlist = function(event) {
     saveWaitlistEntry({ name, phone, email, volume, source: 'main_form', date: new Date().toISOString() });
 
     // Send to live Shipvera backend
-    fetch('/api/waitlist', {
+    const waitlistUrl = (typeof window !== 'undefined' && window.getApiUrl) ? window.getApiUrl('/api/waitlist') : '/api/waitlist';
+    fetch(waitlistUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, phone, email, volume, source: 'main_form' })
@@ -485,9 +488,20 @@ window.handleWaitlist = function(event) {
 
     const form = document.getElementById('waitlistForm');
     const successMsg = document.getElementById('waitlistSuccess');
+    const actionRow = document.getElementById('waitlistActionRow');
+
     if (form && successMsg) {
         form.style.display = 'none';
         successMsg.style.display = 'block';
+
+        if (actionRow) {
+            const cleanPhone = phone.replace(/[^\d]/g, '').slice(-10);
+            actionRow.innerHTML = `
+                <a href="/signup?name=${encodeURIComponent(name)}&email=${encodeURIComponent(email)}&phone=${encodeURIComponent(cleanPhone)}" class="btn-primary btn-glow" style="display: inline-flex; align-items: center; gap: 8px; text-decoration: none; padding: 13px 26px; border-radius: 9px; font-weight: 700; font-size: 0.92rem;">
+                    <span>Set Workspace Password & Enter Console →</span>
+                </a>
+            `;
+        }
     }
 };
 

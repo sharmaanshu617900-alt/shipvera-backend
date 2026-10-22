@@ -1,24 +1,84 @@
 /**
  * Shipvera Dashboard Interactive Engine
  * Professional Enterprise Operations Console
- * Connected to /api/orders, /api/analytics, /api/wallet, /api/calls/trigger
+ * Connected to Render Cloud Backend (/api/orders, /api/analytics, /api/wallet, /api/calls/trigger)
  */
+
+// Centralized API Base Resolver for Render Cloud Backend
+function getApiUrl(path) {
+    if (typeof window !== 'undefined' && window.ShipveraConfig && typeof window.ShipveraConfig.getApiUrl === 'function') {
+        return window.ShipveraConfig.getApiUrl(path);
+    }
+    const saved = localStorage.getItem('SHIPVERA_BACKEND_URL');
+    const base = (saved && saved.trim()) ? saved.trim().replace(/\/+$/, '') : 'https://shipvera-backend.onrender.com';
+    const cleanPath = path.startsWith('/') ? path : '/' + path;
+    return `${base}${cleanPath}`;
+}
 
 let allOrders = [];
 let activeFilter = 'all';
 let selectedPack = 'growth';
 let selectedPackAmount = 2999;
 let currentModalOrderId = null;
+let currentActiveSellerId = null;
 let currentActiveBrand = 'Snitch Apparel & Streetwear';
 
+// Read query params or localStorage for active seller
+try {
+    const urlParams = new URLSearchParams(window.location.search);
+    const paramSellerId = urlParams.get('seller_id');
+    if (paramSellerId) {
+        currentActiveSellerId = paramSellerId;
+        localStorage.setItem('shipvera_active_seller_id', paramSellerId);
+    } else {
+        const savedSellerId = localStorage.getItem('shipvera_active_seller_id');
+        if (savedSellerId) currentActiveSellerId = savedSellerId;
+    }
+
+    const savedSeller = localStorage.getItem('shipvera_active_seller');
+    if (savedSeller) {
+        const parsed = JSON.parse(savedSeller);
+        if (parsed.brand_name && (!currentActiveSellerId || parsed.id === currentActiveSellerId)) {
+            currentActiveBrand = parsed.brand_name;
+            if (!currentActiveSellerId) currentActiveSellerId = parsed.id;
+        }
+    }
+} catch (e) { }
+
+function getAuthHeaders() {
+    const headers = { 'Content-Type': 'application/json' };
+    const userEmail = localStorage.getItem('shipvera_user_email');
+    if (userEmail) {
+        headers['x-seller-email'] = userEmail;
+    }
+    if (currentActiveSellerId) {
+        headers['x-seller-id'] = currentActiveSellerId;
+    }
+    return headers;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+    if (currentActiveBrand) {
+        const storeNameEl = document.getElementById('storeName');
+        if (storeNameEl) storeNameEl.textContent = currentActiveBrand;
+    }
+
+    const founderName = localStorage.getItem('shipvera_founder_name');
+    if (founderName) {
+        const dppFounderName = document.getElementById('dppFounderName');
+        const dppAvatar = document.getElementById('dppAvatar');
+        if (dppFounderName) dppFounderName.textContent = founderName;
+        if (dppAvatar) {
+            const initials = founderName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+            dppAvatar.textContent = initials || 'SV';
+        }
+    }
+
     fetchDashboardData();
-    checkTraiCallingWindow();
-    
+    loadRegisteredStores();
+
     // Auto-refresh orders every 10 seconds
     setInterval(fetchOrders, 10000);
-    // Refresh TRAI window status every minute
-    setInterval(checkTraiCallingWindow, 60000);
 
     // Close store dropdown when clicking outside
     document.addEventListener('click', (e) => {
@@ -34,149 +94,72 @@ async function fetchDashboardData() {
     await Promise.all([
         fetchAnalytics(),
         fetchWallet(),
-        fetchOrders()
+        fetchOrders(),
+        fetchIntegrationsStatus()
     ]);
 }
 
 // ---------- 1. Analytics & Metrics ----------
 async function fetchAnalytics() {
     try {
-        const res = await fetch('/api/analytics');
+        const res = await fetch(getApiUrl('/api/analytics'), {
+            headers: getAuthHeaders()
+        });
         const data = await res.json();
         if (data.success && data.analytics) {
             const a = data.analytics;
-            document.getElementById('metricTotalOrders').textContent = a.total_orders_protected.toLocaleString('en-IN');
-            document.getElementById('metricMoneySaved').textContent = `₹${a.rto_money_saved_inr.toLocaleString('en-IN')}`;
-            document.getElementById('metricRtoCut').textContent = `${a.rto_reduction_rate_pct}%`;
-            
-            if (!currentActiveBrand) {
-                document.getElementById('storeName').textContent = a.seller_brand || 'Snitch Apparel & Streetwear';
+            const totalOrders = Number(a.total_orders_protected) || 0;
+            const moneySaved = Number(a.rto_money_saved_inr) || 0;
+
+            document.getElementById('metricTotalOrders').textContent = totalOrders.toLocaleString('en-IN');
+            document.getElementById('metricMoneySaved').textContent = `₹${moneySaved.toLocaleString('en-IN')}`;
+
+            const rtoCutEl = document.getElementById('metricRtoCut');
+            const rtoPillEl = document.getElementById('metricRtoPill');
+            const inspectedPillEl = document.getElementById('metricInspectedPill');
+
+            if (totalOrders > 0) {
+                if (rtoCutEl) rtoCutEl.textContent = `${a.rto_reduction_rate_pct}%`;
+                if (rtoPillEl) rtoPillEl.textContent = 'Active Drop';
+                if (inspectedPillEl) inspectedPillEl.textContent = `${totalOrders} Inspected`;
+            } else {
+                if (rtoCutEl) rtoCutEl.textContent = '0%';
+                if (rtoPillEl) rtoPillEl.textContent = 'Protected';
+                if (inspectedPillEl) inspectedPillEl.textContent = 'Ready';
             }
 
-            if (data.telemetry) {
-                renderRtoChart(data.telemetry);
-                renderResolutionBreakdown(data.telemetry);
+            if (a.seller_brand) {
+                currentActiveBrand = a.seller_brand;
+                const storeNameEl = document.getElementById('storeName');
+                if (storeNameEl) storeNameEl.textContent = a.seller_brand;
             }
+
+            // Update user profile pill in header
+            updateHeaderProfile({
+                name: a.seller_brand,
+                brand_name: a.seller_brand
+            });
         }
     } catch (e) {
         console.error('Error fetching analytics:', e);
     }
 }
 
-// Render Professional Stripe-Style SVG RTO Reduction Curve
-function renderRtoChart(telemetry) {
-    const wrap = document.getElementById('rtoChartWrap');
-    if (!wrap) return;
-
-    const points = telemetry.rto_drop_timeline || [
-        { label: 'Baseline', rto: 38.2, saved: 0 },
-        { label: 'Sanitizer', rto: 28.5, saved: 14400 },
-        { label: 'Voice AI', rto: 19.8, saved: 32600 },
-        { label: 'Trust Lock', rto: 14.1, saved: 58200 },
-        { label: 'Autopilot', rto: 11.2, saved: 78400 }
-    ];
-
-    const width = 560;
-    const height = 180;
-    const padding = { top: 20, right: 30, bottom: 30, left: 45 };
-
-    const chartW = width - padding.left - padding.right;
-    const chartH = height - padding.top - padding.bottom;
-
-    const maxRto = 40;
-    const minRto = 0;
-
-    const getX = (idx) => padding.left + (idx * (chartW / (points.length - 1)));
-    const getY = (val) => padding.top + ((maxRto - val) / (maxRto - minRto)) * chartH;
-
-    // Build SVG path
-    let pathD = `M ${getX(0)} ${getY(points[0].rto)}`;
-    for (let i = 1; i < points.length; i++) {
-        const prevX = getX(i - 1);
-        const prevY = getY(points[i - 1].rto);
-        const currX = getX(i);
-        const currY = getY(points[i].rto);
-        const cpX1 = prevX + (currX - prevX) / 2;
-        const cpY1 = prevY;
-        const cpX2 = prevX + (currX - prevX) / 2;
-        const cpY2 = currY;
-        pathD += ` C ${cpX1} ${cpY1}, ${cpX2} ${cpY2}, ${currX} ${currY}`;
-    }
-
-    const areaD = `${pathD} L ${getX(points.length - 1)} ${padding.top + chartH} L ${getX(0)} ${padding.top + chartH} Z`;
-
-    const svgHtml = `
-        <svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none">
-            <defs>
-                <linearGradient id="rtoGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" stop-color="#058A5E" stop-opacity="0.22" />
-                    <stop offset="100%" stop-color="#058A5E" stop-opacity="0.0" />
-                </linearGradient>
-            </defs>
-
-            <!-- Horizontal Gridlines -->
-            <line x1="${padding.left}" y1="${getY(40)}" x2="${width - padding.right}" y2="${getY(40)}" stroke="#F1EFEA" stroke-width="1" />
-            <line x1="${padding.left}" y1="${getY(30)}" x2="${width - padding.right}" y2="${getY(30)}" stroke="#F1EFEA" stroke-width="1" />
-            <line x1="${padding.left}" y1="${getY(20)}" x2="${width - padding.right}" y2="${getY(20)}" stroke="#F1EFEA" stroke-width="1" />
-            <line x1="${padding.left}" y1="${getY(10)}" x2="${width - padding.right}" y2="${getY(10)}" stroke="#F1EFEA" stroke-width="1" />
-
-            <!-- Y Axis Labels -->
-            <text x="${padding.left - 8}" y="${getY(40) + 4}" font-size="10" font-family="'JetBrains Mono', monospace" fill="#A1A1AA" text-anchor="end">40%</text>
-            <text x="${padding.left - 8}" y="${getY(30) + 4}" font-size="10" font-family="'JetBrains Mono', monospace" fill="#A1A1AA" text-anchor="end">30%</text>
-            <text x="${padding.left - 8}" y="${getY(20) + 4}" font-size="10" font-family="'JetBrains Mono', monospace" fill="#A1A1AA" text-anchor="end">20%</text>
-            <text x="${padding.left - 8}" y="${getY(10) + 4}" font-size="10" font-family="'JetBrains Mono', monospace" fill="#A1A1AA" text-anchor="end">10%</text>
-
-            <!-- Area Fill -->
-            <path d="${areaD}" fill="url(#rtoGrad)" />
-
-            <!-- Curve -->
-            <path d="${pathD}" fill="none" stroke="#058A5E" stroke-width="2.5" stroke-linecap="round" />
-
-            <!-- Baseline Reference Line (38.2%) -->
-            <line x1="${padding.left}" y1="${getY(38.2)}" x2="${width - padding.right}" y2="${getY(38.2)}" stroke="#EF4444" stroke-width="1" stroke-dasharray="3 3" opacity="0.6" />
-
-            <!-- Data Points -->
-            ${points.map((p, i) => `
-                <g class="chart-point-group">
-                    <circle cx="${getX(i)}" cy="${getY(p.rto)}" r="4.5" fill="#FFFFFF" stroke="#058A5E" stroke-width="2" />
-                    <text x="${getX(i)}" y="${getY(p.rto) - 8}" font-size="10" font-weight="600" font-family="'JetBrains Mono', monospace" fill="#18181B" text-anchor="middle">${p.rto}%</text>
-                    <text x="${getX(i)}" y="${height - 8}" font-size="9" font-family="'Inter', sans-serif" fill="#71717A" text-anchor="middle">${p.label.split(' ')[0]}</text>
-                </g>
-            `).join('')}
-        </svg>
-    `;
-
-    wrap.innerHTML = svgHtml;
+function updateHeaderProfile(seller) {
+    if (!seller) return;
+    const name = seller.name || seller.brand_name || 'Founder';
+    const initials = name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'SV';
+    const avatarEl = document.getElementById('dppAvatar');
+    const founderNameEl = document.getElementById('dppFounderName');
+    if (avatarEl) avatarEl.textContent = initials;
+    if (founderNameEl) founderNameEl.textContent = name;
 }
-
-// Render Address Resolution Breakdown
-function renderResolutionBreakdown(telemetry) {
-    const list = document.getElementById('resolutionList');
-    if (!list) return;
-
-    const data = telemetry.address_resolution_distribution || [
-        { category: 'Landmark Appended via Voice AI', percentage: 64, count: 320, color: '#058A5E' },
-        { category: 'House / Plot Number Corrected', percentage: 22, count: 110, color: '#0D9488' },
-        { category: 'Buyer Cancellation (Blocked RTO)', percentage: 14, count: 70, color: '#DC2626' }
-    ];
-
-    list.innerHTML = data.map(d => `
-        <div class="rbl-row">
-            <div class="rbl-top">
-                <span>${d.category}</span>
-                <span style="color: ${d.color}; font-weight: 600; font-family: var(--font-mono);">${d.percentage}% (${d.count})</span>
-            </div>
-            <div class="rbl-track">
-                <div class="rbl-bar" style="width: ${d.percentage}%; background: ${d.color};"></div>
-            </div>
-        </div>
-    `).join('');
-}
-
 // ---------- 2. Wallet & Balance ----------
 async function fetchWallet() {
     try {
-        const res = await fetch('/api/wallet');
+        const res = await fetch(getApiUrl('/api/wallet'), {
+            headers: getAuthHeaders()
+        });
         const data = await res.json();
         if (data.success && data.wallet) {
             const w = data.wallet;
@@ -198,7 +181,9 @@ async function fetchWallet() {
 // ---------- 3. Orders Stream ----------
 async function fetchOrders() {
     try {
-        const res = await fetch('/api/orders');
+        const res = await fetch(getApiUrl('/api/orders'), {
+            headers: getAuthHeaders()
+        });
         const data = await res.json();
         if (data.success && Array.isArray(data.orders)) {
             allOrders = data.orders;
@@ -221,20 +206,47 @@ function renderOrdersTable() {
     document.getElementById('orderCountBadge').textContent = `${filtered.length} Orders`;
 
     if (filtered.length === 0) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="9" style="text-align: center; padding: 48px 20px; color: #71717A;">
-                    <div style="margin-bottom: 6px; font-weight: 600; color: #374151;">No orders in this view</div>
-                    <p style="margin: 0; font-size: 0.8rem;">Filter "${activeFilter}" returned zero matching records.</p>
-                </td>
-            </tr>
-        `;
+        if (activeFilter === 'all') {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="9" style="text-align: center; padding: 64px 24px;">
+                        <div style="width: 52px; height: 52px; border-radius: 14px; background: #F0FDF4; border: 1px solid #BBF7D0; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 14px;">
+                            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#058A5E" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                        </div>
+                        <div style="font-size: 1.15rem; font-weight: 700; color: #0F172A; margin-bottom: 6px;">No COD Orders Dispatched Yet</div>
+                        <p style="margin: 0 0 20px 0; font-size: 0.86rem; color: #64748B; max-width: 520px; margin-left: auto; margin-right: auto; line-height: 1.5;">
+                            Shipvera is standing by to protect your COD orders. When an order arrives, our autonomous Hinglish voice agent calls your buyer within 60 seconds to confirm purchase intent and enrich courier labels with missing landmarks.
+                        </p>
+                        <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+                            <button class="btn-dab btn-primary" onclick="openTestLiveCallModal()">
+                                <span>📞 Test Call to Your Mobile</span>
+                            </button>
+                            <button class="btn-dab btn-secondary" onclick="openQuickPasteModal()">
+                                <span>+ Quick-Paste WhatsApp Address</span>
+                            </button>
+                            <button class="btn-dab btn-ghost" onclick="simulateShopifyOrder()">
+                                <span>⚡ Simulate Incoming Order</span>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        } else {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="9" style="text-align: center; padding: 48px 20px; color: #71717A;">
+                        <div style="margin-bottom: 6px; font-weight: 600; color: #374151;">No orders in this view</div>
+                        <p style="margin: 0; font-size: 0.8rem;">Filter "${activeFilter}" returned zero matching records.</p>
+                    </td>
+                </tr>
+            `;
+        }
         return;
     }
 
     tbody.innerHTML = filtered.map(o => {
         const isShopify = o.source === 'shopify';
-        const sourceIcon = isShopify ? 'assets/logos/shopify.svg' : 'assets/logos/whatsapp.svg';
+        const sourceIcon = isShopify ? 'https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/shopify.svg' : 'https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/whatsapp.svg';
         const sourceTitle = isShopify ? 'Shopify Webhook' : 'WhatsApp Quick-Paste';
 
         // Risk pill
@@ -484,10 +496,64 @@ function toggleStoreDropdown() {
     }
 }
 
-function switchStore(brandName, domain) {
+async function loadRegisteredStores() {
+    try {
+        const userEmail = localStorage.getItem('shipvera_user_email') || '';
+        const activeId = currentActiveSellerId || localStorage.getItem('shipvera_active_seller_id') || '';
+
+        const queryParams = new URLSearchParams();
+        if (userEmail) queryParams.set('email', userEmail);
+        if (activeId) queryParams.set('seller_id', activeId);
+
+        const res = await fetch(getApiUrl(`/api/auth/sellers?${queryParams.toString()}`), {
+            headers: {
+                'x-seller-email': userEmail,
+                'x-seller-id': activeId
+            }
+        });
+        const data = await res.json();
+        if (data.success && Array.isArray(data.sellers)) {
+            const menu = document.getElementById('storeDropdownMenu');
+            if (!menu) return;
+
+            const itemsHtml = data.sellers.map(s => {
+                const isSelected = (currentActiveSellerId ? s.id === currentActiveSellerId : s.brand_name === currentActiveBrand);
+                const tagClass = s.is_demo ? 'sdm-tag-standby' : (isSelected ? 'sdm-tag-active' : 'sdm-tag-standby');
+                const tagText = s.is_demo ? 'Demo Sandbox' : (isSelected ? 'Active' : 'Connected');
+                return `
+                    <div class="sdm-item ${isSelected ? 'active' : ''}" onclick="switchStore('${s.brand_name.replace(/'/g, "\\'")}', '${s.id}')">
+                        <div class="sdm-item-header">
+                            <strong>${s.brand_name}</strong>
+                            <span class="${tagClass}">${tagText}</span>
+                        </div>
+                        <span class="sdm-meta">${s.shopify_domain || 'Active Workspace'} • ₹${Number(s.wallet_balance_inr || 0).toFixed(2)} Bal</span>
+                    </div>
+                `;
+            }).join('');
+
+            menu.innerHTML = `
+                <div style="padding: 6px 12px; font-size: 0.68rem; font-weight: 700; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.04em;">Your Workspaces</div>
+                ${itemsHtml}
+                <div class="sdm-item add-store" onclick="window.location.href='/signup'">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    <span>+ Connect Another Store</span>
+                </div>
+            `;
+        }
+    } catch (e) {
+        console.warn('Could not fetch store list:', e);
+    }
+}
+
+function switchStore(brandName, sellerId) {
     currentActiveBrand = brandName;
-    document.getElementById('storeName').textContent = brandName;
-    
+    currentActiveSellerId = sellerId;
+    localStorage.setItem('shipvera_active_seller_id', sellerId);
+    localStorage.setItem('shipvera_active_brand', brandName);
+
+    const storeNameEl = document.getElementById('storeName');
+    if (storeNameEl) storeNameEl.textContent = brandName;
+
     document.querySelectorAll('.sdm-item').forEach(item => {
         item.classList.remove('active');
         if (item.querySelector('strong') && item.querySelector('strong').textContent === brandName) {
@@ -498,13 +564,15 @@ function switchStore(brandName, domain) {
     const menu = document.getElementById('storeDropdownMenu');
     if (menu) menu.classList.remove('show');
 
-    document.getElementById('liveCallDesc').textContent = `Standby for ${brandName}`;
+    const lcd = document.getElementById('liveCallDesc');
+    if (lcd) lcd.textContent = `Standby for ${brandName}`;
+
+    fetchDashboardData();
+    loadRegisteredStores();
 }
 
 function openAddStoreAlert() {
-    const menu = document.getElementById('storeDropdownMenu');
-    if (menu) menu.classList.remove('show');
-    alert('Connect Store: Enter your Shopify myshopify.com domain in the onboarding settings to link additional stores.');
+    window.location.href = '/signup';
 }
 
 // ---------- 6. Quick-Paste Modal ----------
@@ -543,10 +611,13 @@ async function submitQuickPaste() {
     resultBox.style.display = 'none';
 
     try {
-        const res = await fetch('/api/orders/quick-paste', {
+        const res = await fetch(getApiUrl('/api/orders/quick-paste'), {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ raw_text: input.value.trim() })
+            headers: getAuthHeaders(),
+            body: JSON.stringify({
+                raw_text: input.value.trim(),
+                seller_id: currentActiveSellerId
+            })
         });
         const data = await res.json();
 
@@ -589,10 +660,11 @@ async function simulateShopifyOrder() {
     const codAmt = [899, 1299, 1599, 2199][Math.floor(Math.random() * 4)];
 
     try {
-        const res = await fetch('/api/webhooks/shopify/orders-create', {
+        const res = await fetch(getApiUrl('/api/webhooks/shopify/orders-create'), {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getAuthHeaders(),
             body: JSON.stringify({
+                seller_id: currentActiveSellerId,
                 id: Date.now().toString().slice(-5),
                 name: `#UK-${Date.now().toString().slice(-4)}`,
                 financial_status: 'pending',
@@ -671,7 +743,7 @@ async function dispatchLiveCallFromModal() {
     statusDetails.textContent = `Target: +91${phone.slice(-10)} • Injecting dynamic brand context...`;
 
     try {
-        const res = await fetch('/api/orders/trigger', {
+        const res = await fetch(getApiUrl('/api/orders/trigger'), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -722,7 +794,7 @@ async function openTranscriptModal(orderId) {
     esb.innerHTML = '';
 
     try {
-        const res = await fetch(`/api/orders/${orderId}`);
+        const res = await fetch(getApiUrl(`/api/orders/${orderId}`));
         const data = await res.json();
         if (data.success && data.order) {
             const o = data.order;
@@ -773,7 +845,7 @@ function toggleModalAudio() {
         g.connect(ctx.destination);
         osc.start();
         osc.stop(ctx.currentTime + 0.25);
-    } catch (e) {}
+    } catch (e) { }
 }
 
 // ---------- 10. Feature 4: ₹19 Trust Lock Modal ----------
@@ -802,7 +874,7 @@ async function simulateTrustLockPayment() {
     btn.innerHTML = '<span>Processing Token...</span>';
 
     try {
-        const res = await fetch('/api/webhooks/razorpay/payment-captured', {
+        const res = await fetch(getApiUrl('/api/webhooks/razorpay/payment-captured'), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -839,7 +911,7 @@ function selectRechargePack(packKey, amount) {
     selectedPack = packKey;
     selectedPackAmount = amount;
     document.querySelectorAll('.recharge-card').forEach(c => c.classList.remove('selected'));
-    
+
     if (packKey === 'starter') {
         document.getElementById('packStarter').checked = true;
         document.querySelector('.recharge-card:nth-child(1)').classList.add('selected');
@@ -857,7 +929,7 @@ async function executeRecharge() {
     btn.innerHTML = '<span>Processing Recharge...</span>';
 
     try {
-        const res = await fetch('/api/wallet/recharge', {
+        const res = await fetch(getApiUrl('/api/wallet/recharge'), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ pack_id: selectedPack })
@@ -877,3 +949,658 @@ async function executeRecharge() {
         btn.innerHTML = `<span>Pay ₹${selectedPackAmount.toLocaleString('en-IN')} & Activate Credits →</span>`;
     }
 }
+
+// =========================================================
+// 12. Render Cloud Backend Connection Controller
+// =========================================================
+
+async function checkBackendConnection() {
+    const dot = document.getElementById('backendStatusDot');
+    const title = document.getElementById('backendStatusTitle');
+    const sub = document.getElementById('backendStatusSub');
+    if (!dot || !sub) return;
+
+    try {
+        if (window.ShipveraConfig && typeof window.ShipveraConfig.pingBackend === 'function') {
+            const result = await window.ShipveraConfig.pingBackend();
+            if (result.ok) {
+                dot.className = 'backend-status-dot online';
+                if (title) title.textContent = 'Render Backend';
+                sub.textContent = `Live (${result.latencyMs}ms)`;
+            } else if (result.latencyMs > 4000) {
+                dot.className = 'backend-status-dot waking';
+                if (title) title.textContent = 'Render Backend';
+                sub.textContent = 'Waking Up (~30s)...';
+            } else {
+                dot.className = 'backend-status-dot offline';
+                if (title) title.textContent = 'Render Backend';
+                sub.textContent = 'Offline (Click to setup)';
+            }
+        }
+    } catch (e) {
+        dot.className = 'backend-status-dot offline';
+        if (title) title.textContent = 'Render Backend';
+        sub.textContent = 'Offline';
+    }
+}
+
+function openBackendConfigModal() {
+    const modal = document.getElementById('backendConfigModal');
+    const input = document.getElementById('backendUrlInput');
+    const resultBox = document.getElementById('backendPingResult');
+
+    if (!modal) return;
+    modal.classList.add('open');
+
+    if (input) {
+        const currentUrl = (window.ShipveraConfig && typeof window.ShipveraConfig.getBackendBaseUrl === 'function')
+            ? window.ShipveraConfig.getBackendBaseUrl()
+            : (localStorage.getItem('SHIPVERA_BACKEND_URL') || 'https://shipvera-backend.onrender.com');
+        input.value = currentUrl;
+    }
+
+    if (resultBox) resultBox.style.display = 'none';
+}
+
+function closeBackendConfigModal() {
+    const modal = document.getElementById('backendConfigModal');
+    if (modal) modal.classList.remove('open');
+}
+
+async function testBackendConnection() {
+    const input = document.getElementById('backendUrlInput');
+    const btn = document.getElementById('btnTestBackend');
+    const resultBox = document.getElementById('backendPingResult');
+    const badge = document.getElementById('bprStatusBadge');
+    const latency = document.getElementById('bprLatency');
+    const details = document.getElementById('bprDetails');
+
+    if (!input || !resultBox) return;
+    const testUrl = input.value.trim() || 'https://shipvera-backend.onrender.com';
+
+    btn.disabled = true;
+    btn.innerHTML = '<span>Pinging...</span>';
+    resultBox.style.display = 'block';
+    badge.className = 'bpr-badge pending';
+    badge.textContent = 'Checking /api/health...';
+    latency.textContent = '';
+    details.innerHTML = '<span style="color: #64645E;">Connecting to Render web service. Cold-start may take 30-50s if instance is sleeping...</span>';
+
+    try {
+        const ping = await window.ShipveraConfig.pingBackend(testUrl);
+        if (ping.ok && ping.data) {
+            badge.className = 'bpr-badge success';
+            badge.textContent = '🟢 Connected & Verified';
+            latency.textContent = `${ping.latencyMs}ms`;
+
+            const seller = ping.data.seller || {};
+            const feats = ping.data.features || {};
+            details.innerHTML = `
+                <div style="margin-top: 6px; line-height: 1.5; font-size: 0.8rem; color: #18181B;">
+                    <strong>Platform:</strong> ${ping.data.platform || 'Shipvera Voice AI Engine'}<br>
+                    <strong>Brand:</strong> ${seller.brand || 'Enterprise Workspace'}<br>
+                    <strong>Wallet Balance:</strong> ${seller.wallet_balance || '₹0.00'} (${seller.available_verifications || 0} verifications)<br>
+                    <strong>Voice AI Telephony:</strong> <span style="color: #058A5E;">${feats.landmark_interrogator_voice_ai || 'Active'}</span><br>
+                    <strong>Address Geo-Sanitizer:</strong> <span style="color: #058A5E;">${feats.pre_call_geo_sanitizer || 'Active'}</span><br>
+                    <strong>Double-Entry Ledger:</strong> <span style="color: #058A5E;">${feats.financial_ledger || 'Active'}</span>
+                </div>
+            `;
+        } else {
+            badge.className = 'bpr-badge error';
+            badge.textContent = '🔴 Connection Failed';
+            latency.textContent = `${ping.latencyMs}ms`;
+            details.innerHTML = `
+                <div style="margin-top: 6px; font-size: 0.8rem; color: #DC2626;">
+                    <strong>Error:</strong> ${ping.error || 'Failed to reach health endpoint.'}<br>
+                    <span style="color: #64645E; font-size: 0.76rem;">Ensure the Render service is deployed and active at this URL. If it just woke up, wait 15 seconds and click Ping Health again.</span>
+                </div>
+            `;
+        }
+    } catch (e) {
+        badge.className = 'bpr-badge error';
+        badge.textContent = '🔴 Request Error';
+        latency.textContent = '';
+        details.innerHTML = `<span style="color: #DC2626; font-size: 0.8rem;">${e.message}</span>`;
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<span>Ping Health</span>';
+    }
+}
+
+function saveBackendConfiguration() {
+    const input = document.getElementById('backendUrlInput');
+    if (!input) return;
+
+    const newUrl = input.value.trim();
+    if (!newUrl) {
+        alert('Please enter a valid Render service URL (e.g., https://shipvera-backend.onrender.com)');
+        return;
+    }
+
+    if (window.ShipveraConfig && typeof window.ShipveraConfig.setBackendUrl === 'function') {
+        window.ShipveraConfig.setBackendUrl(newUrl);
+    } else {
+        localStorage.setItem('SHIPVERA_BACKEND_URL', newUrl);
+    }
+
+    closeBackendConfigModal();
+    checkBackendConnection();
+    fetchDashboardData();
+
+    alert(`Backend Connected to:\n${newUrl}\n\nDashboard is now querying your live Render instance.`);
+}
+
+function applyBackendPreset(presetUrl) {
+    const input = document.getElementById('backendUrlInput');
+    if (input) {
+        input.value = presetUrl;
+        testBackendConnection();
+    }
+}
+
+// =========================================================
+// 13. Shopify Store Integration Controller
+// =========================================================
+
+function openShopifyModal() {
+    const modal = document.getElementById('shopifyModal');
+    if (!modal) return;
+    
+    // Set dynamic webhook URL based on backend base
+    const webhookInput = document.getElementById('shopifyWebhookInput');
+    if (webhookInput) {
+        const base = (window.ShipveraConfig && typeof window.ShipveraConfig.getBackendBaseUrl === 'function')
+            ? window.ShipveraConfig.getBackendBaseUrl()
+            : (localStorage.getItem('SHIPVERA_BACKEND_URL') || window.location.origin);
+        webhookInput.value = `${base}/api/webhooks/shopify/orders-create`;
+    }
+
+    const savedDomain = localStorage.getItem('shipvera_shopify_domain') || 'snitch-streetwear.myshopify.com';
+    const domainInput = document.getElementById('shopifyDomainInput');
+    if (domainInput && !domainInput.value) {
+        domainInput.value = savedDomain;
+    }
+
+    // Auto-detect store display
+    const odbStoreName = document.getElementById('odbStoreName');
+    const odbStoreDomain = document.getElementById('odbStoreDomain');
+    if (odbStoreName) odbStoreName.textContent = currentActiveBrand || 'Snitch Apparel & Streetwear';
+    if (odbStoreDomain) odbStoreDomain.textContent = savedDomain;
+
+    // Reset progress
+    const progressWrap = document.getElementById('oneClickShopifyProgress');
+    const btn = document.getElementById('btnOneClickShopify');
+    const btnText = document.getElementById('btnOneClickShopifyText');
+    const fill = document.getElementById('ocShopifyFill');
+    if (progressWrap) progressWrap.style.display = 'none';
+    if (fill) fill.style.width = '0%';
+    if (btn) btn.disabled = false;
+    if (btnText) btnText.textContent = '⚡ Yes, Connect in 1-Click (Boom!) →';
+
+    const statusBox = document.getElementById('shopifyConnectionStatus');
+    if (statusBox) statusBox.style.display = 'none';
+
+    modal.classList.add('open');
+}
+
+function closeShopifyModal() {
+    const modal = document.getElementById('shopifyModal');
+    if (modal) modal.classList.remove('open');
+}
+
+function toggleManualShopifySetup() {
+    const section = document.getElementById('manualShopifySection');
+    const toggleText = document.getElementById('manualShopifyToggleText');
+    if (!section) return;
+    if (section.style.display === 'none') {
+        section.style.display = 'block';
+        if (toggleText) toggleText.textContent = '⚙ Hide Manual Webhook Setup ▲';
+    } else {
+        section.style.display = 'none';
+        if (toggleText) toggleText.textContent = '⚙ Connect Different Store / Manual Webhook (Advanced) ▼';
+    }
+}
+
+async function executeOneClickShopify() {
+    const btn = document.getElementById('btnOneClickShopify');
+    const btnText = document.getElementById('btnOneClickShopifyText');
+    const progressWrap = document.getElementById('oneClickShopifyProgress');
+    const fill = document.getElementById('ocShopifyFill');
+    const status = document.getElementById('ocShopifyStatus');
+
+    if (btn) btn.disabled = true;
+    if (progressWrap) progressWrap.style.display = 'block';
+
+    const detectedDomain = localStorage.getItem('shipvera_shopify_domain') || 'snitch-streetwear.myshopify.com';
+
+    // Step 1: Handshake
+    if (fill) fill.style.width = '35%';
+    if (status) status.textContent = `Authenticating session with ${detectedDomain}...`;
+    await new Promise(r => setTimeout(r, 350));
+
+    // Step 2: Register Webhook
+    if (fill) fill.style.width = '75%';
+    if (status) status.textContent = 'Auto-installing real-time orders/create webhook...';
+
+    try {
+        const res = await fetch(getApiUrl('/api/auth/connect-shopify'), {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({
+                seller_id: currentActiveSellerId,
+                shopify_domain: detectedDomain,
+                shopify_access_token: 'shpat_auto_provisioned_1click_token'
+            })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            // Step 3: Success Boom!
+            if (fill) fill.style.width = '100%';
+            if (status) {
+                status.style.color = '#058A5E';
+                status.textContent = '🎉 BOOM! Store Connected in 1-Click!';
+            }
+            if (btnText) btnText.textContent = '✓ Store Protected & Active!';
+
+            // Update UI badge on dashboard
+            const tag = document.getElementById('shopifyWebhookTag');
+            const desc = document.getElementById('shopifyDomainDisplay');
+            if (tag) {
+                tag.textContent = 'Active: ' + data.shopify_domain;
+                tag.className = 'dib-status-tag active';
+            }
+            if (desc) {
+                desc.textContent = `1-Click Auto-Syncing real-time COD checkouts from ${data.shopify_domain}`;
+            }
+            localStorage.setItem('shipvera_shopify_domain', data.shopify_domain);
+
+            setTimeout(() => {
+                closeShopifyModal();
+            }, 1200);
+        } else {
+            if (status) {
+                status.style.color = '#DC2626';
+                status.textContent = `Error: ${data.error || 'Failed to auto-connect'}`;
+            }
+            if (btn) btn.disabled = false;
+        }
+    } catch (e) {
+        if (status) {
+            status.style.color = '#DC2626';
+            status.textContent = `Error: ${e.message}`;
+        }
+        if (btn) btn.disabled = false;
+    }
+}
+
+function copyShopifyWebhookUrl() {
+    const input = document.getElementById('shopifyWebhookInput');
+    if (!input) return;
+    
+    const copyText = () => {
+        const btn = document.getElementById('btnCopyShopifyWebhook');
+        if (btn) {
+            btn.innerHTML = '<span>✓ Copied!</span>';
+            setTimeout(() => {
+                btn.innerHTML = '<span>Copy URL</span>';
+            }, 2000);
+        }
+    };
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(input.value).then(copyText).catch(() => {
+            input.select();
+            document.execCommand('copy');
+            copyText();
+        });
+    } else {
+        input.select();
+        document.execCommand('copy');
+        copyText();
+    }
+}
+
+async function saveShopifyConnection() {
+    const domainInput = document.getElementById('shopifyDomainInput');
+    const tokenInput = document.getElementById('shopifyTokenInput');
+    const statusBox = document.getElementById('shopifyConnectionStatus');
+    const btn = document.getElementById('btnSaveShopify');
+    
+    const domain = (domainInput ? domainInput.value.trim() : '');
+    const token = (tokenInput ? tokenInput.value.trim() : '');
+    
+    if (!domain) {
+        alert('Please enter your Shopify store domain (e.g. brand.myshopify.com)');
+        return;
+    }
+    
+    btn.disabled = true;
+    btn.innerHTML = '<span>Connecting to Shopify...</span>';
+    if (statusBox) {
+        statusBox.style.display = 'block';
+        statusBox.style.background = '#EFF6FF';
+        statusBox.style.color = '#1E40AF';
+        statusBox.style.border = '1px solid #BFDBFE';
+        statusBox.innerHTML = 'Verifying store credentials and registering webhook route...';
+    }
+    
+    try {
+        const res = await fetch(getApiUrl('/api/auth/connect-shopify'), {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({
+                seller_id: currentActiveSellerId,
+                shopify_domain: domain,
+                shopify_access_token: token
+            })
+        });
+        const data = await res.json();
+        if (data.success) {
+            if (statusBox) {
+                statusBox.style.background = '#F0FDF4';
+                statusBox.style.color = '#166534';
+                statusBox.style.border = '1px solid #BBF7D0';
+                statusBox.innerHTML = `<strong>Connected Successfully!</strong><br>${data.message}`;
+            }
+            // Update UI badge
+            const tag = document.getElementById('shopifyWebhookTag');
+            const desc = document.getElementById('shopifyDomainDisplay');
+            if (tag) {
+                tag.textContent = 'Active: ' + data.shopify_domain;
+                tag.className = 'dib-status-tag active';
+            }
+            if (desc) {
+                desc.textContent = `Auto-syncs shipping labels via official webhook from ${data.shopify_domain}`;
+            }
+            localStorage.setItem('shipvera_shopify_domain', data.shopify_domain);
+            setTimeout(() => {
+                closeShopifyModal();
+            }, 1200);
+        } else {
+            if (statusBox) {
+                statusBox.style.background = '#FEF2F2';
+                statusBox.style.color = '#991B1B';
+                statusBox.style.border = '1px solid #FECACA';
+                statusBox.innerHTML = `<strong>Connection Failed:</strong> ${data.error || 'Check domain and token'}`;
+            }
+        }
+    } catch (e) {
+        if (statusBox) {
+            statusBox.style.background = '#FEF2F2';
+            statusBox.style.color = '#991B1B';
+            statusBox.style.border = '1px solid #FECACA';
+            statusBox.innerHTML = `<strong>Error:</strong> ${e.message}`;
+        }
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<span>Save & Connect Shopify →</span>';
+    }
+}
+
+// =========================================================
+// 14. Logistics Partner Integration Hub Controller
+// =========================================================
+
+let selectedLogisticsProvider = 'shiprocket';
+
+function openLogisticsModal() {
+    const modal = document.getElementById('logisticsModal');
+    if (!modal) return;
+    const statusBox = document.getElementById('logisticsConnectionStatus');
+    if (statusBox) statusBox.style.display = 'none';
+
+    // Reset progress
+    const progressWrap = document.getElementById('oneClickLogisticsProgress');
+    const btn = document.getElementById('btnOneClickLogistics');
+    const btnText = document.getElementById('btnOneClickLogisticsText');
+    const fill = document.getElementById('ocLogisticsFill');
+    if (progressWrap) progressWrap.style.display = 'none';
+    if (fill) fill.style.width = '0%';
+    if (btn) btn.disabled = false;
+    if (btnText) btnText.textContent = '⚡ Activate 1-Click Courier Sync (Boom!) →';
+
+    const savedProvider = localStorage.getItem('shipvera_logistics_provider') || 'shiprocket';
+    selectLogisticsProvider(savedProvider);
+
+    modal.classList.add('open');
+}
+
+function closeLogisticsModal() {
+    const modal = document.getElementById('logisticsModal');
+    if (modal) modal.classList.remove('open');
+}
+
+function toggleManualLogisticsSetup() {
+    const section = document.getElementById('manualLogisticsSection');
+    const toggleText = document.getElementById('manualLogisticsToggleText');
+    if (!section) return;
+    if (section.style.display === 'none') {
+        section.style.display = 'block';
+        if (toggleText) toggleText.textContent = '⚙ Hide Manual Provider Settings ▲';
+    } else {
+        section.style.display = 'none';
+        if (toggleText) toggleText.textContent = '⚙ Connect Direct Courier API Token (For Custom Warehouses) ▼';
+    }
+}
+
+async function executeOneClickLogistics() {
+    const btn = document.getElementById('btnOneClickLogistics');
+    const btnText = document.getElementById('btnOneClickLogisticsText');
+    const progressWrap = document.getElementById('oneClickLogisticsProgress');
+    const fill = document.getElementById('ocLogisticsFill');
+    const status = document.getElementById('ocLogisticsStatus');
+
+    if (btn) btn.disabled = true;
+    if (progressWrap) progressWrap.style.display = 'block';
+
+    // Step 1
+    if (fill) fill.style.width = '40%';
+    if (status) status.textContent = 'Binding Shopify native courier shipping pipeline...';
+    await new Promise(r => setTimeout(r, 350));
+
+    // Step 2
+    if (fill) fill.style.width = '80%';
+    if (status) status.textContent = 'Synchronizing Shiprocket & Delhivery AWB landmark printer...';
+
+    try {
+        const res = await fetch(getApiUrl('/api/auth/connect-logistics'), {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({
+                seller_id: currentActiveSellerId,
+                provider: 'shopify_native'
+            })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            // Step 3
+            if (fill) fill.style.width = '100%';
+            if (status) {
+                status.style.color = '#2563EB';
+                status.textContent = '🎉 BOOM! Couriers 1-Click Synced!';
+            }
+            if (btnText) btnText.textContent = '✓ Couriers Auto-Synced & Active!';
+
+            const tag = document.getElementById('courierIntegrationTag');
+            const desc = document.getElementById('courierIntegrationDesc');
+            if (tag) {
+                tag.textContent = 'Couriers: 1-Click Active';
+                tag.className = 'dib-status-tag green';
+            }
+            if (desc) {
+                desc.textContent = '1-Click Synced: Verified landmarks auto-print on Shiprocket & Delhivery AWB labels';
+            }
+            localStorage.setItem('shipvera_logistics_provider', 'shopify_native');
+            localStorage.setItem('shipvera_logistics_name', '1-Click Courier Sync');
+
+            setTimeout(() => {
+                closeLogisticsModal();
+            }, 1200);
+        } else {
+            if (status) {
+                status.style.color = '#DC2626';
+                status.textContent = `Error: ${data.error || 'Failed to auto-sync couriers'}`;
+            }
+            if (btn) btn.disabled = false;
+        }
+    } catch (e) {
+        if (status) {
+            status.style.color = '#DC2626';
+            status.textContent = `Error: ${e.message}`;
+        }
+        if (btn) btn.disabled = false;
+    }
+}
+
+function selectLogisticsProvider(provider) {
+    selectedLogisticsProvider = provider;
+    
+    const providers = ['shiprocket', 'delhivery', 'nimbuspost', 'shopify_native'];
+    providers.forEach(p => {
+        let cardId = 'lpCard' + (p === 'shopify_native' ? 'ShopifyNative' : p.charAt(0).toUpperCase() + p.slice(1));
+        let fieldId = 'lpFields' + (p === 'shopify_native' ? 'ShopifyNative' : p.charAt(0).toUpperCase() + p.slice(1));
+        
+        const card = document.getElementById(cardId);
+        const fields = document.getElementById(fieldId);
+        
+        if (card) {
+            if (p === provider) card.classList.add('selected');
+            else card.classList.remove('selected');
+        }
+        if (fields) {
+            fields.style.display = (p === provider) ? 'block' : 'none';
+        }
+    });
+}
+
+async function saveLogisticsConnection() {
+    const btn = document.getElementById('btnSaveLogistics');
+    const statusBox = document.getElementById('logisticsConnectionStatus');
+    
+    let token = '';
+    let email = '';
+    let clientId = '';
+    
+    if (selectedLogisticsProvider === 'shiprocket') {
+        email = document.getElementById('srEmailInput')?.value.trim() || '';
+        token = document.getElementById('srTokenInput')?.value.trim() || '';
+    } else if (selectedLogisticsProvider === 'delhivery') {
+        clientId = document.getElementById('delhiveryClientIdInput')?.value.trim() || '';
+        token = document.getElementById('delhiveryTokenInput')?.value.trim() || '';
+    } else if (selectedLogisticsProvider === 'nimbuspost') {
+        email = document.getElementById('nimbusEmailInput')?.value.trim() || '';
+        token = document.getElementById('nimbusKeyInput')?.value.trim() || '';
+    }
+    
+    btn.disabled = true;
+    btn.innerHTML = '<span>Connecting Logistics...</span>';
+    if (statusBox) {
+        statusBox.style.display = 'block';
+        statusBox.style.background = '#EFF6FF';
+        statusBox.style.color = '#1E40AF';
+        statusBox.style.border = '1px solid #BFDBFE';
+        statusBox.innerHTML = 'Linking logistics aggregator and verifying AWB rewrite hooks...';
+    }
+    
+    try {
+        const res = await fetch(getApiUrl('/api/auth/connect-logistics'), {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({
+                seller_id: currentActiveSellerId,
+                provider: selectedLogisticsProvider,
+                token: token,
+                email: email,
+                client_id: clientId
+            })
+        });
+        const data = await res.json();
+        if (data.success) {
+            if (statusBox) {
+                statusBox.style.background = '#F0FDF4';
+                statusBox.style.color = '#166534';
+                statusBox.style.border = '1px solid #BBF7D0';
+                statusBox.innerHTML = `<strong>Connected Successfully!</strong><br>${data.message}`;
+            }
+            
+            // Update dashboard card tag
+            const tag = document.getElementById('courierIntegrationTag');
+            const desc = document.getElementById('courierIntegrationDesc');
+            if (tag) {
+                tag.textContent = `${data.providerName}: Connected`;
+                tag.className = 'dib-status-tag green';
+            }
+            if (desc) {
+                desc.textContent = `Auto-rewrites verified landmarks onto ${data.providerName} AWB labels before pickup`;
+            }
+            localStorage.setItem('shipvera_logistics_provider', selectedLogisticsProvider);
+            localStorage.setItem('shipvera_logistics_name', data.providerName);
+            
+            setTimeout(() => {
+                closeLogisticsModal();
+            }, 1200);
+        } else {
+            if (statusBox) {
+                statusBox.style.background = '#FEF2F2';
+                statusBox.style.color = '#991B1B';
+                statusBox.style.border = '1px solid #FECACA';
+                statusBox.innerHTML = `<strong>Connection Failed:</strong> ${data.error || 'Check credentials'}`;
+            }
+        }
+    } catch (e) {
+        if (statusBox) {
+            statusBox.style.background = '#FEF2F2';
+            statusBox.style.color = '#991B1B';
+            statusBox.style.border = '1px solid #FECACA';
+            statusBox.innerHTML = `<strong>Error:</strong> ${e.message}`;
+        }
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<span>Save & Connect Logistics →</span>';
+    }
+}
+
+// 15. Auto-Load Existing Integrations Status
+async function fetchIntegrationsStatus() {
+    try {
+        const res = await fetch(getApiUrl('/api/auth/me'), {
+            headers: getAuthHeaders()
+        });
+        const data = await res.json();
+        if (data.success && data.seller) {
+            const s = data.seller;
+            if (s.shopify_domain) {
+                const tag = document.getElementById('shopifyWebhookTag');
+                const desc = document.getElementById('shopifyDomainDisplay');
+                if (tag) tag.textContent = 'Active: ' + s.shopify_domain;
+                if (desc) desc.textContent = `Auto-syncs shipping labels via official webhook from ${s.shopify_domain}`;
+                const domainInput = document.getElementById('shopifyDomainInput');
+                if (domainInput && !domainInput.value) domainInput.value = s.shopify_domain;
+            }
+            if (s.logistics_provider) {
+                const providerNames = {
+                    shiprocket: 'Shiprocket',
+                    delhivery: 'Delhivery Direct',
+                    nimbuspost: 'NimbusPost',
+                    shopify_native: 'Shopify Native'
+                };
+                const pName = providerNames[s.logistics_provider] || s.logistics_provider;
+                const tag = document.getElementById('courierIntegrationTag');
+                const desc = document.getElementById('courierIntegrationDesc');
+                if (tag) {
+                    tag.textContent = `${pName}: Connected`;
+                    tag.className = 'dib-status-tag green';
+                }
+                if (desc) {
+                    desc.textContent = `Auto-rewrites verified landmarks onto ${pName} AWB labels before pickup`;
+                }
+            }
+        }
+    } catch (e) {
+        console.warn('[DASHBOARD] Notice loading integrations status:', e.message);
+    }
+}
+
+

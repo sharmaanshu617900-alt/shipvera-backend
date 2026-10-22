@@ -1,119 +1,120 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Shipvera — Dispatch Intelligence & COD Verification</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+        rel="stylesheet">
     <link rel="icon" type="image/png" href="assets/shipvera_icon.png">
     <link rel="stylesheet" href="dashboard.css?v=3.0">
 </head>
+
 <body class="dashboard-body">
 
     <!-- Top Navigation Header -->
     <header class="dash-header">
         <div class="dash-header-inner">
             <div class="dash-brand-wrap">
-                <a href="/" class="dash-logo" aria-label="Shipvera Home">
-                    <img src="assets/shipvera_logo_transparent.png" alt="Shipvera" class="dash-brand-logo">
+                <a href="/" class="dash-logo" aria-label="Shipvera Home"
+                    style="display: flex; align-items: center; gap: 8px; text-decoration: none;">
+                    <img src="assets/shipvera_icon_transparent.png" alt="Shipvera Icon" width="28" height="28"
+                        style="border-radius: 7px; object-fit: contain;">
+                    <span
+                        style="font-size: 1.25rem; font-weight: 800; letter-spacing: -0.03em; color: #0F172A; font-family: 'Plus Jakarta Sans', sans-serif;">ship<span
+                            style="color: #058A5E;">vera</span></span>
                 </a>
 
                 <div class="header-divider"></div>
 
                 <!-- Multi-Tenant Brand Switcher -->
                 <div class="dash-store-badge-wrap">
-                    <button class="dash-store-badge" onclick="toggleStoreDropdown()" id="storeBadgeBtn" aria-haspopup="true">
-                        <img src="assets/logos/shopify.svg" alt="Shopify" class="store-platform-icon">
+                    <button class="dash-store-badge" onclick="toggleStoreDropdown()" id="storeBadgeBtn"
+                        aria-haspopup="true">
+                        <img src="https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/shopify.svg" alt="Shopify"
+                            class="store-platform-icon">
                         <span class="store-name" id="storeName">Snitch Apparel & Streetwear</span>
-                        <svg class="store-caret" width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        <svg class="store-caret" width="10" height="6" viewBox="0 0 10 6" fill="none">
+                            <path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                        </svg>
                         <span class="store-status-dot" title="Store Connected"></span>
                     </button>
                     <div class="store-dropdown-menu" id="storeDropdownMenu">
-                        <div class="sdm-item active" onclick="switchStore('Snitch Apparel & Streetwear', 'snitch.myshopify.com')">
-                            <div class="sdm-item-header">
-                                <strong>Snitch Apparel & Streetwear</strong>
-                                <span class="sdm-tag-active">Active</span>
-                            </div>
-                            <span class="sdm-meta">snitch.myshopify.com • Webhook v2024.10</span>
-                        </div>
-                        <div class="sdm-item" onclick="switchStore('The Souled Store', 'souledstore.myshopify.com')">
-                            <div class="sdm-item-header">
-                                <strong>The Souled Store</strong>
-                                <span class="sdm-tag-standby">Standby</span>
-                            </div>
-                            <span class="sdm-meta">souledstore.myshopify.com</span>
-                        </div>
-                        <div class="sdm-item" onclick="switchStore('Urban Monkey', 'urbanmonkey.myshopify.com')">
-                            <div class="sdm-item-header">
-                                <strong>Urban Monkey</strong>
-                                <span class="sdm-tag-standby">Standby</span>
-                            </div>
-                            <span class="sdm-meta">urbanmonkey.myshopify.com</span>
-                        </div>
-                        <div class="sdm-item add-store" onclick="openAddStoreAlert()">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                            <span>Connect Another Store</span>
-                        </div>
+                        <div style="padding: 12px; font-size: 0.78rem; color: #64748B;">Loading workspaces...</div>
                     </div>
                 </div>
             </div>
 
             <div class="dash-header-actions">
-                <!-- TRAI Regulatory SLA Status -->
-                <div class="dash-trai-pill" id="traiWindowPill" title="TRAI Commercial Calling Hours: 8:30 AM to 9:30 PM IST">
-                    <span class="trai-dot" id="traiDot"></span>
-                    <span class="trai-text" id="traiWindowText">TRAI Window: Active (8:30 AM – 9:30 PM)</span>
-                </div>
-
-                <!-- Voice Engine Telephony Pill -->
-                <div class="dash-engine-pill">
-                    <span class="engine-pulse-dot"></span>
-                    <div class="engine-info">
-                        <span class="engine-title">Bolna Telephony</span>
-                        <span class="engine-sub" id="liveCallDesc">Standby • 40s Guardrail Active</span>
-                    </div>
-                </div>
-
                 <!-- Wallet Card (Strict Pay-As-You-Go) -->
                 <div class="dash-wallet-pill">
                     <div class="dwp-balance-wrap">
-                        <span class="dwp-label">Wallet Balance</span>
+                        <span class="dwp-label">PayG Wallet</span>
                         <span class="dwp-amount" id="walletBalance">₹0.00</span>
                     </div>
-                    <button class="dwp-recharge-btn" onclick="openRechargeModal()">Add Credits</button>
+                    <button class="dwp-recharge-btn" onclick="openRechargeModal()">+ Add Funds</button>
                 </div>
 
-                <a href="/" class="dash-exit-btn">Exit to Site</a>
+                <!-- Active Founder / Workspace Indicator -->
+                <div class="dash-profile-pill" id="profilePill" title="Active Workspace Account">
+                    <div class="dpp-avatar" id="dppAvatar">SV</div>
+                    <div class="dpp-info">
+                        <span class="dpp-name" id="dppFounderName">Merchant</span>
+                        <span class="dpp-status">● Live Protected</span>
+                    </div>
+                </div>
+
+                <a href="/signup" class="dash-exit-btn"
+                    style="background: #F0FDF4; color: #058A5E; border-color: #BBF7D0; font-weight: 600;">+ New
+                    Store</a>
+                <a href="/" class="dash-exit-btn">Exit</a>
             </div>
         </div>
     </header>
 
     <!-- Main Dashboard Container -->
     <main class="dash-container">
-        
+
         <!-- Action Header -->
         <section class="dash-action-bar">
             <div class="dab-headline">
                 <div class="dab-headline-row">
                     <h1 class="dab-title">Dispatch Operations & Address Verification</h1>
-                    <span class="dab-badge">Bolna Voice AI • Sarvam TTS</span>
+                    <span class="dab-badge">Automated COD Protection</span>
                 </div>
-                <p class="dab-subtitle">Autonomous phone verification, local landmark extraction, and courier shipping label sync.</p>
+                <p class="dab-subtitle">Autonomous phone verification, local landmark extraction, and courier shipping
+                    label sync.</p>
             </div>
             <div class="dab-buttons">
                 <button class="btn-dab btn-primary" onclick="openTestLiveCallModal()">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-                    <span>Test Outbound Call</span>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path
+                            d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                    </svg>
+                    <span>Test Call on Your Mobile</span>
                 </button>
                 <button class="btn-dab btn-secondary" onclick="openQuickPasteModal()">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+                        <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+                    </svg>
                     <span>Quick-Paste Order</span>
                 </button>
                 <button class="btn-dab btn-ghost" onclick="simulateShopifyOrder()">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                    <span>Simulate Shopify Webhook</span>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="7 10 12 15 17 10" />
+                        <line x1="12" y1="15" x2="12" y2="3" />
+                    </svg>
+                    <span>Simulate Incoming Order</span>
                 </button>
             </div>
         </section>
@@ -122,14 +123,21 @@
         <div class="dash-alert-banner" id="zeroBalanceAlert" style="display: none;">
             <div class="dab-alert-left">
                 <div class="dab-alert-icon-wrap">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path
+                            d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                        <line x1="12" y1="9" x2="12" y2="13" />
+                        <line x1="12" y1="17" x2="12.01" y2="17" />
+                    </svg>
                 </div>
                 <div>
-                    <strong>Wallet Balance: ₹0.00 (Pay-As-You-Go Mode)</strong>
-                    <p>Verification calls are paused. Recharge your wallet to resume automated 60-second address verification.</p>
+                    <strong>Wallet Balance: ₹0.00 (Pure Pay-As-You-Go Mode)</strong>
+                    <p>Automated buyer verification calls are on standby. Add funds to verify COD orders at ₹6.00 per
+                        connected call.</p>
                 </div>
             </div>
-            <button class="btn-recharge-urgent" onclick="openRechargeModal()">Recharge Wallet (₹999) →</button>
+            <button class="btn-recharge-urgent" onclick="openRechargeModal()">Add Funds (₹999) →</button>
         </div>
 
         <!-- 4 Key Institutional Metric Cards -->
@@ -137,7 +145,7 @@
             <div class="dash-metric-card">
                 <div class="dmc-top">
                     <span class="dmc-label">Orders Evaluated</span>
-                    <span class="dmc-pill">100% Inspected</span>
+                    <span class="dmc-pill" id="metricInspectedPill">100% Inspected</span>
                 </div>
                 <div class="dmc-value" id="metricTotalOrders">0</div>
                 <div class="dmc-sub" id="metricOrdersSub">Assessed before courier label printing</div>
@@ -146,83 +154,82 @@
             <div class="dash-metric-card">
                 <div class="dmc-top">
                     <span class="dmc-label">Freight Loss Prevented</span>
-                    <span class="dmc-pill highlight-green">+₹180 / Order</span>
+                    <span class="dmc-pill highlight-green">+₹180 / Cancel</span>
                 </div>
                 <div class="dmc-value dmc-highlight" id="metricMoneySaved">₹0</div>
-                <div class="dmc-sub">Cumulative forward and reverse logistics savings</div>
+                <div class="dmc-sub">Saved by auto-canceling fake COD orders</div>
             </div>
 
             <div class="dash-metric-card">
                 <div class="dmc-top">
                     <span class="dmc-label">RTO Reduction Rate</span>
-                    <span class="dmc-pill">Verified Cohort</span>
+                    <span class="dmc-pill" id="metricRtoPill">Active</span>
                 </div>
-                <div class="dmc-value" id="metricRtoCut">70%</div>
-                <div class="dmc-sub">Drop vs. 38.2% historical COD baseline</div>
+                <div class="dmc-value" id="metricRtoCut">0%</div>
+                <div class="dmc-sub" id="metricRtoSub">Based on verified address dispatches</div>
             </div>
 
             <div class="dash-metric-card">
                 <div class="dmc-top">
-                    <span class="dmc-label">Cost Per Order</span>
-                    <span class="dmc-pill">Zero Waste Cap</span>
+                    <span class="dmc-label">Pricing Rate</span>
+                    <span class="dmc-pill">No Retainer</span>
                 </div>
                 <div class="dmc-value">₹6.00</div>
-                <div class="dmc-sub">Billed only on completed phone connections</div>
+                <div class="dmc-sub">Billed strictly per completed phone verification</div>
             </div>
         </section>
 
-        <!-- Analytics & Performance Section -->
-        <section class="dash-charts-grid">
-            <!-- Chart 1: RTO Reduction Curve -->
-            <div class="dash-chart-card">
-                <div class="dcc-header">
-                    <div>
-                        <h3 class="dcc-title">RTO Rate Progression</h3>
-                        <p class="dcc-sub">Weekly COD return reduction across address-verified orders</p>
-                    </div>
-                    <span class="dcc-badge highlight">31x Net ROI</span>
+        <!-- Real Store Infrastructure & Channel Status -->
+        <section class="dash-integration-banner">
+            <div class="dib-card dib-card-clickable" id="shopifyIntegrationCard" onclick="openShopifyModal()" title="Click to manage Shopify Store connection and webhooks" style="cursor: pointer;">
+                <div class="dib-icon-box">
+                    <img src="https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/shopify.svg" alt="Shopify" width="18"
+                        height="18">
                 </div>
-                <div class="dcc-body">
-                    <div class="chart-svg-wrap" id="rtoChartWrap"></div>
-                    <div class="chart-legend-row">
-                        <div class="clr-item">
-                            <span class="clr-dot" style="background: #EF4444;"></span>
-                            <span>Historical Baseline (38.2%)</span>
-                        </div>
-                        <div class="clr-item">
-                            <span class="clr-dot" style="background: #058A5E;"></span>
-                            <span>Shipvera Autopilot (11.2%)</span>
-                        </div>
+                <div class="dib-info">
+                    <div class="dib-title-row">
+                        <strong>Shopify Store Webhook</strong>
+                        <span class="dib-status-tag active" id="shopifyWebhookTag">Active</span>
+                        <span class="dib-manage-hint">Manage ⚙</span>
                     </div>
+                    <span class="dib-desc" id="shopifyDomainDisplay">Auto-syncs shipping labels via official webhook on
+                        every COD checkout</span>
                 </div>
             </div>
 
-            <!-- Chart 2: Address Intelligence Breakdown -->
-            <div class="dash-chart-card">
-                <div class="dcc-header">
-                    <div>
-                        <h3 class="dcc-title">Address Resolution Breakdown</h3>
-                        <p class="dcc-sub">Distribution of courier shipping label repairs</p>
-                    </div>
-                    <span class="dcc-badge">88.6% First Attempt</span>
+            <div class="dib-card dib-card-clickable" id="logisticsIntegrationCard" onclick="openLogisticsModal()" title="Click to connect Shiprocket, Delhivery, or NimbusPost" style="cursor: pointer;">
+                <div class="dib-icon-box" style="background: #EFF6FF; border-color: #BFDBFE;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2">
+                        <rect x="1" y="3" width="15" height="13"></rect>
+                        <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+                        <circle cx="5.5" cy="18.5" r="2.5"></circle>
+                        <circle cx="18.5" cy="18.5" r="2.5"></circle>
+                    </svg>
                 </div>
-                <div class="dcc-body">
-                    <div class="resolution-breakdown-list" id="resolutionList"></div>
-
-                    <div class="courier-efficiency-box">
-                        <div class="ceb-item">
-                            <span class="ceb-val">1.8 Days</span>
-                            <span class="ceb-label">Faster Transit</span>
-                        </div>
-                        <div class="ceb-item">
-                            <span class="ceb-val">+₹180</span>
-                            <span class="ceb-label">Saved Per Cancel</span>
-                        </div>
-                        <div class="ceb-item">
-                            <span class="ceb-val">24 Sec</span>
-                            <span class="ceb-label">Avg. Call Duration</span>
-                        </div>
+                <div class="dib-info">
+                    <div class="dib-title-row">
+                        <strong>Courier AWB Label Rewrite</strong>
+                        <span class="dib-status-tag blue" id="courierIntegrationTag">Shiprocket & Delhivery</span>
+                        <span class="dib-manage-hint">Connect ⚙</span>
                     </div>
+                    <span class="dib-desc" id="courierIntegrationDesc">Rewrites verified rooftop landmarks into courier labels before pickup</span>
+                </div>
+            </div>
+
+            <div class="dib-card dib-card-clickable" onclick="openTestLiveCallModal()" title="Click to test 60-second AI phone verification" style="cursor: pointer;">
+                <div class="dib-icon-box" style="background: #ECFDF5; border-color: #A7F3D0;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2">
+                        <path
+                            d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                    </svg>
+                </div>
+                <div class="dib-info">
+                    <div class="dib-title-row">
+                        <strong>60-Second Hinglish Dialer</strong>
+                        <span class="dib-status-tag green">₹6.00 / Call</span>
+                        <span class="dib-manage-hint">Test ⚡</span>
+                    </div>
+                    <span class="dib-desc">Confirms buyer intent within 60 seconds to auto-cancel fake COD orders</span>
                 </div>
             </div>
         </section>
@@ -238,10 +245,14 @@
                 <!-- Status Filter Tabs -->
                 <div class="dos-filter-tabs">
                     <button class="tab-btn active" data-filter="all" onclick="filterOrders('all')">All</button>
-                    <button class="tab-btn" data-filter="verified_cleaned" onclick="filterOrders('verified_cleaned')">Verified & Cleaned</button>
-                    <button class="tab-btn" data-filter="cancelled_fake" onclick="filterOrders('cancelled_fake')">Buyer Cancelled</button>
-                    <button class="tab-btn" data-filter="trust_lock_sent" onclick="filterOrders('trust_lock_sent')">₹19 Token Pending</button>
-                    <button class="tab-btn" data-filter="calling" onclick="filterOrders('calling')">Dialing / Queued</button>
+                    <button class="tab-btn" data-filter="verified_cleaned"
+                        onclick="filterOrders('verified_cleaned')">Verified & Cleaned</button>
+                    <button class="tab-btn" data-filter="cancelled_fake" onclick="filterOrders('cancelled_fake')">Buyer
+                        Cancelled</button>
+                    <button class="tab-btn" data-filter="trust_lock_sent" onclick="filterOrders('trust_lock_sent')">₹19
+                        Token Pending</button>
+                    <button class="tab-btn" data-filter="calling" onclick="filterOrders('calling')">Dialing /
+                        Queued</button>
                 </div>
             </div>
 
@@ -281,14 +292,16 @@
             <div class="modal-header">
                 <div>
                     <h3 class="modal-title">Quick-Paste Order</h3>
-                    <p class="modal-subtitle">Paste unformatted customer WhatsApp or Instagram chat text. Shipvera extracts details and queues verification.</p>
+                    <p class="modal-subtitle">Paste unformatted customer WhatsApp or Instagram chat text. Shipvera
+                        extracts details and queues verification.</p>
                 </div>
                 <button class="modal-close-btn" onclick="closeQuickPasteModal()" aria-label="Close modal">×</button>
             </div>
             <div class="modal-body">
                 <label class="modal-label" for="quickPasteInput">Customer Chat Message:</label>
-                <textarea id="quickPasteInput" class="modal-textarea" rows="4" placeholder="e.g. Rahul 9876543210, sector 15 noida near metro station, black hoodie L size COD 799"></textarea>
-                
+                <textarea id="quickPasteInput" class="modal-textarea" rows="4"
+                    placeholder="e.g. Rahul 9876543210, sector 15 noida near metro station, black hoodie L size COD 799"></textarea>
+
                 <div class="quick-paste-samples">
                     <span class="qps-label">Presets:</span>
                     <button class="qps-btn" onclick="fillSample(1)">Indore (Missing Landmark)</button>
@@ -322,7 +335,9 @@
                 <div class="mini-audio-bar">
                     <div class="mab-left">
                         <button class="mab-play-btn" id="mabPlayBtn" onclick="toggleModalAudio()">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                                <polygon points="5 3 19 12 5 21 5 3" />
+                            </svg>
                         </button>
                         <div class="mab-meta">
                             <span class="mab-call-title" id="mabCallTitle">Call Recording // Shipvera AI & Buyer</span>
@@ -403,7 +418,8 @@
             <div class="modal-header">
                 <div>
                     <h3 class="modal-title">Outbound Voice AI Calling Station</h3>
-                    <p class="modal-subtitle">Dispatch an automated phone verification call via Bolna.ai and Sarvam AI telephony gateway.</p>
+                    <p class="modal-subtitle">Dispatch an automated phone verification call via Bolna.ai and Sarvam AI
+                        telephony gateway.</p>
                 </div>
                 <button class="modal-close-btn" onclick="closeLiveCallModal()" aria-label="Close modal">×</button>
             </div>
@@ -428,9 +444,11 @@
                     <label class="modal-label" for="lcmPhoneInput">Destination Mobile Number (E.164):</label>
                     <div class="lcm-phone-input-wrap">
                         <span class="lcm-phone-prefix">+91</span>
-                        <input type="tel" id="lcmPhoneInput" class="modal-input" placeholder="Enter 10-digit mobile number">
+                        <input type="tel" id="lcmPhoneInput" class="modal-input"
+                            placeholder="Enter 10-digit mobile number">
                     </div>
-                    <span class="lcm-helper">Enter your personal mobile number to receive and audit the live AI call.</span>
+                    <span class="lcm-helper">Enter your personal mobile number to receive and audit the live AI
+                        call.</span>
                 </div>
 
                 <div class="lcm-guardrails-box">
@@ -472,7 +490,8 @@
             <div class="modal-header">
                 <div>
                     <h3 class="modal-title">₹19 Trust Token Recovery</h3>
-                    <p class="modal-subtitle">Automated fallback for unanswered calls to eliminate forward & reverse courier loss.</p>
+                    <p class="modal-subtitle">Automated fallback for unanswered calls to eliminate forward & reverse
+                        courier loss.</p>
                 </div>
                 <button class="modal-close-btn" onclick="closeTrustLockModal()" aria-label="Close modal">×</button>
             </div>
@@ -483,7 +502,9 @@
                         <span class="tl-wa-verified">Meta Official WABA</span>
                     </div>
                     <div class="tl-wa-bubble">
-                        <p id="tlWaMessage">Hi Rahul, humne aapka ₹1,299 ka parcel dispatch karne ke liye call kiya tha par connect nahi hua. Parcel hold na ho isliye bas ₹19 ka chota token UPI karke apna address lock kar dein. Baaki ₹1,280 delivery pe hi dena hai!</p>
+                        <p id="tlWaMessage">Hi Rahul, humne aapka ₹1,299 ka parcel dispatch karne ke liye call kiya tha
+                            par connect nahi hua. Parcel hold na ho isliye bas ₹19 ka chota token UPI karke apna address
+                            lock kar dein. Baaki ₹1,280 delivery pe hi dena hai!</p>
                         <div class="tl-wa-button-preview">
                             <span>Pay ₹19 via UPI to Confirm</span>
                         </div>
@@ -510,6 +531,301 @@
         </div>
     </div>
 
-    <script src="dashboard.js?v=3.0"></script>
+    <!-- Modal 5: Render Cloud Backend Connection Configuration -->
+    <div class="dash-modal" id="backendConfigModal">
+        <div class="modal-backdrop" onclick="closeBackendConfigModal()"></div>
+        <div class="modal-window" style="max-width: 540px;">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title">Render Cloud Backend Connection</h3>
+                    <p class="modal-subtitle">Connect your Shipvera dashboard to your deployed Render backend for live
+                        order verification, Bolna Voice AI & Shopify sync.</p>
+                </div>
+                <button class="modal-close-btn" onclick="closeBackendConfigModal()" aria-label="Close modal">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="bcm-form-group">
+                    <label class="modal-label" for="backendUrlInput">Render Backend Service URL:</label>
+                    <div class="bcm-input-wrap">
+                        <input type="url" id="backendUrlInput" class="modal-input"
+                            placeholder="https://shipvera-backend.onrender.com" spellcheck="false" autocomplete="off">
+                        <button class="btn-bcm-test" id="btnTestBackend" onclick="testBackendConnection()">
+                            <span>Ping Health</span>
+                        </button>
+                    </div>
+                    <span class="bcm-hint">Default: <code>https://shipvera-backend.onrender.com</code> (or paste your
+                        custom Render URL).</span>
+                </div>
+
+                <!-- Live Ping Status Result Box -->
+                <div class="bcm-ping-result" id="backendPingResult" style="display: none;">
+                    <div class="bpr-header">
+                        <span class="bpr-badge" id="bprStatusBadge">Connected</span>
+                        <span class="bpr-latency" id="bprLatency">142ms</span>
+                    </div>
+                    <div class="bpr-details" id="bprDetails">
+                        <!-- Populated dynamically via /api/health -->
+                    </div>
+                </div>
+
+                <!-- Cold Start Warning Tip -->
+                <div class="bcm-coldstart-tip">
+                    <div class="bct-icon">💡</div>
+                    <div class="bct-text">
+                        <strong>Render Free Tier Cold-Start Note:</strong>
+                        <p>Render free web services spin down after 15 minutes of inactivity. If the backend is asleep,
+                            the first request may take <strong>30–50 seconds</strong> to wake up. Once awake, all voice
+                            triggers, sync & analytics respond in ~150ms.</p>
+                    </div>
+                </div>
+
+                <!-- Quick Presets -->
+                <div class="bcm-presets">
+                    <span class="bcm-presets-label">Quick Presets:</span>
+                    <button class="bcm-preset-btn"
+                        onclick="applyBackendPreset('https://shipvera-backend.onrender.com')">Render Cloud
+                        (Default)</button>
+                    <button class="bcm-preset-btn" onclick="applyBackendPreset('http://localhost:3000')">Localhost (Port
+                        3000)</button>
+                    <button class="bcm-preset-btn" onclick="applyBackendPreset(window.location.origin)">Current
+                        Origin</button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-modal btn-cancel" onclick="closeBackendConfigModal()">Cancel</button>
+                <button class="btn-modal btn-confirm" id="btnSaveBackend" onclick="saveBackendConfiguration()">
+                    <span>Save & Connect →</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 6: Shopify Store Webhook & API Connection -->
+    <div class="dash-modal" id="shopifyModal">
+        <div class="modal-backdrop" onclick="closeShopifyModal()"></div>
+        <div class="modal-window" style="max-width: 580px;">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title">Shopify Store Real-Time Integration</h3>
+                    <p class="modal-subtitle">Auto-ingests new COD checkouts within 60 seconds and auto-cancels fake orders directly in your Shopify Admin.</p>
+                </div>
+                <button class="modal-close-btn" onclick="closeShopifyModal()" aria-label="Close modal">×</button>
+            </div>
+            <div class="modal-body">
+                <!-- 1-Click Auto-Detect Magic Connect Banner -->
+                <div class="oneclick-detect-banner">
+                    <div class="odb-top">
+                        <div class="odb-icon-wrap">
+                            <img src="https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/shopify.svg" alt="Shopify" width="22" height="22">
+                        </div>
+                        <div class="odb-text">
+                            <span class="odb-detected-badge">⚡ Auto-Detected Active Store</span>
+                            <div class="odb-store-name" id="odbStoreName">Snitch Apparel & Streetwear</div>
+                            <span class="odb-store-domain" id="odbStoreDomain">snitch-streetwear.myshopify.com</span>
+                        </div>
+                    </div>
+                    <p class="odb-pitch">Is this your store? 1-Click connect instantly configures live checkout sync, 60s Hinglish Voice AI calls, and COD fraud shield — zero copy-pasting required!</p>
+                    <button class="btn-oneclick-connect" id="btnOneClickShopify" onclick="executeOneClickShopify()">
+                        <span id="btnOneClickShopifyText">⚡ Yes, Connect in 1-Click (Boom!) →</span>
+                    </button>
+                    <div id="oneClickShopifyProgress" class="oc-progress-wrap" style="display: none;">
+                        <div class="oc-progress-bar"><div class="oc-progress-fill" id="ocShopifyFill"></div></div>
+                        <span class="oc-progress-status" id="ocShopifyStatus">Connecting to store...</span>
+                    </div>
+                </div>
+
+                <!-- Toggle for Manual / Custom Store Connection -->
+                <div class="manual-accordion-header" onclick="toggleManualShopifySetup()">
+                    <span id="manualShopifyToggleText">⚙ Connect Different Store / Manual Webhook (Advanced) ▼</span>
+                </div>
+
+                <div id="manualShopifySection" style="display: none; margin-top: 14px;">
+                    <!-- Step 1: Webhook URL with 1-click Copy -->
+                    <div class="bcm-form-group">
+                        <label class="modal-label">1. Official Shopify Orders Webhook URL:</label>
+                        <div class="bcm-input-wrap">
+                            <input type="text" id="shopifyWebhookInput" class="modal-input" readonly value="https://shipvera-backend.onrender.com/api/webhooks/shopify/orders-create" style="background: #F8FAFC; font-family: monospace; font-size: 0.8rem; color: #0F172A;">
+                            <button class="btn-bcm-test" id="btnCopyShopifyWebhook" onclick="copyShopifyWebhookUrl()">
+                                <span>Copy URL</span>
+                            </button>
+                        </div>
+                        <span class="bcm-hint">Shopify Admin → <strong>Settings</strong> → <strong>Notifications</strong> → <strong>Webhooks</strong> → Create Webhook: <strong>Order creation</strong> (Format: JSON).</span>
+                    </div>
+
+                    <!-- Step 2: Store Domain -->
+                    <div class="bcm-form-group" style="margin-top: 14px;">
+                        <label class="modal-label" for="shopifyDomainInput">2. Custom Store Domain:</label>
+                        <input type="text" id="shopifyDomainInput" class="modal-input" placeholder="e.g. brand.myshopify.com" spellcheck="false">
+                        <span class="bcm-hint">Used to identify incoming orders and associate them with this merchant workspace.</span>
+                    </div>
+
+                    <!-- Step 3: Shopify Admin API Access Token -->
+                    <div class="bcm-form-group" style="margin-top: 14px;">
+                        <label class="modal-label" for="shopifyTokenInput">3. Admin API Access Token (Optional):</label>
+                        <input type="password" id="shopifyTokenInput" class="modal-input" placeholder="shpat_xxxxxxxxxxxxxxxxxxxxxxxxx" spellcheck="false">
+                        <span class="bcm-hint">Shopify Admin → <strong>Apps & Sales Channels</strong> → <strong>Develop Apps</strong>.</span>
+                    </div>
+
+                    <button class="btn-modal btn-confirm" id="btnSaveShopify" onclick="saveShopifyConnection()" style="width: 100%; margin-top: 14px;">
+                        <span>Save Custom Store Connection →</span>
+                    </button>
+                </div>
+
+                <!-- Status alert box -->
+                <div id="shopifyConnectionStatus" style="display: none; margin-top: 14px; padding: 12px; border-radius: 8px; font-size: 0.82rem;"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-modal btn-cancel" onclick="closeShopifyModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 7: Courier & Logistics Partner Integration Hub -->
+    <div class="dash-modal" id="logisticsModal">
+        <div class="modal-backdrop" onclick="closeLogisticsModal()"></div>
+        <div class="modal-window" style="max-width: 620px;">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title">Logistics Partner Integration Hub</h3>
+                    <p class="modal-subtitle">Automatically push verified rooftop landmarks to your courier AWB shipping label before dispatch.</p>
+                </div>
+                <button class="modal-close-btn" onclick="closeLogisticsModal()" aria-label="Close modal">×</button>
+            </div>
+            <div class="modal-body">
+                <!-- 1-Click Smart Courier Sync Banner -->
+                <div class="oneclick-detect-banner" style="background: linear-gradient(135deg, #EFF6FF 0%, #FFFFFF 100%); border-color: #93C5FD;">
+                    <div class="odb-top">
+                        <div class="odb-icon-wrap" style="background: #DBEAFE; border-color: #BFDBFE;">
+                            <span style="font-size: 1.35rem;">🚀</span>
+                        </div>
+                        <div class="odb-text">
+                            <span class="odb-detected-badge" style="background: #DBEAFE; color: #1E40AF;">⚡ 1-Click Smart Courier Sync</span>
+                            <div class="odb-store-name">Zero-Setup Courier Label Overwrite</div>
+                            <span class="odb-store-domain">Shiprocket • Delhivery • NimbusPost • Bluedart</span>
+                        </div>
+                    </div>
+                    <p class="odb-pitch">Your courier aggregator is already connected to Shopify. Shipvera automatically rewrites verified rooftop landmarks directly onto Shopify orders, so your courier shipping labels print with verified landmarks automatically. <strong>Zero courier API keys required!</strong></p>
+                    <button class="btn-oneclick-connect" id="btnOneClickLogistics" onclick="executeOneClickLogistics()" style="background: #2563EB;">
+                        <span id="btnOneClickLogisticsText">⚡ Activate 1-Click Courier Sync (Boom!) →</span>
+                    </button>
+                    <div id="oneClickLogisticsProgress" class="oc-progress-wrap" style="display: none;">
+                        <div class="oc-progress-bar"><div class="oc-progress-fill" id="ocLogisticsFill" style="background: #2563EB;"></div></div>
+                        <span class="oc-progress-status" id="ocLogisticsStatus" style="color: #2563EB;">Activating courier hooks...</span>
+                    </div>
+                </div>
+
+                <!-- Toggle for Manual / Direct Courier API Connection -->
+                <div class="manual-accordion-header" onclick="toggleManualLogisticsSetup()">
+                    <span id="manualLogisticsToggleText">⚙ Connect Direct Courier API Token (For Custom Warehouses) ▼</span>
+                </div>
+
+                <div id="manualLogisticsSection" style="display: none; margin-top: 14px;">
+                    <!-- Provider Selector Cards (Shiprocket, Delhivery, NimbusPost, Shopify Native) -->
+                    <label class="modal-label" style="margin-bottom: 8px; display: block;">Select Your Primary Dispatch Provider:</label>
+                    <div class="logistics-provider-grid">
+                        <div class="lp-card selected" id="lpCardShiprocket" onclick="selectLogisticsProvider('shiprocket')">
+                            <div class="lp-card-header">
+                                <span class="lp-logo">🚀</span>
+                                <span class="lp-badge recommended">Most Popular</span>
+                            </div>
+                            <div class="lp-title">Shiprocket</div>
+                            <div class="lp-desc">Auto-updates order address & landmark sticker via Shiprocket API</div>
+                        </div>
+
+                        <div class="lp-card" id="lpCardDelhivery" onclick="selectLogisticsProvider('delhivery')">
+                            <div class="lp-card-header">
+                                <span class="lp-logo">🚚</span>
+                                <span class="lp-badge">Direct API</span>
+                            </div>
+                            <div class="lp-title">Delhivery Direct</div>
+                            <div class="lp-desc">Direct warehouse manifest & AWB sticker overwrite before pickup</div>
+                        </div>
+
+                        <div class="lp-card" id="lpCardNimbuspost" onclick="selectLogisticsProvider('nimbuspost')">
+                            <div class="lp-card-header">
+                                <span class="lp-logo">⚡</span>
+                                <span class="lp-badge">Multi-Courier</span>
+                            </div>
+                            <div class="lp-title">NimbusPost</div>
+                            <div class="lp-desc">Instant shipping label synchronization across Nimbus shipping engine</div>
+                        </div>
+
+                        <div class="lp-card" id="lpCardShopifyNative" onclick="selectLogisticsProvider('shopify_native')">
+                            <div class="lp-card-header">
+                                <span class="lp-logo">🔄</span>
+                                <span class="lp-badge no-key">Zero Extra API Key</span>
+                            </div>
+                            <div class="lp-title">Shopify Native Sync</div>
+                            <div class="lp-desc">Updates Shopify order address directly; auto-inherits on all courier apps</div>
+                        </div>
+                    </div>
+
+                    <!-- Dynamic Credentials Fields based on selected provider -->
+                    <div id="lpCredentialsArea" style="margin-top: 18px;">
+                        <!-- Shiprocket Fields -->
+                        <div id="lpFieldsShiprocket">
+                            <div class="bcm-form-group">
+                                <label class="modal-label" for="srEmailInput">Shiprocket Account Email:</label>
+                                <input type="email" id="srEmailInput" class="modal-input" placeholder="e.g. shipping@brand.com" spellcheck="false">
+                            </div>
+                            <div class="bcm-form-group" style="margin-top: 10px;">
+                                <label class="modal-label" for="srTokenInput">Shiprocket API Token / Password (Optional):</label>
+                                <input type="password" id="srTokenInput" class="modal-input" placeholder="Leave empty for auto-generated token or paste custom token" spellcheck="false">
+                                <span class="bcm-hint">Shiprocket Panel → <strong>API</strong> → <strong>Configure</strong> → API Token.</span>
+                            </div>
+                        </div>
+
+                        <!-- Delhivery Fields -->
+                        <div id="lpFieldsDelhivery" style="display: none;">
+                            <div class="bcm-form-group">
+                                <label class="modal-label" for="delhiveryClientIdInput">Delhivery Client Name / ID:</label>
+                                <input type="text" id="delhiveryClientIdInput" class="modal-input" placeholder="e.g. SNITCH_SURAT_HUB" spellcheck="false">
+                            </div>
+                            <div class="bcm-form-group" style="margin-top: 10px;">
+                                <label class="modal-label" for="delhiveryTokenInput">Delhivery Unified API Token:</label>
+                                <input type="password" id="delhiveryTokenInput" class="modal-input" placeholder="Paste Delhivery token" spellcheck="false">
+                                <span class="bcm-hint">Delhivery Client Portal → <strong>API & Webhooks</strong>.</span>
+                            </div>
+                        </div>
+
+                        <!-- NimbusPost Fields -->
+                        <div id="lpFieldsNimbuspost" style="display: none;">
+                            <div class="bcm-form-group">
+                                <label class="modal-label" for="nimbusEmailInput">NimbusPost Registered Email:</label>
+                                <input type="email" id="nimbusEmailInput" class="modal-input" placeholder="e.g. orders@brand.com" spellcheck="false">
+                            </div>
+                            <div class="bcm-form-group" style="margin-top: 10px;">
+                                <label class="modal-label" for="nimbusKeyInput">NimbusPost API Key:</label>
+                                <input type="password" id="nimbusKeyInput" class="modal-input" placeholder="Paste Nimbus API Key" spellcheck="false">
+                                <span class="bcm-hint">Nimbus Dashboard → <strong>API Settings</strong> → Generate Key.</span>
+                            </div>
+                        </div>
+
+                        <!-- Shopify Native Sync Fields -->
+                        <div id="lpFieldsShopifyNative" style="display: none;">
+                            <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 8px; padding: 14px; color: #166534; font-size: 0.84rem; line-height: 1.5;">
+                                <strong>No external API key needed!</strong><br>
+                                Shipvera will directly update the <code>shipping_address.address2</code> and order notes in your connected Shopify store. Whichever app you use (Shiprocket, Delhivery, Bluedart, or Shipway), it will automatically import the modified verified address and print it on the label!
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="btn-modal btn-confirm" id="btnSaveLogistics" onclick="saveLogisticsConnection()" style="width: 100%; margin-top: 14px;">
+                        <span>Save Custom Logistics Connection →</span>
+                    </button>
+                </div>
+
+                <!-- Status alert box -->
+                <div id="logisticsConnectionStatus" style="display: none; margin-top: 14px; padding: 12px; border-radius: 8px; font-size: 0.82rem;"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-modal btn-cancel" onclick="closeLogisticsModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="config.js?v=3.1"></script>
+    <script src="dashboard.js?v=3.1"></script>
 </body>
+
 </html>
