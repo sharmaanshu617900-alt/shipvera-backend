@@ -126,6 +126,11 @@ class QueueEngine {
       return;
     }
 
+    if (!seller) {
+      db.updateJob(job.id, { status: 'failed', error: 'Seller not found for order' });
+      return;
+    }
+
     // Check wallet balance
     if (seller.wallet_balance_inr < 6.00) {
       db.updateOrder(order.id, { verification_status: 'payment_required' });
@@ -138,11 +143,23 @@ class QueueEngine {
     db.updateJob(job.id, { status: 'processing', attempts: (job.attempts || 0) + 1 });
     console.log(`[QUEUE EXEC] Firing outbound voice interrogation for Order ${order.external_order_id} (Attempt ${job.attempts + 1})`);
 
-    const callResult = await triggerOutboundCall({
-      order,
-      seller,
-      live: false // In automated worker, dispatch or simulate depending on env
-    });
+    // Automated path is LIVE by default. triggerOutboundCall only
+    // simulates when SHIPVERA_ALLOW_SIMULATED_CALLS=true is set
+    // explicitly for local testing; otherwise a live Bolna call is placed.
+    let callResult;
+    try {
+      callResult = await triggerOutboundCall({ order, seller, live: true });
+    } catch (callErr) {
+      db.updateOrder(order.id, { verification_status: 'call_failed' });
+      db.updateJob(job.id, { status: 'failed', error: callErr.message });
+      return;
+    }
+    if (callResult && callResult.simulated) {
+      // A simulated result must never be treated as a buyer outcome.
+      db.updateOrder(order.id, { verification_status: 'call_failed' });
+      db.updateJob(job.id, { status: 'failed', error: 'Simulated call result received in automated worker; no buyer outcome recorded.' });
+      return;
+    }
 
     // Handle outcome
     if (callResult.intent === 'VERIFIED_GENUINE') {
@@ -173,10 +190,16 @@ class QueueEngine {
         });
         console.log(`[QUEUE RETRY] Order ${order.external_order_id} unanswered. Retry 1 queued for ${retryAt}`);
       } else {
-        // Fallback to Feature 4: ₹19 Trust Lock on WhatsApp
-        console.log(`[QUEUE FALLBACK] Order ${order.external_order_id} exhausted call retries. Firing ₹19 WhatsApp Trust Lock.`);
-        generateTrustLock({ order, seller });
-        db.updateJob(job.id, { status: 'completed', result: 'TRUST_LOCK_TRIGGERED' });
+        // Fallback to Feature 4: 19 UPI Trust Lock on WhatsApp.
+        // Await it: if WhatsApp/Razorpay is not configured, the job
+        // must fail visibly instead of being marked completed.
+        console.log(`[QUEUE FALLBACK] Order ${order.external_order_id} exhausted call retries. Firing 19 WhatsApp Trust Lock.`);
+        const trustLockResult = await generateTrustLock({ order, seller });
+        if (trustLockResult && trustLockResult.success) {
+          db.updateJob(job.id, { status: 'completed', result: 'TRUST_LOCK_TRIGGERED' });
+        } else {
+          db.updateJob(job.id, { status: 'failed', error: (trustLockResult && trustLockResult.reason) || 'Trust Lock could not be sent.' });
+        }
       }
     }
   }

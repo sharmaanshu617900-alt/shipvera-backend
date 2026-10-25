@@ -17,15 +17,14 @@ async function sendWhatsAppTrustLock({ buyerPhone, buyerName, codAmount, tokenAm
   let phone = (buyerPhone || '').replace(/[^\d]/g, '');
   if (phone.length === 10) phone = '91' + phone;
 
-  // If no live WhatsApp API credentials are set, run in structured Sandbox Log mode
+  // If no live WhatsApp API credentials are set, fail visibly.
+  // Never return success:true when no message was actually sent.
   if (!token || !phoneNumberId || token.includes('demo')) {
-    console.log(`[WHATSAPP DISPATCH - SANDBOX MODE]`);
-    console.log(`   To: +${phone} (${buyerName})`);
-    console.log(`   Message: "Hi ${buyerName}, aapka ₹${codAmount} ka parcel hold na ho isliye bas ₹${tokenAmount} ka chota token UPI karke address lock kar dein. Baaki delivery par dena!"`);
-    console.log(`   Payment Link: ${paymentUrl}`);
+    console.warn('[WHATSAPP DISPATCH - NOT CONFIGURED] No live WhatsApp credentials; message was NOT sent.');
     return {
-      success: true,
-      mode: 'sandbox',
+      success: false,
+      mode: 'not_configured',
+      reason: 'WHATSAPP_ACCESS_TOKEN and WHATSAPP_PHONE_NUMBER_ID must be set. No WhatsApp message was sent.',
       recipient: phone,
       paymentUrl
     };

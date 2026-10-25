@@ -179,7 +179,7 @@ router.post('/login', async (req, res) => {
  * List available seller workspaces for store switcher
  * Enforces strict multi-tenant isolation:
  * - A logged-in merchant only sees workspaces registered to their email/account.
- * - Always includes the designated Read-Only Demo Sandbox (Snitch) for interactive testing.
+ * - Lists only sellers that were actually created; no demo store is injected.
  * - Prevents cross-tenant account switching and information leakage.
  */
 router.get('/sellers', async (req, res) => {
@@ -226,26 +226,8 @@ router.get('/sellers', async (req, res) => {
       }
     }
 
-    // 2. Include designated Demo Sandbox store for evaluation
-    const demoStore = allSellers.find(s => s.id === 'sel_d2c_enterprise_001') || {
-      id: 'sel_d2c_enterprise_001',
-      brand_name: 'Snitch Apparel (Demo Sandbox)',
-      shopify_domain: 'snitch-streetwear.myshopify.com',
-      wallet_balance_inr: 0.00
-    };
-
-    if (!seen.has(demoStore.id)) {
-      resultSellers.push({
-        id: demoStore.id,
-        brand_name: 'Snitch Apparel (Demo Sandbox)',
-        name: 'Demo Merchant',
-        email: 'demo@snitchcloth.in',
-        phone: '+919876500001',
-        shopify_domain: demoStore.shopify_domain,
-        wallet_balance_inr: demoStore.wallet_balance_inr,
-        is_demo: true
-      });
-    }
+    // No demo store is injected here. A fresh install lists only
+    // sellers that were actually created.
 
     return res.status(200).json({ success: true, sellers: resultSellers });
   } catch (err) {
@@ -264,8 +246,10 @@ router.get('/sellers', async (req, res) => {
 router.post('/connect-shopify', async (req, res) => {
   try {
     const { seller_id, shopify_domain, shopify_access_token } = req.body || {};
-    const defaultSeller = db.getSeller();
-    const sellerId = seller_id || req.headers['x-seller-id'] || defaultSeller?.id;
+    const sellerId = seller_id || req.headers['x-seller-id'] || null;
+    if (!sellerId) {
+      return res.status(404).json({ error: 'Seller not found. Provide seller_id; no fallback seller is used.' });
+    }
 
     if (!sellerId) {
       return res.status(400).json({ error: 'Active seller ID is required.' });
@@ -409,7 +393,10 @@ router.post('/connect-shopify', async (req, res) => {
 router.get('/shopify/install', (req, res) => {
   try {
     const shop = (req.query.shop || '').trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
-    const sellerId = req.query.seller_id || req.headers['x-seller-id'] || 'sel_d2c_enterprise_001';
+    const sellerId = req.query.seller_id || req.headers['x-seller-id'] || null;
+    if (!sellerId) {
+      return res.status(400).send('Missing seller_id. Provide ?seller_id= for the seller to link this Shopify store to.');
+    }
     const apiKey = process.env.SHOPIFY_API_KEY;
 
     if (!shop) {
@@ -448,7 +435,7 @@ router.get('/shopify/callback', async (req, res) => {
       return res.status(400).send('Invalid OAuth callback parameters (missing shop or code).');
     }
 
-    let sellerId = 'sel_d2c_enterprise_001';
+    let sellerId = null;
     if (state) {
       try {
         const decoded = JSON.parse(Buffer.from(state, 'base64').toString('utf-8'));
@@ -471,7 +458,10 @@ router.get('/shopify/callback', async (req, res) => {
     }
 
     const accessToken = exchangeResult.accessToken;
-    const seller = db.getSeller(sellerId) || db.getSeller();
+    const seller = (sellerId ? db.getSeller(sellerId) : null) || db.getSellerByShopifyDomain(cleanDomain);
+    if (!seller) {
+      return res.status(400).send('Seller not found for this Shopify OAuth callback. Create the seller first, then retry OAuth with that seller_id.');
+    }
 
     seller.shopify_domain = cleanDomain;
     seller.shopify_access_token = accessToken;
@@ -539,8 +529,10 @@ router.get('/shopify/callback', async (req, res) => {
 router.post('/connect-logistics', async (req, res) => {
   try {
     const { seller_id, provider = 'shiprocket', token, email, password, client_id } = req.body || {};
-    const defaultSeller = db.getSeller();
-    const sellerId = seller_id || req.headers['x-seller-id'] || defaultSeller?.id;
+    const sellerId = seller_id || req.headers['x-seller-id'] || null;
+    if (!sellerId) {
+      return res.status(404).json({ error: 'Seller not found. Provide seller_id; no fallback seller is used.' });
+    }
 
     if (!sellerId) {
       return res.status(400).json({ error: 'Active seller ID is required.' });

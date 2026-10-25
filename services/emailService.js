@@ -41,8 +41,8 @@ async function sendDailySavingsDigest({ toEmail, sellerBrand, totalOrders, fakeB
   `;
 
   if (!apiKey) {
-    console.log(`[RESEND DIGEST - SIMULATION] Email to ${toEmail} | Saved: ₹${moneySavedInr} | Blocked: ${fakeBlocked}`);
-    return { success: true, mode: 'simulation' };
+    console.warn('[RESEND DIGEST - NOT CONFIGURED] No RESEND_API_KEY; email was NOT sent.');
+    return { success: false, mode: 'not_configured', reason: 'RESEND_API_KEY is required. No email was sent.' };
   }
 
   const payload = {

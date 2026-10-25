@@ -16,10 +16,11 @@ function isLiveShiprocketToken(token) {
 
 async function updateShiprocketCustomAddress({ token, externalOrderId, deliveryAddress, deliveryAddress2, landmark, city, pincode }) {
   if (!isLiveShiprocketToken(token)) {
-    console.log(`[SHIPROCKET SYNC - SANDBOX MODE] Order ${externalOrderId} updated with courier landmark: "${landmark}"`);
+    console.warn(`[SHIPROCKET SYNC - NOT CONFIGURED] Order ${externalOrderId} was NOT synced to Shiprocket; no live token.`);
     return {
-      success: true,
-      mode: 'sandbox',
+      success: false,
+      mode: 'not_configured',
+      reason: 'Shiprocket token is required. No Shiprocket update was made.',
       updated: { deliveryAddress, deliveryAddress2, landmark, city, pincode }
     };
   }
@@ -69,9 +70,9 @@ async function updateShiprocketCustomAddress({ token, externalOrderId, deliveryA
 async function shiprocketLogin({ email, password }) {
   if (!email || !password || email.includes('demo')) {
     return {
-      success: true,
-      mode: 'sandbox',
-      token: `sr_token_${Buffer.from(email || 'demo').toString('base64').slice(0, 16)}`
+      success: false,
+      mode: 'not_configured',
+      reason: 'Shiprocket email and password are required. No token was issued.'
     };
   }
 
@@ -114,7 +115,7 @@ async function shiprocketLogin({ email, password }) {
  */
 async function fetchShiprocketOrders({ token, limit = 10 }) {
   if (!token || token.includes('demo')) {
-    return { success: true, mode: 'sandbox', orders: [] };
+    return { success: false, mode: 'not_configured', reason: 'Shiprocket token is required. No orders were fetched.', orders: [] };
   }
 
   return new Promise((resolve) => {
