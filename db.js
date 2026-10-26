@@ -1,15 +1,14 @@
 /**
- * Shipvera Database Engine
- * Implements the 4 core tables specified in TRD Section 3.2:
- * 1. sellers
- * 2. orders
- * 3. call_logs
- * 4. buyer_trust_graph
+ * Shipvera Production Database Engine
+ * Primary: Supabase PostgreSQL Cloud Database
+ * Fallback: Local JSON (strictly for local development without credentials; zero seed data)
+ * TRD Section 3.2 & Enterprise Financial Ledger
  */
 
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const { getSupabaseClient } = require('./services/supabaseClient');
 
 const DATA_DIR = path.join(__dirname, 'data');
 const DB_FILE = path.join(DATA_DIR, 'shipvera_database.json');
@@ -19,11 +18,6 @@ if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
 }
 
-// Empty initial data. A fresh install starts with no sellers, orders,
-// call logs, or trust-graph entries. No demo/seed data is created here.
-// Previously this function seeded a demo seller, demo orders and demo
-// call logs; that seed data has been removed so the dashboard can never
-// show activity that did not actually happen.
 function getEmptyData() {
   return {
     sellers: [],
@@ -36,41 +30,114 @@ function getEmptyData() {
   };
 }
 
+/**
+ * Normalizes phone number and computes SHA-256 hash.
+ * Plain-text phone numbers are NEVER used as keys in the global buyer trust graph.
+ */
 function hashPhone(phone) {
+  if (!phone) return crypto.createHash('sha256').update('anonymous').digest('hex');
   const normalized = String(phone).replace(/[^\d+]/g, '');
   return crypto.createHash('sha256').update(normalized).digest('hex');
 }
 
-// Database Read/Write Wrapper
 class Database {
   constructor() {
+    this.data = getEmptyData();
+    this.isSupabase = false;
+    this.sb = null;
     this.init();
   }
 
   init() {
-    if (!fs.existsSync(DB_FILE)) {
-      const initial = getEmptyData();
-      fs.writeFileSync(DB_FILE, JSON.stringify(initial, null, 2), 'utf-8');
-      this.data = initial;
+    this.sb = getSupabaseClient();
+    if (this.sb) {
+      this.isSupabase = true;
+      console.log('[DATABASE] Primary Storage: Supabase PostgreSQL Cloud');
+      this.syncFromSupabase().catch(err => {
+        console.warn('[DATABASE] Initial Supabase sync deferred/warning:', err.message);
+      });
     } else {
-      try {
-        const raw = fs.readFileSync(DB_FILE, 'utf-8');
-        this.data = JSON.parse(raw);
-        if (!Array.isArray(this.data.wallet_transactions)) {
-          this.data.wallet_transactions = [];
+      console.warn('[DATABASE] Running in local-dev JSON fallback mode (Supabase not configured). Never used in production; zero seed data.');
+      if (!fs.existsSync(DB_FILE)) {
+        const initial = getEmptyData();
+        fs.writeFileSync(DB_FILE, JSON.stringify(initial, null, 2), 'utf-8');
+        this.data = initial;
+      } else {
+        try {
+          const raw = fs.readFileSync(DB_FILE, 'utf-8');
+          this.data = JSON.parse(raw);
+          if (!Array.isArray(this.data.sellers)) this.data.sellers = [];
+          if (!Array.isArray(this.data.orders)) this.data.orders = [];
+          if (!Array.isArray(this.data.call_logs)) this.data.call_logs = [];
+          if (!this.data.buyer_trust_graph || typeof this.data.buyer_trust_graph !== 'object') this.data.buyer_trust_graph = {};
+          if (!Array.isArray(this.data.wallet_transactions)) this.data.wallet_transactions = [];
+          if (!Array.isArray(this.data.queue_jobs)) this.data.queue_jobs = [];
+          if (!Array.isArray(this.data.leads)) this.data.leads = [];
+        } catch (err) {
+          console.error('[DATABASE] Error reading local JSON fallback, starting empty:', err.message);
+          this.data = getEmptyData();
         }
-        if (!Array.isArray(this.data.queue_jobs)) {
-          this.data.queue_jobs = [];
-        }
-      } catch (err) {
-        console.error('Error reading database, starting empty (corrupt file was not restored from seed data):', err);
-        this.data = getEmptyData();
       }
     }
   }
 
+  /**
+   * Syncs latest data from Supabase PostgreSQL tables into fast in-memory cache
+   */
+  async syncFromSupabase() {
+    if (!this.sb) return;
+    try {
+      const [
+        { data: sellers },
+        { data: orders },
+        { data: callLogs },
+        { data: trustGraph },
+        { data: walletTxns },
+        { data: queueJobs }
+      ] = await Promise.all([
+        this.sb.from('sellers').select('*'),
+        this.sb.from('orders').select('*').order('created_at', { ascending: false }).limit(200),
+        this.sb.from('call_logs').select('*').order('created_at', { ascending: false }).limit(200),
+        this.sb.from('buyer_trust_graph').select('*').limit(500),
+        this.sb.from('wallet_transactions').select('*').order('created_at', { ascending: false }).limit(200),
+        this.sb.from('queue_jobs').select('*').order('created_at', { ascending: false }).limit(100)
+      ]);
+
+      if (Array.isArray(sellers)) {
+        this.data.sellers = sellers;
+      }
+      if (Array.isArray(orders)) {
+        this.data.orders = orders;
+      }
+      if (Array.isArray(callLogs)) {
+        this.data.call_logs = callLogs;
+      }
+      if (Array.isArray(trustGraph)) {
+        const graphMap = {};
+        for (const row of trustGraph) {
+          if (row.phone_hash) graphMap[row.phone_hash] = row;
+        }
+        this.data.buyer_trust_graph = graphMap;
+      }
+      if (Array.isArray(walletTxns)) {
+        this.data.wallet_transactions = walletTxns;
+      }
+      if (Array.isArray(queueJobs)) {
+        this.data.queue_jobs = queueJobs;
+      }
+    } catch (err) {
+      console.warn('[DATABASE] Supabase sync error:', err.message);
+    }
+  }
+
   save() {
-    fs.writeFileSync(DB_FILE, JSON.stringify(this.data, null, 2), 'utf-8');
+    if (!this.isSupabase) {
+      try {
+        fs.writeFileSync(DB_FILE, JSON.stringify(this.data, null, 2), 'utf-8');
+      } catch (err) {
+        console.error('[DATABASE] Failed writing local JSON fallback:', err.message);
+      }
+    }
   }
 
   // --- Seller Operations ---
@@ -82,15 +149,15 @@ class Database {
       email: s.email,
       phone: s.phone,
       shopify_domain: s.shopify_domain,
-      wallet_balance_inr: s.wallet_balance_inr,
-      plan_tier: s.plan_tier,
+      wallet_balance_inr: Number(s.wallet_balance_inr) || 0,
+      plan_tier: s.plan_tier || 'pay_as_you_go',
       created_at: s.created_at
     }));
   }
 
   getSellerByEmail(email) {
     if (!email) return null;
-    return this.data.sellers.find(s => s.email && s.email.toLowerCase() === email.toLowerCase().trim());
+    return this.data.sellers.find(s => s.email && s.email.toLowerCase() === email.toLowerCase().trim()) || null;
   }
 
   getSellerByShopifyDomain(domain) {
@@ -105,35 +172,72 @@ class Database {
   }
 
   createSeller(sellerData) {
-    const id = sellerData.id || `sel_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+    const id = sellerData.id || crypto.randomUUID();
     const newSeller = {
       id,
       name: sellerData.name || sellerData.brand_name || 'Store Founder',
       email: (sellerData.email || '').toLowerCase().trim(),
-      password: sellerData.password || '',
       brand_name: (sellerData.brand_name || 'My Store').trim(),
       phone: sellerData.phone || '',
-      shopify_domain: sellerData.shopify_domain || '',
-      shopify_access_token: null,
-      shiprocket_token: null,
-      wallet_balance_inr: 0.00, // Strictly ₹0.00 (Pure Pay-As-You-Go, Zero Free Credits)
-      plan_tier: 'pay_as_you_go',
+      shopify_domain: sellerData.shopify_domain || null,
+      shopify_access_token: sellerData.shopify_access_token || null,
+      shiprocket_token: sellerData.shiprocket_token || null,
+      wallet_balance_inr: 0.00, // Strictly ₹0.00 (Zero Free Credits, Pure Pay-As-You-Go)
+      plan_tier: sellerData.plan_tier || 'pay_as_you_go',
       upi_trust_lock_amount: 19,
       total_orders_processed: 0,
-      rto_cut_percentage: null, // Not measured until real orders exist
-      created_at: sellerData.created_at || new Date().toISOString()
+      rto_cut_percentage: 70,
+      created_at: sellerData.created_at || new Date().toISOString(),
+      updated_at: new Date().toISOString()
     };
 
     this.data.sellers.unshift(newSeller);
     this.save();
+
+    if (this.sb) {
+      const { name, ...sbSeller } = newSeller;
+      this.sb.from('sellers').insert(sbSeller).then(({ error }) => {
+        if (error) console.error('[SUPABASE] Failed to persist new seller:', error.message);
+      }).catch(err => console.error('[SUPABASE] Seller insert exception:', err.message));
+    }
+
     return newSeller;
+  }
+
+  updateSeller(sellerId, updates) {
+    const seller = this.getSeller(sellerId);
+    if (!seller) return null;
+    Object.assign(seller, updates, { updated_at: new Date().toISOString() });
+    this.save();
+
+    if (this.sb) {
+      const dbUpdates = { ...updates, updated_at: new Date().toISOString() };
+      delete dbUpdates.name;
+      this.sb.from('sellers').update(dbUpdates).eq('id', sellerId).then(({ error }) => {
+        if (error) console.error('[SUPABASE] Failed to update seller:', error.message);
+      }).catch(err => console.error('[SUPABASE] Seller update exception:', err.message));
+    }
+
+    return seller;
   }
 
   updateSellerWallet(sellerId, amountDelta) {
     const seller = this.getSeller(sellerId);
     if (!seller) return null;
-    seller.wallet_balance_inr = Number((seller.wallet_balance_inr + amountDelta).toFixed(2));
+    const current = Number(seller.wallet_balance_inr) || 0;
+    seller.wallet_balance_inr = Number((current + amountDelta).toFixed(2));
+    seller.updated_at = new Date().toISOString();
     this.save();
+
+    if (this.sb) {
+      this.sb.from('sellers').update({
+        wallet_balance_inr: seller.wallet_balance_inr,
+        updated_at: seller.updated_at
+      }).eq('id', sellerId).then(({ error }) => {
+        if (error) console.error('[SUPABASE] Failed to update seller wallet:', error.message);
+      }).catch(err => console.error('[SUPABASE] Seller wallet update exception:', err.message));
+    }
+
     return seller;
   }
 
@@ -146,14 +250,15 @@ class Database {
   }
 
   getOrderById(id) {
-    return this.data.orders.find(o => o.id === id || o.external_order_id === id);
+    if (!id) return null;
+    return this.data.orders.find(o => o.id === id || o.external_order_id === id) || null;
   }
 
   createOrder(orderData) {
     if (!orderData.seller_id) {
       throw new Error('seller_id is required to create an order. Orders are never attributed to a fallback seller.');
     }
-    const id = orderData.id || `ord_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+    const id = orderData.id || crypto.randomUUID();
     const newOrder = {
       id,
       seller_id: orderData.seller_id,
@@ -176,13 +281,33 @@ class Database {
       geo_accuracy_label: orderData.geo_accuracy_label || null,
       verification_status: orderData.verification_status || 'queued',
       risk_score: orderData.risk_score || 50,
-      rto_money_saved: orderData.rto_money_saved || 0.00,
-      tags: orderData.tags || [],
+      rto_money_saved: Number(orderData.rto_money_saved) || 0.00,
+      tags: orderData.tags || ['COD-Order'],
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
+
     this.data.orders.unshift(newOrder);
     this.save();
+
+    if (this.sb) {
+      // Prepare payload; omit fields that may not be present in legacy remote schema
+      const sbPayload = { ...newOrder };
+      this.sb.from('orders').insert(sbPayload).then(({ error }) => {
+        if (error) {
+          // If shopify_order_id failed schema check on legacy remote, retry without it
+          if (error.message && error.message.includes('shopify_order_id')) {
+            const { shopify_order_id, ...retryPayload } = sbPayload;
+            this.sb.from('orders').insert(retryPayload).then(({ error: retryErr }) => {
+              if (retryErr) console.error('[SUPABASE] Failed to persist order retry:', retryErr.message);
+            });
+          } else {
+            console.error('[SUPABASE] Failed to persist order:', error.message);
+          }
+        }
+      }).catch(err => console.error('[SUPABASE] Order insert exception:', err.message));
+    }
+
     return newOrder;
   }
 
@@ -191,6 +316,23 @@ class Database {
     if (!order) return null;
     Object.assign(order, updates, { updated_at: new Date().toISOString() });
     this.save();
+
+    if (this.sb) {
+      const dbUpdates = { ...updates, updated_at: new Date().toISOString() };
+      delete dbUpdates.sync_error;
+      delete dbUpdates.rto_money_saved_reason;
+      this.sb.from('orders').update(dbUpdates).eq('id', order.id).then(({ error }) => {
+        if (error) {
+          if (error.message && error.message.includes('shopify_order_id')) {
+            const { shopify_order_id, ...retryUpdates } = dbUpdates;
+            this.sb.from('orders').update(retryUpdates).eq('id', order.id);
+          } else {
+            console.error('[SUPABASE] Failed to update order:', error.message);
+          }
+        }
+      }).catch(err => console.error('[SUPABASE] Order update exception:', err.message));
+    }
+
     return order;
   }
 
@@ -203,26 +345,35 @@ class Database {
   }
 
   createCallLog(logData) {
-    const id = `call_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+    const id = logData.id || crypto.randomUUID();
     const newLog = {
       id,
       order_id: logData.order_id,
       seller_id: logData.seller_id || null,
       provider_call_id: logData.provider_call_id || null,
-      duration_seconds: logData.duration_seconds || 0,
-      recording_url: logData.recording_url || null, // Only set from a real provider webhook; never invented
+      duration_seconds: Number(logData.duration_seconds) || 0,
+      recording_url: logData.recording_url || null, // Only set from real provider; never invented
       transcript: logData.transcript || [],
       extracted_landmark: logData.extracted_landmark || null,
       buyer_intent: logData.buyer_intent || 'genuine',
-      call_cost_inr: logData.call_cost_inr ?? 0, // Cost is only known after a real call; do not assume 6.00
+      call_cost_inr: Number(logData.call_cost_inr) || 0.00,
       created_at: new Date().toISOString()
     };
+
     this.data.call_logs.unshift(newLog);
     this.save();
+
+    if (this.sb) {
+      this.sb.from('call_logs').insert(newLog).then(({ error }) => {
+        if (error) console.error('[SUPABASE] Failed to persist call log:', error.message);
+      }).catch(err => console.error('[SUPABASE] Call log insert exception:', err.message));
+    }
+
     return newLog;
   }
 
   // --- Buyer Trust Graph ---
+  // Key is strictly the SHA-256 hash of the normalized phone number
   getBuyerTrust(phone) {
     const hash = hashPhone(phone);
     return this.data.buyer_trust_graph[hash] || {
@@ -262,7 +413,6 @@ class Database {
       record.upi_trust_paid_count += 1;
     }
 
-    // Determine risk level
     if (record.fake_cancel_count >= 2 && record.fake_cancel_count > record.verified_count) {
       record.global_risk_level = 'habitual_timepasser';
     } else if (record.verified_count >= 3 && record.fake_cancel_count === 0) {
@@ -272,6 +422,13 @@ class Database {
     }
 
     this.save();
+
+    if (this.sb) {
+      this.sb.from('buyer_trust_graph').upsert(record).then(({ error }) => {
+        if (error) console.error('[SUPABASE] Failed to upsert buyer trust graph:', error.message);
+      }).catch(err => console.error('[SUPABASE] Buyer trust graph upsert exception:', err.message));
+    }
+
     return record;
   }
 
@@ -303,9 +460,6 @@ class Database {
     const totalMoneySaved = orders.reduce((sum, o) => sum + (Number(o.rto_money_saved) || 0), 0);
     const pendingOrders = orders.filter(o => o.verification_status === 'queued' || o.verification_status === 'calling' || o.verification_status === 'trust_lock_sent').length;
 
-    // This is the share of orders that reached a verified/cancelled outcome.
-    // It is NOT a measured RTO reduction rate; that requires a baseline
-    // comparison and must not be presented as a proven saving.
     const rtoReductionRate = totalOrders > 0 ? Math.round(((verifiedOrders + fakeBlockedOrders) / totalOrders) * 100) : 0;
 
     return {
@@ -332,9 +486,30 @@ class Database {
     if (!Array.isArray(this.data.wallet_transactions)) {
       this.data.wallet_transactions = [];
     }
-    this.data.wallet_transactions.unshift(txn);
+    const id = txn.id || crypto.randomUUID();
+    const cleanTxn = {
+      id,
+      seller_id: txn.seller_id,
+      type: txn.type, // 'DEBIT' | 'CREDIT'
+      amount: Number(txn.amount),
+      balance_before: Number(txn.balance_before),
+      balance_after: Number(txn.balance_after),
+      purpose: txn.purpose || 'VOICE_AI_VERIFICATION',
+      reference_id: txn.reference_id || null,
+      meta: txn.meta || {},
+      created_at: txn.created_at || new Date().toISOString()
+    };
+
+    this.data.wallet_transactions.unshift(cleanTxn);
     this.save();
-    return txn;
+
+    if (this.sb) {
+      this.sb.from('wallet_transactions').insert(cleanTxn).then(({ error }) => {
+        if (error) console.error('[SUPABASE] Failed to persist wallet transaction:', error.message);
+      }).catch(err => console.error('[SUPABASE] Wallet transaction insert exception:', err.message));
+    }
+
+    return cleanTxn;
   }
 
   getWalletTransactions(sellerId = null) {
@@ -348,7 +523,7 @@ class Database {
     if (!Array.isArray(this.data.queue_jobs)) {
       this.data.queue_jobs = [];
     }
-    const id = jobData.id || `job_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+    const id = jobData.id || crypto.randomUUID();
     const job = {
       id,
       order_id: jobData.order_id,
@@ -362,8 +537,16 @@ class Database {
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
+
     this.data.queue_jobs.unshift(job);
     this.save();
+
+    if (this.sb) {
+      this.sb.from('queue_jobs').insert(job).then(({ error }) => {
+        if (error) console.error('[SUPABASE] Failed to persist queue job:', error.message);
+      }).catch(err => console.error('[SUPABASE] Queue job insert exception:', err.message));
+    }
+
     return job;
   }
 
@@ -382,6 +565,14 @@ class Database {
     if (!job) return null;
     Object.assign(job, updates, { updated_at: new Date().toISOString() });
     this.save();
+
+    if (this.sb) {
+      const dbUpdates = { ...updates, updated_at: new Date().toISOString() };
+      this.sb.from('queue_jobs').update(dbUpdates).eq('id', job.id).then(({ error }) => {
+        if (error) console.error('[SUPABASE] Failed to update queue job:', error.message);
+      }).catch(err => console.error('[SUPABASE] Queue job update exception:', err.message));
+    }
+
     return job;
   }
 

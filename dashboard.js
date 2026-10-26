@@ -21,7 +21,7 @@ let selectedPack = 'growth';
 let selectedPackAmount = 2999;
 let currentModalOrderId = null;
 let currentActiveSellerId = null;
-let currentActiveBrand = 'Snitch Apparel & Streetwear';
+let currentActiveBrand = '';
 
 // Read query params or localStorage for active seller
 try {
@@ -1115,17 +1115,17 @@ function openShopifyModal() {
         webhookInput.value = `${base}/api/webhooks/shopify/orders-create`;
     }
 
-    const savedDomain = localStorage.getItem('shipvera_shopify_domain') || 'snitch-streetwear.myshopify.com';
+    const savedDomain = localStorage.getItem('shipvera_shopify_domain') || '';
     const domainInput = document.getElementById('shopifyDomainInput');
     if (domainInput && !domainInput.value) {
         domainInput.value = savedDomain;
     }
 
-    // Auto-detect store display
+    // Store display in connect modal
     const odbStoreName = document.getElementById('odbStoreName');
     const odbStoreDomain = document.getElementById('odbStoreDomain');
-    if (odbStoreName) odbStoreName.textContent = currentActiveBrand || 'Snitch Apparel & Streetwear';
-    if (odbStoreDomain) odbStoreDomain.textContent = savedDomain;
+    if (odbStoreName) odbStoreName.textContent = currentActiveBrand || 'Connect Store';
+    if (odbStoreDomain) odbStoreDomain.textContent = savedDomain || 'Enter domain and token below';
 
     // Reset progress
     const progressWrap = document.getElementById('oneClickShopifyProgress');
@@ -1135,7 +1135,7 @@ function openShopifyModal() {
     if (progressWrap) progressWrap.style.display = 'none';
     if (fill) fill.style.width = '0%';
     if (btn) btn.disabled = false;
-    if (btnText) btnText.textContent = '⚡ Yes, Connect in 1-Click (Boom!) →';
+    if (btnText) btnText.textContent = '⚡ Connect Shopify Store →';
 
     const statusBox = document.getElementById('shopifyConnectionStatus');
     if (statusBox) statusBox.style.display = 'none';
@@ -1154,7 +1154,7 @@ function toggleManualShopifySetup() {
     if (!section) return;
     if (section.style.display === 'none') {
         section.style.display = 'block';
-        if (toggleText) toggleText.textContent = '⚙ Hide Manual Webhook Setup ▲';
+        if (toggleText) toggleText.textContent = '⚙ Hide Manual Credentials ▲';
     } else {
         section.style.display = 'none';
         if (toggleText) toggleText.textContent = '⚙ Connect Different Store / Manual Webhook (Advanced) ▼';
@@ -1167,16 +1167,28 @@ async function executeOneClickShopify() {
     const progressWrap = document.getElementById('oneClickShopifyProgress');
     const fill = document.getElementById('ocShopifyFill');
     const status = document.getElementById('ocShopifyStatus');
+    const domainInput = document.getElementById('shopifyDomainInput');
+    const tokenInput = document.getElementById('shopifyTokenInput');
+
+    const domain = (domainInput && domainInput.value.trim()) || localStorage.getItem('shipvera_shopify_domain') || '';
+    const token = (tokenInput && tokenInput.value.trim()) || '';
+
+    if (!domain || !token) {
+        const section = document.getElementById('manualShopifySection');
+        if (section) section.style.display = 'block';
+        if (!domain && domainInput) domainInput.focus();
+        else if (!token && tokenInput) tokenInput.focus();
+        alert('Please enter your Shopify store domain and Admin API Access Token (shpat_...) below.');
+        return;
+    }
 
     if (btn) btn.disabled = true;
     if (progressWrap) progressWrap.style.display = 'block';
 
-    const detectedDomain = localStorage.getItem('shipvera_shopify_domain') || 'snitch-streetwear.myshopify.com';
-
     // Step 1: Handshake
     if (fill) fill.style.width = '35%';
-    if (status) status.textContent = `Authenticating session with ${detectedDomain}...`;
-    await new Promise(r => setTimeout(r, 350));
+    if (status) status.textContent = `Authenticating session with ${domain}...`;
+    await new Promise(r => setTimeout(r, 200));
 
     // Step 2: Register Webhook
     if (fill) fill.style.width = '75%';
@@ -1188,18 +1200,18 @@ async function executeOneClickShopify() {
             headers: getAuthHeaders(),
             body: JSON.stringify({
                 seller_id: currentActiveSellerId,
-                shopify_domain: detectedDomain,
-                shopify_access_token: 'shpat_auto_provisioned_1click_token'
+                shopify_domain: domain,
+                shopify_access_token: token
             })
         });
         const data = await res.json();
 
         if (data.success) {
-            // Step 3: Success Boom!
+            // Step 3: Success
             if (fill) fill.style.width = '100%';
             if (status) {
                 status.style.color = '#058A5E';
-                status.textContent = '🎉 BOOM! Store Connected in 1-Click!';
+                status.textContent = '🎉 Store Connected Successfully!';
             }
             if (btnText) btnText.textContent = '✓ Store Protected & Active!';
 
@@ -1211,17 +1223,18 @@ async function executeOneClickShopify() {
                 tag.className = 'dib-status-tag active';
             }
             if (desc) {
-                desc.textContent = `1-Click Auto-Syncing real-time COD checkouts from ${data.shopify_domain}`;
+                desc.textContent = `Auto-syncing real-time COD checkouts from ${data.shopify_domain}`;
             }
             localStorage.setItem('shipvera_shopify_domain', data.shopify_domain);
 
             setTimeout(() => {
                 closeShopifyModal();
+                if (typeof loadSellerProfile === 'function') loadSellerProfile();
             }, 1200);
         } else {
             if (status) {
                 status.style.color = '#DC2626';
-                status.textContent = `Error: ${data.error || 'Failed to auto-connect'}`;
+                status.textContent = `Error: ${data.error || 'Failed to connect'}`;
             }
             if (btn) btn.disabled = false;
         }

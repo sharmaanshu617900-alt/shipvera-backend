@@ -138,29 +138,6 @@ ALTER TABLE wallet_transactions DISABLE ROW LEVEL SECURITY;
 ALTER TABLE queue_jobs DISABLE ROW LEVEL SECURITY;
 
 -- ====================================================================
--- SEED INITIAL ENTERPRISE WORKSPACE
+-- FRESH INSTALLATION: Starts 100% empty. No seed sellers or orders.
 -- ====================================================================
-INSERT INTO sellers (
-  id,
-  email,
-  brand_name,
-  phone,
-  shopify_domain,
-  shopify_access_token,
-  shiprocket_token,
-  wallet_balance_inr,
-  plan_tier,
-  upi_trust_lock_amount
-) VALUES (
-  'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
-  'founder@snitchcloth.in',
-  'Snitch Apparel & Streetwear',
-  '+919876500001',
-  'snitch-streetwear.myshopify.com',
-  'shpat_live_encrypted_access_token_demo',
-  'sr_token_live_encrypted_demo',
-  0.00, -- Zero free credits
-  'pay_as_you_go',
-  19
-) ON CONFLICT (email) DO NOTHING;
 

@@ -92,12 +92,20 @@ router.post('/recharge', (req, res) => {
       return res.status(400).json({ error: 'Valid pack_id ("starter" | "growth" | "scale") or custom_amount >= ₹100 required' });
     }
 
-    const seller = db.getSeller();
+    const sellerId = req.headers['x-seller-id'] || req.body.seller_id;
+    if (!sellerId) {
+      return res.status(400).json({ error: 'seller_id is required in body or x-seller-id header' });
+    }
+    const seller = db.getSeller(sellerId);
+    if (!seller) {
+      return res.status(404).json({ error: 'Seller workspace not found' });
+    }
+
     const txn = recordRechargeCredit({
       sellerId: seller.id,
       amount: amountToAdd,
       packName,
-      paymentId: payment_id || `razorpay_${Date.now()}`
+      paymentId: payment_id || null
     });
 
     const updatedSeller = db.getSeller(seller.id);
