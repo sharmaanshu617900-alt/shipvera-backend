@@ -37,12 +37,12 @@
                         aria-haspopup="true">
                         <img src="https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/shopify.svg" alt="Shopify"
                             class="store-platform-icon">
-                        <span class="store-name" id="storeName">Snitch Apparel & Streetwear</span>
+                        <span class="store-name" id="storeName">Select Workspace</span>
                         <svg class="store-caret" width="10" height="6" viewBox="0 0 10 6" fill="none">
                             <path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
                                 stroke-linejoin="round" />
                         </svg>
-                        <span class="store-status-dot" title="Store Connected"></span>
+                        <span class="store-status-dot" title="Workspace Active"></span>
                     </button>
                     <div class="store-dropdown-menu" id="storeDropdownMenu">
                         <div style="padding: 12px; font-size: 0.78rem; color: #64748B;">Loading workspaces...</div>
@@ -427,16 +427,16 @@
                 <div class="lcm-order-summary">
                     <div class="lcm-summary-row">
                         <span>Order Reference: <strong id="lcmOrderId">#UK-1092</strong></span>
-                        <span>COD Total: <strong id="lcmCodAmount">₹1,299</strong></span>
+                        <span>COD Total: <strong id="lcmCodAmount">—</strong></span>
                     </div>
                     <div class="lcm-summary-row">
-                        <span>Customer: <strong id="lcmBuyerName">Rahul Verma</strong></span>
-                        <span>Brand Identity: <strong id="lcmBrandName">Snitch Apparel</strong></span>
+                        <span>Customer: <strong id="lcmBuyerName">—</strong></span>
+                        <span>Brand Identity: <strong id="lcmBrandName">—</strong></span>
                     </div>
                     <div class="lcm-address-box">
                         <span class="lcm-addr-label">Address Flagged for Verification:</span>
-                        <p id="lcmRawAddress">56 Dukan, MG Road, Indore</p>
-                        <span class="lcm-missing-tag" id="lcmMissingTag">Missing Landmark or House Number</span>
+                        <p id="lcmRawAddress">Select an order to verify</p>
+                        <span class="lcm-missing-tag" id="lcmMissingTag">Address Verification Required</span>
                     </div>
                 </div>
 
@@ -619,12 +619,12 @@
                             <img src="https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/shopify.svg" alt="Shopify" width="22" height="22">
                         </div>
                         <div class="odb-text">
-                            <span class="odb-detected-badge">⚡ Auto-Detected Active Store</span>
-                            <div class="odb-store-name" id="odbStoreName">Snitch Apparel & Streetwear</div>
-                            <span class="odb-store-domain" id="odbStoreDomain">snitch-streetwear.myshopify.com</span>
+                            <span class="odb-detected-badge">⚡ Connect Store</span>
+                            <div class="odb-store-name" id="odbStoreName">No Store Connected</div>
+                            <span class="odb-store-domain" id="odbStoreDomain">Enter your domain & access token below</span>
                         </div>
                     </div>
-                    <p class="odb-pitch">Is this your store? 1-Click connect instantly configures live checkout sync, 60s Hinglish Voice AI calls, and COD fraud shield — zero copy-pasting required!</p>
+                    <p class="odb-pitch">Connect your live Shopify store to automatically sync incoming COD checkouts, trigger 60s Voice AI calls, and protect revenue.</p>
                     <button class="btn-oneclick-connect" id="btnOneClickShopify" onclick="executeOneClickShopify()">
                         <span id="btnOneClickShopifyText">⚡ Yes, Connect in 1-Click (Boom!) →</span>
                     </button>
@@ -779,7 +779,7 @@
                         <div id="lpFieldsDelhivery" style="display: none;">
                             <div class="bcm-form-group">
                                 <label class="modal-label" for="delhiveryClientIdInput">Delhivery Client Name / ID:</label>
-                                <input type="text" id="delhiveryClientIdInput" class="modal-input" placeholder="e.g. SNITCH_SURAT_HUB" spellcheck="false">
+                                <input type="text" id="delhiveryClientIdInput" class="modal-input" placeholder="e.g. HUB_SURAT_01" spellcheck="false">
                             </div>
                             <div class="bcm-form-group" style="margin-top: 10px;">
                                 <label class="modal-label" for="delhiveryTokenInput">Delhivery Unified API Token:</label>

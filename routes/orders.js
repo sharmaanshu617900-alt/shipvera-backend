@@ -175,6 +175,14 @@ router.post('/trigger', async (req, res) => {
     }
     const windowCheck = checkCallingWindow();
 
+    if (Number(seller.wallet_balance_inr) < 6.00) {
+      db.updateOrder(order.id, { verification_status: 'payment_required' });
+      return res.status(402).json({
+        error: `Insufficient wallet balance (₹${seller.wallet_balance_inr || '0.00'}). Minimum ₹6.00 required before dispatching a verification call.`,
+        wallet_balance_inr: seller.wallet_balance_inr
+      });
+    }
+
     if (!windowCheck.isAllowedNow && !req.body.override_night_window) {
       return res.status(403).json({
         error: 'Night Window Policy Active (9:30 PM - 8:30 AM IST). Call queued for 9:00 AM morning batch.',

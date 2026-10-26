@@ -31,7 +31,7 @@ function recordUsageDebit({ sellerId, amount = 6.00, purpose, referenceId, meta 
   db.save();
 
   const txn = {
-    id: `txn_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`,
+    id: crypto.randomUUID(),
     seller_id: sellerId,
     type: 'DEBIT',
     amount: -amount,
@@ -63,7 +63,7 @@ function recordRechargeCredit({ sellerId, amount, packName, paymentId, paymentGa
   db.save();
 
   const txn = {
-    id: `txn_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`,
+    id: crypto.randomUUID(),
     seller_id: sellerId,
     type: 'CREDIT',
     amount: Number(amount),

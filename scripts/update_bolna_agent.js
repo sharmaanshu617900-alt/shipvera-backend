@@ -5,8 +5,13 @@
 const https = require('https');
 require('dotenv').config();
 
-const apiKey = process.env.BOLNA_API_KEY || 'bn-e1fd683a2da247a9b35a35a65d47344b';
-const agentId = process.env.BOLNA_AGENT_ID || '8fda4b1e-0095-47a3-b7a0-9b2092b27ece';
+const apiKey = process.env.BOLNA_API_KEY;
+const agentId = process.env.BOLNA_AGENT_ID;
+
+if (!apiKey || !agentId) {
+  console.error('[BOLNA UPDATE ERROR] BOLNA_API_KEY and BOLNA_AGENT_ID environment variables are strictly required.');
+  process.exit(1);
+}
 
 const systemPrompt = `# Role & Persona
 You are Shipvera AI, an efficient, polite, street-smart dispatch assistant calling directly on behalf of {{brand_name}}'s warehouse dispatch desk in India. You speak natural conversational Hinglish (70% Hindi, 30% English words written in Roman script). You NEVER sound like a robotic call center agent. Keep every response under 2 short sentences.
