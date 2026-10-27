@@ -129,3 +129,32 @@ not_configured / failed instead of fake success.
   an already-written local database file.
 - Any committed `.env` file and git history: see the security warning
   above. This PR does not rewrite history.
+
+## Sarvam migration (branch agent/sarvam-all-connected) — what changed
+- `services/sarvamVoice.js` (new): Sarvam-only voice. Old-provider SDK calls
+  removed; `services/voiceAI.js` is now only a re-export shim.
+- `services/sarvamClient.js` (new): Saaras STT (`POST /speech-to-text`,
+  saaras:v4) + Bulbul TTS (`POST /text-to-speech`, bulbul:v3) via
+  header `api-subscription-key` from SARVAM_API_KEY only. Missing key
+  throws NOT_CONFIGURED with no network request and no fake audio/transcript.
+- `services/verificationRouter.js` (new): OTP-first routing. Voice only
+  on OTP failed/no_reply/mismatch, high-value COD (default >= 2000), or
+  repeat-RTO. Otherwise triggerOutboundCall throws OTP_REQUIRED.
+- Hard 60-second cap on dispatch payload and on billed cost
+  (calculateSarvamCallCost / settleCallCost). Credit only on a connected
+  call; unanswered/busy/failed = Rs.0. PAYG voice Rs.12 ex-GST; wallet
+  gate raised from Rs.6 to Rs.12 in voice, queue, and order routes.
+- Deleted from this branch: the committed `.env` file, the old-provider
+  agent-update script, and the old-provider agent config JSON. Deleting
+  them from this branch does NOT clean git history — the owner must
+  still revoke old credentials and rewrite history or make the repo
+  private AND rotate everything ever committed (see warning above).
+- `/api/health` now reports sarvam, sarvam_agent, shopify, shiprocket
+  separately, never fake healthy.
+- UNVERIFIED: Sarvam Voice Agents outbound-dial API endpoint (not
+  hardcoded; set SARVAM_VOICE_AGENT_DISPATCH_URL only after confirming
+  it in Sarvam docs/dashboard). Pulse rates (Rs.3.50/60s agent +
+  Rs.0.20/30s telephony) must be re-checked against the first real bill.
+- NOT changed by this branch: Supabase migration of db.js, Razorpay
+  activation, WhatsApp template approval, Google Maps key. Those are
+  still BLOCKED items in README.md. No live call was made.

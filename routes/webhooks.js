@@ -195,7 +195,7 @@ router.post('/shopify/orders-create', verifyShopifyHmac, async (req, res) => {
 
 /**
  * 2. POST /api/webhooks/voice/call-completed
- * Receives recording_url, transcript, duration, and buyer_intent from Voice AI Provider (Bolna/Vapi/Twilio)
+ * Receives recording_url, transcript, duration, and buyer_intent from the Voice AI Provider (Sarvam Voice Agents)
  */
 router.post('/voice/call-completed', async (req, res) => {
   try {
@@ -206,7 +206,7 @@ router.post('/voice/call-completed', async (req, res) => {
     let durationSeconds = payload.duration_seconds || payload.conversation_duration || 0;
     let recordingUrl = payload.recording_url || payload.telephony_data?.recording_url || null;
 
-    // Support Bolna native webhook payload
+    // Support Sarvam Voice Agents webhook payload (execution/call id lookup)
     const executionId = payload.id || payload.execution_id;
     if (!orderId && executionId) {
       // Find order by matching execution ID in call logs

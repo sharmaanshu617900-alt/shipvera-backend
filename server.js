@@ -92,7 +92,10 @@ app.post('/api/waitlist', (req, res) => {
 app.get('/api/health', (req, res) => {
   const configured = {
     supabase: Boolean(process.env.SUPABASE_URL && (process.env.SUPABASE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY)),
-    bolna: Boolean(process.env.BOLNA_API_KEY && process.env.BOLNA_AGENT_ID),
+    sarvam: Boolean(process.env.SARVAM_API_KEY),
+    sarvam_agent: Boolean(process.env.SARVAM_AGENT_ID && process.env.SARVAM_PHONE_NUMBER_ID),
+    shopify: Boolean(process.env.SHOPIFY_SHOP_DOMAIN && process.env.SHOPIFY_ADMIN_ACCESS_TOKEN),
+    shiprocket: Boolean(process.env.SHIPROCKET_EMAIL && process.env.SHIPROCKET_PASSWORD),
     razorpay: Boolean(process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET),
     whatsapp: Boolean(process.env.WHATSAPP_ACCESS_TOKEN && process.env.WHATSAPP_PHONE_NUMBER_ID),
     google_maps: Boolean(process.env.GOOGLE_MAPS_API_KEY),
@@ -108,7 +111,11 @@ app.get('/api/health', (req, res) => {
     configured,
     features: {
       pre_call_geo_sanitizer: configured.google_maps ? 'configured' : 'not_configured',
-      landmark_interrogator_voice_ai: configured.bolna ? 'configured' : 'not_configured',
+      landmark_interrogator_voice_ai: configured.sarvam_agent ? 'configured' : 'not_configured',
+      sarvam_stt_tts: configured.sarvam ? 'configured' : 'not_configured',
+      sarvam_voice_agent: configured.sarvam_agent ? 'configured' : 'not_configured',
+      shopify: configured.shopify ? 'configured' : 'not_configured',
+      shiprocket: configured.shiprocket ? 'configured' : 'not_configured',
       live_address_rewriter: 'rule_based_no_llm - LLM extraction requires LLM_API_KEY (see REALITY_CHECKLIST.md)',
       upi_trust_lock: configured.razorpay && configured.whatsapp ? 'configured' : 'not_configured',
       quick_paste_mode: 'available - creates orders only with validated seller, phone, pincode and amount',

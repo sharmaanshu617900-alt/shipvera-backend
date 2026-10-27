@@ -67,7 +67,7 @@ CREATE TABLE IF NOT EXISTS call_logs (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   order_id UUID REFERENCES orders(id) ON DELETE CASCADE,
   seller_id UUID REFERENCES sellers(id) ON DELETE CASCADE,
-  provider_call_id TEXT UNIQUE, -- Bolna execution ID or Vapi Call ID
+  provider_call_id TEXT UNIQUE, -- Voice provider execution/call ID (Sarvam)
   duration_seconds INT DEFAULT 0,
   recording_url TEXT,
   transcript JSONB DEFAULT '[]'::jsonb, -- Array of {role: 'ai'|'user', speaker: '...', text: '...'}

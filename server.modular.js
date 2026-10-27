@@ -102,7 +102,7 @@ app.get('/api/health', (req, res) => {
     },
     features: {
       pre_call_geo_sanitizer: 'active (Google Maps Geocoding REST API)',
-      landmark_interrogator_voice_ai: 'active (Bolna Voice AI - Sarvam Bulbul Shubh)',
+      landmark_interrogator_voice_ai: 'active (Sarvam Voice Agents - Saaras STT + Bulbul TTS)',
       live_address_rewriter: 'active (Shopify Admin + Shiprocket Auto-Sync)',
       upi_trust_lock: 'active (₹19 Dynamic Razorpay UPI Links)',
       quick_paste_mode: 'active (WhatsApp / Instagram NLP Parser)',

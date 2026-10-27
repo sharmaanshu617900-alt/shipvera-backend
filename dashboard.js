@@ -689,7 +689,7 @@ async function simulateShopifyOrder() {
     }
 }
 
-// ---------- 8. Live Bolna Calling Station Modal ----------
+// ---------- 8. Live Sarvam Calling Station Modal ----------
 function openLiveCallModal(orderId) {
     currentModalOrderId = orderId;
     const order = allOrders.find(o => o.id === orderId);
@@ -739,7 +739,7 @@ async function dispatchLiveCallFromModal() {
     btn.disabled = true;
     btn.innerHTML = '<span>Initiating Outbound Connection...</span>';
     statusBox.style.display = 'block';
-    statusTitle.textContent = 'Connecting to Bolna Telephony Gateway...';
+    statusTitle.textContent = 'Connecting to Sarvam Telephony Gateway...';
     statusDetails.textContent = `Target: +91${phone.slice(-10)} • Injecting dynamic brand context...`;
 
     try {
@@ -760,7 +760,7 @@ async function dispatchLiveCallFromModal() {
             statusDetails.innerHTML = `
                 Execution ID: <strong>${data.executionId}</strong><br>
                 Recipient: <strong>+91${phone.slice(-10)}</strong><br>
-                Gateway: <strong>Bolna.ai / Sarvam AI Telephony</strong><br>
+                Gateway: <strong>Sarvam Voice Agents Telephony</strong><br>
                 Status: <strong>Active (Hard Cap: 40s)</strong><br>
                 <em>Check the recipient phone. Ringing now.</em>
             `;

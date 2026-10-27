@@ -132,7 +132,7 @@ router.post('/quick-paste', async (req, res) => {
     // or an invented spoken text in this route.
     let callResult = null;
     let callError = null;
-    if (windowCheck.isAllowedNow && seller.wallet_balance_inr >= 6.00) {
+    if (windowCheck.isAllowedNow && seller.wallet_balance_inr >= 12.00) {
       try {
         callResult = await triggerOutboundCall({ order, seller, live: true });
       } catch (e) {
@@ -198,7 +198,7 @@ router.post('/trigger', async (req, res) => {
       const updatedOrder = db.getOrderById(order.id);
       return res.status(200).json({
         success: true,
-        message: 'Live voice call initiated via Bolna AI',
+        message: 'Live voice call initiated via Sarvam Voice Agents',
         live: true,
         executionId: callResult.executionId,
         order: updatedOrder,
