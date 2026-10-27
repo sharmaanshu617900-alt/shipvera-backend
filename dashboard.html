@@ -133,8 +133,7 @@
                 </div>
                 <div>
                     <strong>Wallet Balance: ₹0.00 (Pure Pay-As-You-Go Mode)</strong>
-                    <p>Automated buyer verification calls are on standby. Add funds to verify COD orders at ₹6.00 per
-                        connected call.</p>
+                    <p>Automated buyer verification calls are on standby. Add funds to verify COD orders at ₹12.00 ex-GST per verified order.</p>
                 </div>
             </div>
             <button class="btn-recharge-urgent" onclick="openRechargeModal()">Add Funds (₹999) →</button>
@@ -154,7 +153,7 @@
             <div class="dash-metric-card">
                 <div class="dmc-top">
                     <span class="dmc-label">Freight Loss Prevented</span>
-                    <span class="dmc-pill highlight-green">+₹180 / Cancel</span>
+                    <span class="dmc-pill highlight-green">Real Verified</span>
                 </div>
                 <div class="dmc-value dmc-highlight" id="metricMoneySaved">₹0</div>
                 <div class="dmc-sub">Saved by auto-canceling fake COD orders</div>
@@ -162,20 +161,20 @@
 
             <div class="dash-metric-card">
                 <div class="dmc-top">
-                    <span class="dmc-label">RTO Reduction Rate</span>
+                    <span class="dmc-label">Orders Cleaned</span>
                     <span class="dmc-pill" id="metricRtoPill">Active</span>
                 </div>
-                <div class="dmc-value" id="metricRtoCut">0%</div>
-                <div class="dmc-sub" id="metricRtoSub">Based on verified address dispatches</div>
+                <div class="dmc-value" id="metricRtoCut">0</div>
+                <div class="dmc-sub" id="metricRtoSub">Verified addresses with local landmarks</div>
             </div>
 
             <div class="dash-metric-card">
                 <div class="dmc-top">
                     <span class="dmc-label">Pricing Rate</span>
-                    <span class="dmc-pill">No Retainer</span>
+                    <span class="dmc-pill">Ex-GST</span>
                 </div>
-                <div class="dmc-value">₹6.00</div>
-                <div class="dmc-sub">Billed strictly per completed phone verification</div>
+                <div class="dmc-value">₹12.00</div>
+                <div class="dmc-sub">Billed on confirmed, corrected, or cancelled</div>
             </div>
         </section>
 
@@ -283,6 +282,95 @@
             </div>
         </section>
 
+        <!-- RTO Recovery Console Section (Part 2) -->
+        <section class="dash-recovery-section" id="recoverySection" style="margin-top: 32px;">
+            <div class="dos-header" style="align-items: flex-start; justify-content: space-between;">
+                <div>
+                    <div class="dos-title-wrap" style="gap: 12px; align-items: center;">
+                        <h2 class="dos-title" style="color: var(--oxblood, #6B1228);">RTO Recovery Console</h2>
+                        <span class="dos-badge" style="background: var(--oxblood-soft, #FBE9EC); color: var(--oxblood, #6B1228); font-weight: 700;">Prepaid Recovery Only • COD Never</span>
+                    </div>
+                    <p style="margin: 6px 0 0; font-size: 0.9rem; color: var(--ink-muted, #7A726A);">
+                        Turn failed COD delivery losses into 100% upfront prepaid revenue. Strict Return QC Gate + Worth-It Gate (P &gt; F + PK + C + CALL + NEW) before buyer contact.
+                    </p>
+                </div>
+
+                <div class="recovery-policy-bar" style="display: flex; gap: 12px; align-items: center; background: var(--surface, #FFFFFF); padding: 8px 16px; border: 1px solid var(--border, #E8DDD6); border-radius: 8px;">
+                    <div style="display: flex; align-items: center; gap: 6px; font-size: 0.82rem;">
+                        <label for="recoveryDiscountMax"><strong>Max Discount:</strong></label>
+                        <select id="recoveryDiscountMax" onchange="saveRecoverySettings()" style="border: 1px solid var(--border, #E8DDD6); border-radius: 4px; padding: 2px 6px;">
+                            <option value="5">5%</option>
+                            <option value="10" selected>10% (Default Max)</option>
+                        </select>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 6px; font-size: 0.82rem;">
+                        <label for="recoveryMinPrice"><strong>Min Price:</strong> ₹</label>
+                        <input type="number" id="recoveryMinPrice" value="300" min="200" step="50" onchange="saveRecoverySettings()" style="width: 60px; border: 1px solid var(--border, #E8DDD6); border-radius: 4px; padding: 2px 4px;">
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 6px; font-size: 0.82rem;">
+                        <label for="recoveryAutoApprove"><strong>Auto-Approve Reship:</strong></label>
+                        <input type="checkbox" id="recoveryAutoApprove" onchange="saveRecoverySettings()">
+                        <span style="color: var(--ink-muted, #7A726A); font-size: 0.75rem;">(Default: OFF)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recovery Institutional Metric Strip -->
+            <div class="dash-metrics-grid" style="grid-template-columns: repeat(3, 1fr); margin-top: 16px;">
+                <div class="dash-metric-card">
+                    <div class="dmc-top">
+                        <span class="dmc-label">Total Recovered Revenue</span>
+                        <span class="dmc-pill highlight-green">Prepaid Paid</span>
+                    </div>
+                    <div class="dmc-value dmc-highlight" id="recoveryTotalRevenue">₹0.00</div>
+                    <div class="dmc-sub">100% upfront captured via Razorpay</div>
+                </div>
+
+                <div class="dash-metric-card">
+                    <div class="dmc-top">
+                        <span class="dmc-label">Recovery Commission Paid</span>
+                        <span class="dmc-pill">10% Success Fee</span>
+                    </div>
+                    <div class="dmc-value" id="recoveryTotalCommission">₹0.00</div>
+                    <div class="dmc-sub">Billed ONLY when order is recovery_paid</div>
+                </div>
+
+                <div class="dash-metric-card">
+                    <div class="dmc-top">
+                        <span class="dmc-label">Sunk RTO Loss Avoided</span>
+                        <span class="dmc-pill highlight-green">Net Capital Saved</span>
+                    </div>
+                    <div class="dmc-value dmc-highlight" id="recoveryLossAvoided">₹0.00</div>
+                    <div class="dmc-sub">Inventory restocked or reshipped prepaid</div>
+                </div>
+            </div>
+
+            <!-- RTO Returned Orders Pipeline Table -->
+            <div class="dos-table-card" style="margin-top: 16px;">
+                <div class="table-responsive">
+                    <table class="dash-table">
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Buyer & Phone</th>
+                                <th>Selling Price (P)</th>
+                                <th>Sunk RTO Loss</th>
+                                <th>Return QC Gate</th>
+                                <th>Worth-It Gate Formula</th>
+                                <th>Payment Status</th>
+                                <th style="text-align: right;">1-Click Reship Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recoveryOrdersTableBody">
+                            <tr>
+                                <td colspan="8" class="table-loading">Loading RTO recovery pipeline...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
     </main>
 
     <!-- Modal 1: Quick-Paste Order -->
@@ -370,42 +458,85 @@
             <div class="modal-header">
                 <div>
                     <h3 class="modal-title">Wallet Recharge</h3>
-                    <p class="modal-subtitle">Pay-As-You-Go. ₹6.00 deducted only on completed phone connections.</p>
+                    <p class="modal-subtitle">Razorpay Only. Voice ₹12 ex-GST per verified order. WhatsApp/OTP ₹3 ex-GST. +18% GST at checkout.</p>
                 </div>
                 <button class="modal-close-btn" onclick="closeRechargeModal()" aria-label="Close modal">×</button>
             </div>
             <div class="modal-body">
-                <div class="recharge-cards-grid">
-                    <div class="recharge-card" onclick="selectRechargePack('starter', 999)">
+                <div class="recharge-cards-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
+                    <div class="recharge-card" onclick="selectRechargePack('trial', 99)">
                         <div class="rc-radio-row">
-                            <input type="radio" name="rechargePack" id="packStarter" value="starter">
-                            <label for="packStarter" class="rc-title">Starter Pack</label>
+                            <input type="radio" name="rechargePack" id="packTrial" value="trial">
+                            <label for="packTrial" class="rc-title">Store Trial (1-Time)</label>
                         </div>
-                        <div class="rc-price">₹999</div>
-                        <div class="rc-desc">180 Verified Orders (Effective <strong>₹5.50/Order</strong>)</div>
+                        <div class="rc-price">₹99 <span style="font-size: 0.75rem; font-weight: normal; color: var(--ink-muted);">ex-GST</span></div>
+                        <div class="rc-desc">10 Voice Credits • 14-day validity</div>
                     </div>
 
-                    <div class="recharge-card selected" onclick="selectRechargePack('growth', 2999)">
-                        <div class="rc-popular-tag">MOST POPULAR</div>
+                    <div class="recharge-card selected" onclick="selectRechargePack('voice_100', 999)">
+                        <div class="rc-popular-tag">STARTER PACK</div>
                         <div class="rc-radio-row">
-                            <input type="radio" name="rechargePack" id="packGrowth" value="growth" checked>
-                            <label for="packGrowth" class="rc-title">Growth Pack</label>
+                            <input type="radio" name="rechargePack" id="packVoice100" value="voice_100" checked>
+                            <label for="packVoice100" class="rc-title">100 Voice Pack</label>
                         </div>
-                        <div class="rc-price">₹2,999</div>
-                        <div class="rc-desc">600 Verified Orders (Effective <strong>₹5.00/Order</strong>)</div>
+                        <div class="rc-price">₹999 <span style="font-size: 0.75rem; font-weight: normal; color: var(--ink-muted);">ex-GST</span></div>
+                        <div class="rc-desc">100 Verified Orders (₹9.99/order)</div>
+                    </div>
+
+                    <div class="recharge-card" onclick="selectRechargePack('voice_500', 4499)">
+                        <div class="rc-radio-row">
+                            <input type="radio" name="rechargePack" id="packVoice500" value="voice_500">
+                            <label for="packVoice500" class="rc-title">500 Voice Pack</label>
+                        </div>
+                        <div class="rc-price">₹4,499 <span style="font-size: 0.75rem; font-weight: normal; color: var(--ink-muted);">ex-GST</span></div>
+                        <div class="rc-desc">500 Verified Orders (₹8.99/order)</div>
+                    </div>
+
+                    <div class="recharge-card" onclick="selectRechargePack('voice_1000', 7999)">
+                        <div class="rc-radio-row">
+                            <input type="radio" name="rechargePack" id="packVoice1000" value="voice_1000">
+                            <label for="packVoice1000" class="rc-title">1,000 Voice Pack</label>
+                        </div>
+                        <div class="rc-price">₹7,999 <span style="font-size: 0.75rem; font-weight: normal; color: var(--ink-muted);">ex-GST</span></div>
+                        <div class="rc-desc">1,000 Verified Orders (Floor ₹8.00/order)</div>
+                    </div>
+
+                    <div class="recharge-card" onclick="selectRechargePack('otp_500', 1000)" style="grid-column: span 2;">
+                        <div class="rc-radio-row">
+                            <input type="radio" name="rechargePack" id="packOtp500" value="otp_500">
+                            <label for="packOtp500" class="rc-title">500 OTP / WhatsApp Pack</label>
+                        </div>
+                        <div class="rc-price">₹1,000 <span style="font-size: 0.75rem; font-weight: normal; color: var(--ink-muted);">ex-GST</span></div>
+                        <div class="rc-desc">500 WhatsApp Trust Lock / OTP verifications (₹2.00/order)</div>
                     </div>
                 </div>
 
-                <div class="recharge-trust-notes">
-                    <span>• Failed carrier connections = ₹0.00 charge</span>
-                    <span>• Balance never expires</span>
-                    <span>• Automated GST invoice issued</span>
+                <!-- GST Calculation Summary Row -->
+                <div id="rechargeGstBreakdown" style="margin-top: 14px; padding: 10px 14px; background: var(--oxblood-soft, #FBE9EC); border-radius: 6px; font-size: 0.85rem; color: var(--ink, #17130F);">
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>Base Amount (Ex-GST):</span>
+                        <strong id="gstBaseAmount">₹999.00</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-top: 4px;">
+                        <span>GST (+18%):</span>
+                        <strong id="gstTaxAmount">₹179.82</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-top: 6px; border-top: 1px solid var(--border, #E8DDD6); padding-top: 6px; font-size: 0.95rem;">
+                        <strong>Total Checkout (Razorpay):</strong>
+                        <strong id="gstTotalAmount" style="color: var(--oxblood, #6B1228);">₹1,178.82</strong>
+                    </div>
+                </div>
+
+                <div class="recharge-trust-notes" style="margin-top: 12px;">
+                    <span>• Free: Unanswered, busy, DND, carrier-failed, AI error = ₹0.00 charge</span>
+                    <span>• Billed strictly on confirmed, corrected, or cancelled</span>
+                    <span>• Zero signup credits • Minimum recharge ₹500 ex-GST</span>
                 </div>
             </div>
             <div class="modal-footer">
                 <button class="btn-modal btn-cancel" onclick="closeRechargeModal()">Cancel</button>
                 <button class="btn-modal btn-confirm" id="btnConfirmRecharge" onclick="executeRecharge()">
-                    <span>Pay ₹2,999 & Activate Credits →</span>
+                    <span>Pay ₹1,178.82 via Razorpay →</span>
                 </button>
             </div>
         </div>

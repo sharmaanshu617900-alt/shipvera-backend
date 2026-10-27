@@ -6,9 +6,10 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
-    "test": "node scripts/test_4_core_features.js && node scripts/test_live_account_connection.js",
+    "test": "node scripts/test_4_core_features.js && node scripts/test_live_account_connection.js && node scripts/test_rto_recovery_and_pricing.js",
     "test:features": "node scripts/test_4_core_features.js",
-    "test:connections": "node scripts/test_live_account_connection.js"
+    "test:connections": "node scripts/test_live_account_connection.js",
+    "test:recovery": "node scripts/test_rto_recovery_and_pricing.js"
   },
   "keywords": [
     "voice-ai",

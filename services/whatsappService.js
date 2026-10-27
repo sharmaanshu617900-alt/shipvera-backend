@@ -10,7 +10,7 @@ const https = require('https');
  * Sends a WhatsApp template message to the buyer
  */
 async function sendWhatsAppTrustLock({ buyerPhone, buyerName, codAmount, tokenAmount = 19, paymentUrl }) {
-  const token = process.env.WHATSAPP_ACCESS_TOKEN;
+  const token = process.env.WHATSAPP_ACCESS_TOKEN || process.env.WHATSAPP_CLOUD_API_TOKEN;
   const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
 
   // Format phone to international format without + (e.g., 919876543210)
@@ -24,7 +24,7 @@ async function sendWhatsAppTrustLock({ buyerPhone, buyerName, codAmount, tokenAm
     return {
       success: false,
       mode: 'not_configured',
-      reason: 'WHATSAPP_ACCESS_TOKEN and WHATSAPP_PHONE_NUMBER_ID must be set. No WhatsApp message was sent.',
+      reason: 'WHATSAPP_ACCESS_TOKEN (or WHATSAPP_CLOUD_API_TOKEN) and WHATSAPP_PHONE_NUMBER_ID must be set. No WhatsApp message was sent.',
       recipient: phone,
       paymentUrl
     };

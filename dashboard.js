@@ -96,7 +96,8 @@ async function fetchDashboardData() {
         fetchAnalytics(),
         fetchWallet(),
         fetchOrders(),
-        fetchIntegrationsStatus()
+        fetchIntegrationsStatus(),
+        fetchRecoveryData()
     ]);
 }
 
@@ -1614,6 +1615,305 @@ async function fetchIntegrationsStatus() {
         }
     } catch (e) {
         console.warn('[DASHBOARD] Notice loading integrations status:', e.message);
+    }
+}
+
+// ---------- 16. Wallet Recharge Modal (Part 3 Exact Pricing) ----------
+let currentSelectedPack = 'voice_100';
+let currentSelectedAmount = 999;
+
+function openRechargeModal() {
+    const modal = document.getElementById('rechargeModal');
+    if (modal) modal.classList.add('open');
+    selectRechargePack('voice_100', 999);
+}
+
+function closeRechargeModal() {
+    const modal = document.getElementById('rechargeModal');
+    if (modal) modal.classList.remove('open');
+}
+
+function selectRechargePack(packId, priceExGst) {
+    currentSelectedPack = packId;
+    currentSelectedAmount = priceExGst;
+
+    document.querySelectorAll('.recharge-card').forEach(c => c.classList.remove('selected'));
+    const radio = document.querySelector(`input[name="rechargePack"][value="${packId}"]`);
+    if (radio) {
+        radio.checked = true;
+        const card = radio.closest('.recharge-card');
+        if (card) card.classList.add('selected');
+    }
+
+    const base = Number(priceExGst);
+    const gst = Number((base * 0.18).toFixed(2));
+    const total = Number((base + gst).toFixed(2));
+
+    const baseEl = document.getElementById('gstBaseAmount');
+    const taxEl = document.getElementById('gstTaxAmount');
+    const totalEl = document.getElementById('gstTotalAmount');
+    const btn = document.getElementById('btnConfirmRecharge');
+
+    if (baseEl) baseEl.textContent = `₹${base.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+    if (taxEl) taxEl.textContent = `₹${gst.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+    if (totalEl) totalEl.textContent = `₹${total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+    if (btn) btn.innerHTML = `<span>Pay ₹${total.toLocaleString('en-IN', { minimumFractionDigits: 2 })} via Razorpay →</span>`;
+}
+
+async function executeRecharge() {
+    const btn = document.getElementById('btnConfirmRecharge');
+    if (!currentActiveSellerId) {
+        alert('Please connect or select a seller workspace before recharging.');
+        return;
+    }
+
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span>Connecting Razorpay...</span>';
+    }
+
+    try {
+        const res = await fetch(getApiUrl('/api/wallet/recharge'), {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({
+                pack_id: currentSelectedPack,
+                seller_id: currentActiveSellerId
+            })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            alert(`Recharge successful! Added ₹${data.checkout ? data.checkout.base_amount_ex_gst : currentSelectedAmount} ex-GST to your wallet.`);
+            closeRechargeModal();
+            fetchWallet();
+        } else {
+            alert(data.error || 'Recharge failed.');
+        }
+    } catch (e) {
+        alert('Connection error during recharge: ' + e.message);
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            selectRechargePack(currentSelectedPack, currentSelectedAmount);
+        }
+    }
+}
+
+// ---------- 17. RTO Recovery Console Engine (Part 2) ----------
+async function fetchRecoveryData() {
+    try {
+        const [statsRes, ordersRes] = await Promise.all([
+            fetch(getApiUrl('/api/recovery/stats'), { headers: getAuthHeaders() }),
+            fetch(getApiUrl('/api/recovery/orders'), { headers: getAuthHeaders() })
+        ]);
+
+        const statsData = await statsRes.json();
+        const ordersData = await ordersRes.json();
+
+        if (statsData.success && statsData.stats) {
+            const s = statsData.stats;
+            const revEl = document.getElementById('recoveryTotalRevenue');
+            const commEl = document.getElementById('recoveryTotalCommission');
+            const lossEl = document.getElementById('recoveryLossAvoided');
+
+            if (revEl) revEl.textContent = `₹${Number(s.total_recovered_revenue || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+            if (commEl) commEl.textContent = `₹${Number(s.total_recovery_commission_paid || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+            if (lossEl) lossEl.textContent = `₹${Number(s.total_rto_loss_avoided || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+        }
+
+        if (ordersData.success && Array.isArray(ordersData.orders)) {
+            renderRecoveryOrders(ordersData.orders);
+        }
+    } catch (e) {
+        console.warn('[RECOVERY] Notice fetching recovery data:', e.message);
+    }
+}
+
+function renderRecoveryOrders(orders) {
+    const tbody = document.getElementById('recoveryOrdersTableBody');
+    if (!tbody) return;
+
+    if (!orders || orders.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="8" style="text-align: center; padding: 24px; color: var(--ink-muted, #7A726A);">
+                    No RTO returned orders currently in recovery pipeline. Real returns from Shopify/Shiprocket will automatically appear here.
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    tbody.innerHTML = orders.map(o => {
+        const price = Number(o.cod_amount || 0);
+        const sunk = Number(o.sunk_rto_cost || 120);
+        const qc = o.return_qc_status || 'pending';
+        const calc = o.worth_it_preview;
+
+        let qcHtml = '';
+        if (qc === 'undamaged') {
+            qcHtml = `<span class="dib-status-tag green">✓ Undamaged (Reshippable)</span>`;
+        } else if (qc === 'damaged') {
+            qcHtml = `<span class="dib-status-tag" style="background: #FFF1F2; color: #E11D48;">⚠ Damaged (Needs Replacement)</span>`;
+        } else {
+            qcHtml = `
+                <div style="display: flex; gap: 4px;">
+                    <button class="btn-dab btn-ghost" onclick="markOrderQc('${o.id}', 'undamaged')" style="padding: 2px 6px; font-size: 0.72rem; color: #058A5E; border-color: #A7F3D0;" title="Mark undamaged and reshippable">✓ Good</button>
+                    <button class="btn-dab btn-ghost" onclick="markOrderQc('${o.id}', 'damaged')" style="padding: 2px 6px; font-size: 0.72rem; color: #E11D48; border-color: #FECACA;" title="Mark damaged (replacement unit needed)">⚠ Damaged</button>
+                </div>
+            `;
+        }
+
+        let worthItHtml = '';
+        if (qc === 'pending') {
+            worthItHtml = `<span style="color: var(--ink-muted); font-size: 0.8rem;">Pending QC inspection</span>`;
+        } else if (calc) {
+            if (calc.is_worth_it) {
+                worthItHtml = `
+                    <span style="color: #058A5E; font-weight: 700; font-size: 0.85rem;">✓ Worth-It</span>
+                    <div style="font-size: 0.72rem; color: #64748B; margin-top: 2px;">
+                        P(₹${calc.prepaid_price_P}) &gt; Cost(₹${calc.total_cost})
+                    </div>
+                `;
+            } else {
+                worthItHtml = `
+                    <span style="color: #E11D48; font-weight: 700; font-size: 0.85rem;">✕ Not Worth-It</span>
+                    <div style="font-size: 0.72rem; color: #64748B; margin-top: 2px;">
+                        Cost(₹${calc.total_cost}) &gt; P(₹${calc.prepaid_price_P})
+                    </div>
+                `;
+            }
+        }
+
+        let payStatusHtml = `<span class="dib-status-tag" style="background: #F1EFEA; color: #64748B;">Pending</span>`;
+        if (o.verification_status === 'rto_recovered_reshipped') {
+            payStatusHtml = `<span class="dib-status-tag green">Paid & Reshipped</span>`;
+        } else if (o.recovery_payment_status === 'paid') {
+            payStatusHtml = `<span class="dib-status-tag green">Paid ₹${price} (Prepaid)</span>`;
+        } else if (o.recovery_payment_link) {
+            payStatusHtml = `<span class="dib-status-tag" style="background: #FFFBEB; color: #D97706;">Link Sent (Unpaid)</span>`;
+        }
+
+        let actionHtml = '';
+        if (o.verification_status === 'rto_recovered_reshipped') {
+            actionHtml = `<span style="color: #058A5E; font-weight: 600; font-size: 0.82rem;">✓ Reshipped</span>`;
+        } else if (o.recovery_payment_status === 'paid') {
+            actionHtml = `
+                <button class="btn-dab btn-primary" onclick="approveReship('${o.id}')" style="background: var(--oxblood, #6B1228); color: #fff; padding: 4px 10px; font-size: 0.78rem;">
+                    Approve Reship →
+                </button>
+            `;
+        } else if (calc && calc.is_worth_it && qc !== 'pending') {
+            actionHtml = `
+                <button class="btn-dab btn-secondary" onclick="triggerRecovery('${o.id}')" style="padding: 4px 10px; font-size: 0.78rem;">
+                    Offer Recovery →
+                </button>
+            `;
+        } else {
+            actionHtml = `<span style="color: var(--ink-muted); font-size: 0.78rem;">Blocked</span>`;
+        }
+
+        return `
+            <tr>
+                <td><strong>${o.external_order_id || o.id}</strong></td>
+                <td>
+                    <div style="font-weight: 600;">${o.buyer_name || 'Customer'}</div>
+                    <div style="font-size: 0.78rem; color: var(--ink-muted);">${o.buyer_phone || '—'}</div>
+                </td>
+                <td>₹${price.toLocaleString('en-IN')}</td>
+                <td style="color: #E11D48;">-₹${sunk.toLocaleString('en-IN')}</td>
+                <td>${qcHtml}</td>
+                <td>${worthItHtml}</td>
+                <td>${payStatusHtml}</td>
+                <td style="text-align: right;">${actionHtml}</td>
+            </tr>
+        `;
+    }).join('');
+}
+
+async function markOrderQc(orderId, qcStatus) {
+    try {
+        const res = await fetch(getApiUrl('/api/recovery/mark-qc'), {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({ order_id: orderId, qc_status: qcStatus })
+        });
+        const data = await res.json();
+        if (data.success) {
+            fetchRecoveryData();
+        } else {
+            alert(data.error || 'Failed to update QC status.');
+        }
+    } catch (e) {
+        alert('Error updating Return QC: ' + e.message);
+    }
+}
+
+async function triggerRecovery(orderId) {
+    try {
+        const maxDiscount = Number(document.getElementById('recoveryDiscountMax')?.value || 10);
+        const res = await fetch(getApiUrl('/api/recovery/trigger'), {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({
+                order_id: orderId,
+                discount_percent: maxDiscount
+            })
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert(`Prepaid recovery link created! Link: ${data.payment_url}\nBuyer will be contacted with discounted prepaid offer.`);
+            fetchRecoveryData();
+        } else {
+            alert(`Recovery blocked: ${data.reason || data.error || 'Check requirements'}`);
+        }
+    } catch (e) {
+        alert('Error triggering recovery: ' + e.message);
+    }
+}
+
+async function approveReship(orderOrAttemptId) {
+    try {
+        const res = await fetch(getApiUrl('/api/recovery/approve-reship'), {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({
+                recovery_attempt_id: orderOrAttemptId,
+                payment_mode: 'PREPAID'
+            })
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert('Reshipment approved! Order created for courier dispatch as 100% PREPAID.');
+            fetchRecoveryData();
+            fetchOrders();
+        } else {
+            alert(`Reshipment blocked: ${data.error || 'Payment or address requirements not met'}`);
+        }
+    } catch (e) {
+        alert('Error approving reshipment: ' + e.message);
+    }
+}
+
+async function saveRecoverySettings() {
+    try {
+        const discountMax = Number(document.getElementById('recoveryDiscountMax')?.value || 10);
+        const minPrice = Number(document.getElementById('recoveryMinPrice')?.value || 300);
+        const autoApprove = Boolean(document.getElementById('recoveryAutoApprove')?.checked);
+
+        await fetch(getApiUrl('/api/recovery/settings'), {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({
+                seller_id: currentActiveSellerId,
+                discount_max: discountMax,
+                min_product_price: minPrice,
+                auto_approve: autoApprove
+            })
+        });
+    } catch (e) {
+        console.warn('Could not save recovery settings:', e.message);
     }
 }
 

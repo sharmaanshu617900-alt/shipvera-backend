@@ -171,8 +171,8 @@ async function triggerOutboundCall({ order, seller, forcedIntent = null, live, r
     };
   }
 
-  if (seller.wallet_balance_inr < 6.00) {
-    throw new Error('Insufficient wallet balance. Recharge required before calls can be dispatched.');
+  if (seller.wallet_balance_inr < 12.00) {
+    throw new Error('Insufficient wallet balance. Recharge required before calls can be dispatched (₹12 ex-GST per verified order).');
   }
 
   db.updateOrder(order.id, { verification_status: 'calling' });

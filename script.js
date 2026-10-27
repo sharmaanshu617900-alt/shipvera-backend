@@ -428,9 +428,9 @@ window.updateCalculator = function() {
     const returnedOrders = Math.round(orders * (rtoRate / 100));
     const monthlyBurn = returnedOrders * lossPerReturn;
 
-    // TrustOrder cuts RTO by 70%
-    const monthlySavings = Math.round(monthlyBurn * 0.70);
-    const toolCost = orders * 6; // ₹6 per verified order
+    // Estimated verified prevention benchmark
+    const monthlySavings = Math.round(monthlyBurn * 0.50);
+    const toolCost = orders * 12; // ₹12 ex-GST per verified order
     const netProfit = monthlySavings - toolCost;
     const roiMultiplier = (monthlySavings / (toolCost || 1)).toFixed(1);
 

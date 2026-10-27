@@ -131,11 +131,25 @@ class QueueEngine {
       return;
     }
 
-    // Check wallet balance
-    if (seller.wallet_balance_inr < 6.00) {
+    // Part 1 H: Risk-based calling only
+    // Low-risk repeat buyer = risk score only, no call, no credit deduction.
+    const buyerTrust = db.getBuyerTrust(order.buyer_phone);
+    const isLowRiskRepeat = order.risk_score < 30 && buyerTrust && buyerTrust.global_risk_level === 'trusted';
+    if (isLowRiskRepeat) {
+      console.log(`[QUEUE] Low-risk repeat buyer detected for Order ${order.external_order_id} (Score: ${order.risk_score}). Skipping call, no credit deduction.`);
+      db.updateOrder(order.id, {
+        verification_status: 'verified_low_risk_auto',
+        tags: [...(order.tags || []), 'RTO-Shield-LowRisk-SkippedCall']
+      });
+      db.updateJob(job.id, { status: 'completed', result: 'LOW_RISK_REPEAT_BUYER_NO_CALL' });
+      return;
+    }
+
+    // Check wallet balance (Voice fee: ₹12.00 ex-GST)
+    if (seller.wallet_balance_inr < 12.00) {
       db.updateOrder(order.id, { verification_status: 'payment_required' });
-      db.updateJob(job.id, { status: 'failed', error: 'Wallet balance insufficient (₹0.00)' });
-      console.warn(`[QUEUE] Order ${order.external_order_id} halted: Zero wallet balance.`);
+      db.updateJob(job.id, { status: 'failed', error: 'Wallet balance insufficient (< ₹12.00)' });
+      console.warn(`[QUEUE] Order ${order.external_order_id} halted: Wallet balance insufficient.`);
       return;
     }
 

@@ -25,6 +25,7 @@ const ordersRouter = require('./routes/orders');
 const analyticsRouter = require('./routes/analytics');
 const walletRouter = require('./routes/wallet');
 const authRouter = require('./routes/auth');
+const recoveryRouter = require('./routes/recovery');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -66,6 +67,7 @@ app.use('/api/webhooks', webhooksRouter);
 app.use('/api/orders', ordersRouter);
 app.use('/api/analytics', analyticsRouter);
 app.use('/api/wallet', walletRouter);
+app.use('/api/recovery', recoveryRouter);
 
 // Lead Waitlist Endpoint. The lead is actually stored (db.addLead),
 // not just echoed back, and no seller wallet is invented for a lead.

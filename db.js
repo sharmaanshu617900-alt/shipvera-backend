@@ -195,8 +195,8 @@ class Database {
       shopify_webhook_secret: sellerData.shopify_webhook_secret || null,
       shiprocket_token: sellerData.shiprocket_token || null,
       shiprocket_email: sellerData.shiprocket_email || null,
-      wallet_balance_inr: 0.00, // Strictly ₹0.00 (Zero Free Credits, Pure Pay-As-You-Go)
-      trust_lock_balance_inr: 0.00,
+      wallet_balance_inr: Number(sellerData.wallet_balance_inr !== undefined ? sellerData.wallet_balance_inr : 0.00),
+      trust_lock_balance_inr: Number(sellerData.trust_lock_balance_inr !== undefined ? sellerData.trust_lock_balance_inr : 0.00),
       plan_tier: sellerData.plan_tier || 'pay_as_you_go',
       plan_billing_cycle: sellerData.plan_billing_cycle || 'monthly',
       credits_remaining: 0,
@@ -643,6 +643,44 @@ class Database {
     return this.data.subscriptions.find(s => s.seller_id === sellerId && s.status === 'active') || null;
   }
 
+  // --- Trust Lock Payments ---
+  createTrustLockPayment({ sellerId, orderId, amount = 19, razorpayPaymentId = null, status = 'collected' }) {
+    if (!Array.isArray(this.data.trust_lock_payments)) {
+      this.data.trust_lock_payments = [];
+    }
+    const payment = {
+      id: crypto.randomUUID(),
+      seller_id: sellerId,
+      order_id: orderId,
+      amount: Number(amount) || 19,
+      razorpay_payment_id: razorpayPaymentId,
+      status: status || 'collected',
+      created_at: new Date().toISOString()
+    };
+    this.data.trust_lock_payments.unshift(payment);
+    this.save();
+    return payment;
+  }
+
+  settleTrustLockPayments(sellerId) {
+    if (!Array.isArray(this.data.trust_lock_payments)) {
+      this.data.trust_lock_payments = [];
+    }
+    const batchId = 'batch_' + crypto.randomUUID();
+    const settledTime = new Date().toISOString();
+    let count = 0;
+    for (const p of this.data.trust_lock_payments) {
+      if (p.seller_id === sellerId && p.status === 'collected') {
+        p.status = 'settled';
+        p.settled_at = settledTime;
+        p.settlement_batch_id = batchId;
+        count++;
+      }
+    }
+    this.save();
+    return { batchId, settledCount: count, settledAt: settledTime };
+  }
+
   // --- RTO RECOVERY ATTEMPTS (Strictly Append-Only) ---
   createRecoveryAttempt(data) {
     if (!Array.isArray(this.data.recovery_attempts)) {
@@ -650,31 +688,32 @@ class Database {
     }
     const attempt = {
       id: data.id || crypto.randomUUID(),
-      seller_id: data.seller_id,
-      original_order_id: data.original_order_id,
-      rto_cost_sunk: Number(data.rto_cost_sunk) || 0.00,
-      product_price: Number(data.product_price) || 0.00,
-      discount_percent: Number(data.discount_percent) || 0.00,
-      forward_shipping: Number(data.forward_shipping) || 80.00,
-      packaging: Number(data.packaging) || 20.00,
-      commission: Number(data.commission) || 0.00,
-      call_cost: Number(data.call_cost) || 7.00,
-      new_product_cost: Number(data.new_product_cost) || 0.00,
-      qc_status: data.qc_status || 'unknown',
-      worth_it_result: Boolean(data.worth_it_result),
-      total_cost: Number(data.total_cost) || 0.00,
-      net_margin: Number(data.net_margin) || 0.00,
-      buyer_contacted: Boolean(data.buyer_contacted),
-      contact_channel: data.contact_channel || null,
-      buyer_response: data.buyer_response || 'not_contacted',
-      razorpay_payment_link_id: data.razorpay_payment_link_id || null,
-      razorpay_payment_link_url: data.razorpay_payment_link_url || null,
-      payment_status: data.payment_status || 'unpaid',
-      payment_id: data.payment_id || null,
-      seller_approval: Boolean(data.seller_approval),
-      reship_status: data.reship_status || 'pending_payment',
-      reship_tracking_number: data.reship_tracking_number || null,
-      corrected_address: data.corrected_address || null,
+      seller_id: data.seller_id || data.sellerId,
+      original_order_id: data.original_order_id || data.originalOrderId,
+      rto_cost_sunk: Number(data.rto_cost_sunk !== undefined ? data.rto_cost_sunk : data.rtoCostSunk) || 0.00,
+      product_price: Number(data.product_price !== undefined ? data.product_price : data.productPrice) || 0.00,
+      discount_percent: Number(data.discount_percent !== undefined ? data.discount_percent : data.discountPercent) || 0.00,
+      forward_shipping: Number(data.forward_shipping !== undefined ? data.forward_shipping : data.forwardShipping) || 80.00,
+      packaging: Number(data.packaging !== undefined ? data.packaging : data.packaging) || 20.00,
+      commission: Number(data.commission !== undefined ? data.commission : data.commission) || 0.00,
+      call_cost: Number(data.call_cost !== undefined ? data.call_cost : data.callCost) || 7.00,
+      new_product_cost: Number(data.new_product_cost !== undefined ? data.new_product_cost : data.newProductCost) || 0.00,
+      qc_status: data.qc_status || data.qcStatus || 'unknown',
+      worth_it_result: Boolean(data.worth_it_result !== undefined ? data.worth_it_result : data.worthItResult),
+      total_cost: Number(data.total_cost || data.totalCost) || 0.00,
+      net_margin: Number(data.net_margin || data.netMargin) || 0.00,
+      buyer_contacted: Boolean(data.buyer_contacted || data.buyerContacted),
+      contact_channel: data.contact_channel || data.contactChannel || null,
+      buyer_response: data.buyer_response || data.buyerResponse || 'not_contacted',
+      razorpay_payment_link_id: data.razorpay_payment_link_id || data.razorpayPaymentLinkId || (data.meta && data.meta.payment_link_id) || null,
+      razorpay_payment_link_url: data.razorpay_payment_link_url || data.razorpayPaymentLinkUrl || (data.meta && data.meta.payment_url) || null,
+      payment_status: data.payment_status || data.paymentStatus || 'unpaid',
+      payment_id: data.payment_id || data.paymentId || null,
+      seller_approval: Boolean(data.seller_approval !== undefined ? data.seller_approval : data.sellerApproval),
+      reship_status: data.reship_status || data.reshipStatus || 'pending_payment',
+      reship_tracking_number: data.reship_tracking_number || data.reshipTrackingNumber || null,
+      corrected_address: data.corrected_address || data.correctedAddress || null,
+      meta: data.meta || {},
       created_at: new Date().toISOString()
     };
 
@@ -734,8 +773,11 @@ class Database {
       total_rto_orders: rtoOrders.length,
       total_recovery_attempts: attempts.length,
       total_recovered_orders: paidAttempts.length,
+      total_recovered_revenue: Number(totalRecoveredRevenue.toFixed(2)),
       total_recovered_revenue_inr: Number(totalRecoveredRevenue.toFixed(2)),
+      total_recovery_commission_paid: Number(totalCommissionPaid.toFixed(2)),
       total_recovery_commission_paid_inr: Number(totalCommissionPaid.toFixed(2)),
+      total_rto_loss_avoided: Number(totalRtoLossAvoided.toFixed(2)),
       total_rto_loss_avoided_inr: Number(totalRtoLossAvoided.toFixed(2)),
       success_rate_pct: attempts.length > 0 ? Math.round((paidAttempts.length / attempts.length) * 100) : 0
     };
@@ -853,11 +895,16 @@ class Database {
       cost_per_verified_order_inr: 12.00
     };
   }
+
+  getEmptyData() {
+    return getEmptyData();
+  }
 }
 
 const db = new Database();
 
 module.exports = {
   db,
-  hashPhone
+  hashPhone,
+  getEmptyData
 };
