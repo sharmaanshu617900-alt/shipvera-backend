@@ -50,15 +50,36 @@ async function updateShiprocketCustomAddress({ token, externalOrderId, deliveryA
       let body = '';
       res.on('data', chunk => body += chunk);
       res.on('end', () => {
-        resolve({
-          success: res.statusCode >= 200 && res.statusCode < 300,
-          statusCode: res.statusCode,
-          response: body
-        });
+        try {
+          const parsed = JSON.parse(body);
+          if (res.statusCode >= 200 && res.statusCode < 300) {
+            resolve({
+              success: true,
+              live: true,
+              statusCode: res.statusCode,
+              data: parsed
+            });
+          } else {
+            const errMsg = parsed.message || (res.statusCode === 429 ? 'Shiprocket API rate limit reached (429)' : `Shiprocket API error (Status ${res.statusCode})`);
+            resolve({
+              success: false,
+              statusCode: res.statusCode,
+              error: errMsg,
+              details: parsed
+            });
+          }
+        } catch (e) {
+          resolve({
+            success: res.statusCode >= 200 && res.statusCode < 300,
+            statusCode: res.statusCode,
+            error: res.statusCode >= 300 ? body : null,
+            response: body
+          });
+        }
       });
     });
 
-    req.on('error', err => resolve({ success: false, error: err.message }));
+    req.on('error', err => resolve({ success: false, error: `Shiprocket connection error: ${err.message}` }));
     req.write(postData);
     req.end();
   });

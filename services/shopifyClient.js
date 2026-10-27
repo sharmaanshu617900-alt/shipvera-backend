@@ -1,5 +1,5 @@
 /**
- * Shipvera Shopify Admin Integration Client
+ * TrustOrder Shopify Admin Integration Client
  * Production-ready REST & GraphQL connector
  * Auto-syncs cleaned addresses, tags, and cancellation triggers directly into Shopify.
  */
@@ -51,7 +51,7 @@ async function updateShopifyOrderAddress({ shopifyDomain, accessToken, externalO
         zip: shippingAddress.zip
       },
       tags: Array.isArray(tags) ? tags.join(', ') : tags,
-      note: note || 'Verified & Cleaned by Shipvera Voice AI'
+      note: note || 'Verified & Cleaned by TrustOrder Voice AI'
     }
   };
 
@@ -76,19 +76,30 @@ async function updateShopifyOrderAddress({ shopifyDomain, accessToken, externalO
           if (res.statusCode >= 200 && res.statusCode < 300) {
             console.log(`[SHOPIFY SYNC - SUCCESS] Order ${externalOrderId} (${targetId}) synchronized successfully.`);
             resolve({ success: true, live: true, data: parsed });
+          } else if (res.statusCode === 429) {
+            const retryAfter = res.headers['retry-after'] || '2';
+            console.warn(`[SHOPIFY SYNC - RATE LIMIT] 429 Too Many Requests. Retry-After: ${retryAfter}s`);
+            resolve({
+              success: false,
+              statusCode: 429,
+              rateLimited: true,
+              retryAfterSeconds: Number(retryAfter),
+              error: `Shopify API rate limit exceeded (429). Retry after ${retryAfter} seconds.`
+            });
           } else {
             console.warn(`[SHOPIFY SYNC - WARN] Status ${res.statusCode}: ${body}`);
-            resolve({ success: false, statusCode: res.statusCode, error: body });
+            const errMsg = parsed.errors || parsed.error_description || `Shopify update failed with status ${res.statusCode}`;
+            resolve({ success: false, statusCode: res.statusCode, error: typeof errMsg === 'object' ? JSON.stringify(errMsg) : errMsg, details: parsed });
           }
         } catch (e) {
-          resolve({ success: false, error: body });
+          resolve({ success: false, error: body, statusCode: res.statusCode });
         }
       });
     });
 
     req.on('error', (err) => {
       console.error('[SHOPIFY SYNC - ERROR]', err.message);
-      resolve({ success: false, error: err.message });
+      resolve({ success: false, error: `Shopify connection error: ${err.message}` });
     });
 
     req.write(postData);
@@ -111,7 +122,7 @@ async function cancelShopifyOrder({ shopifyDomain, accessToken, externalOrderId,
   const payload = {
     reason,
     email: false,
-    note: 'Cancelled by Shipvera AI: Buyer confirmed cancellation during dispatch phone call.'
+    note: 'Cancelled by TrustOrder AI: Buyer confirmed cancellation during dispatch phone call.'
   };
 
   const postData = JSON.stringify(payload);
@@ -130,11 +141,24 @@ async function cancelShopifyOrder({ shopifyDomain, accessToken, externalOrderId,
       let body = '';
       res.on('data', chunk => body += chunk);
       res.on('end', () => {
-        resolve({ success: res.statusCode >= 200 && res.statusCode < 300, statusCode: res.statusCode });
+        try {
+          const parsed = JSON.parse(body);
+          if (res.statusCode >= 200 && res.statusCode < 300) {
+            resolve({ success: true, live: true, statusCode: res.statusCode, data: parsed });
+          } else if (res.statusCode === 429) {
+            const retryAfter = res.headers['retry-after'] || '2';
+            resolve({ success: false, statusCode: 429, rateLimited: true, error: `Shopify rate limit exceeded (429). Retry after ${retryAfter}s` });
+          } else {
+            const errMsg = parsed.errors || parsed.error_description || `Shopify cancellation failed with status ${res.statusCode}`;
+            resolve({ success: false, statusCode: res.statusCode, error: typeof errMsg === 'object' ? JSON.stringify(errMsg) : errMsg, details: parsed });
+          }
+        } catch (e) {
+          resolve({ success: res.statusCode >= 200 && res.statusCode < 300, statusCode: res.statusCode, error: body });
+        }
       });
     });
 
-    req.on('error', err => resolve({ success: false, error: err.message }));
+    req.on('error', err => resolve({ success: false, error: `Shopify cancel connection error: ${err.message}` }));
     req.write(postData);
     req.end();
   });

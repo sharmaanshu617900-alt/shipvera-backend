@@ -1,16 +1,17 @@
 /**
- * Shipvera Dashboard Interactive Engine
+ * TrustOrder Dashboard Interactive Engine
  * Professional Enterprise Operations Console
  * Connected to Render Cloud Backend (/api/orders, /api/analytics, /api/wallet, /api/calls/trigger)
  */
 
 // Centralized API Base Resolver for Render Cloud Backend
 function getApiUrl(path) {
-    if (typeof window !== 'undefined' && window.ShipveraConfig && typeof window.ShipveraConfig.getApiUrl === 'function') {
-        return window.ShipveraConfig.getApiUrl(path);
+    const config = window.TrustOrderConfig || window.ShipveraConfig;
+    if (typeof window !== 'undefined' && config && typeof config.getApiUrl === 'function') {
+        return config.getApiUrl(path);
     }
-    const saved = localStorage.getItem('SHIPVERA_BACKEND_URL');
-    const base = (saved && saved.trim()) ? saved.trim().replace(/\/+$/, '') : 'https://shipvera-backend.onrender.com';
+    const saved = localStorage.getItem('TRUSTORDER_BACKEND_URL') || (localStorage.getItem('TRUSTORDER_BACKEND_URL') || localStorage.getItem('SHIPVERA_BACKEND_URL'));
+    const base = (saved && saved.trim()) ? saved.trim().replace(/\/+$/, '') : 'https://trustorder-backend.onrender.com';
     const cleanPath = path.startsWith('/') ? path : '/' + path;
     return `${base}${cleanPath}`;
 }
@@ -21,7 +22,7 @@ let selectedPack = 'growth';
 let selectedPackAmount = 2999;
 let currentModalOrderId = null;
 let currentActiveSellerId = null;
-let currentActiveBrand = 'Snitch Apparel & Streetwear';
+let currentActiveBrand = '';
 
 // Read query params or localStorage for active seller
 try {
@@ -29,13 +30,13 @@ try {
     const paramSellerId = urlParams.get('seller_id');
     if (paramSellerId) {
         currentActiveSellerId = paramSellerId;
-        localStorage.setItem('shipvera_active_seller_id', paramSellerId);
+        localStorage.setItem('trustorder_active_seller_id', paramSellerId); localStorage.setItem('shipvera_active_seller_id', paramSellerId);
     } else {
-        const savedSellerId = localStorage.getItem('shipvera_active_seller_id');
+        const savedSellerId = (localStorage.getItem('trustorder_active_seller_id') || localStorage.getItem('shipvera_active_seller_id'));
         if (savedSellerId) currentActiveSellerId = savedSellerId;
     }
 
-    const savedSeller = localStorage.getItem('shipvera_active_seller');
+    const savedSeller = (localStorage.getItem('trustorder_active_seller') || localStorage.getItem('shipvera_active_seller'));
     if (savedSeller) {
         const parsed = JSON.parse(savedSeller);
         if (parsed.brand_name && (!currentActiveSellerId || parsed.id === currentActiveSellerId)) {
@@ -47,7 +48,7 @@ try {
 
 function getAuthHeaders() {
     const headers = { 'Content-Type': 'application/json' };
-    const userEmail = localStorage.getItem('shipvera_user_email');
+    const userEmail = (localStorage.getItem('trustorder_user_email') || localStorage.getItem('shipvera_user_email'));
     if (userEmail) {
         headers['x-seller-email'] = userEmail;
     }
@@ -63,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (storeNameEl) storeNameEl.textContent = currentActiveBrand;
     }
 
-    const founderName = localStorage.getItem('shipvera_founder_name');
+    const founderName = (localStorage.getItem('trustorder_founder_name') || localStorage.getItem('shipvera_founder_name'));
     if (founderName) {
         const dppFounderName = document.getElementById('dppFounderName');
         const dppAvatar = document.getElementById('dppAvatar');
@@ -95,7 +96,8 @@ async function fetchDashboardData() {
         fetchAnalytics(),
         fetchWallet(),
         fetchOrders(),
-        fetchIntegrationsStatus()
+        fetchIntegrationsStatus(),
+        fetchRecoveryData()
     ]);
 }
 
@@ -215,7 +217,7 @@ function renderOrdersTable() {
                         </div>
                         <div style="font-size: 1.15rem; font-weight: 700; color: #0F172A; margin-bottom: 6px;">No COD Orders Dispatched Yet</div>
                         <p style="margin: 0 0 20px 0; font-size: 0.86rem; color: #64748B; max-width: 520px; margin-left: auto; margin-right: auto; line-height: 1.5;">
-                            Shipvera is standing by to protect your COD orders. When an order arrives, our autonomous Hinglish voice agent calls your buyer within 60 seconds to confirm purchase intent and enrich courier labels with missing landmarks.
+                            TrustOrder is standing by to protect your COD orders. When an order arrives, our autonomous Hinglish voice agent calls your buyer within 60 seconds to confirm purchase intent and enrich courier labels with missing landmarks.
                         </p>
                         <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
                             <button class="btn-dab btn-primary" onclick="openTestLiveCallModal()">
@@ -498,8 +500,8 @@ function toggleStoreDropdown() {
 
 async function loadRegisteredStores() {
     try {
-        const userEmail = localStorage.getItem('shipvera_user_email') || '';
-        const activeId = currentActiveSellerId || localStorage.getItem('shipvera_active_seller_id') || '';
+        const userEmail = (localStorage.getItem('trustorder_user_email') || localStorage.getItem('shipvera_user_email')) || '';
+        const activeId = currentActiveSellerId || (localStorage.getItem('trustorder_active_seller_id') || localStorage.getItem('shipvera_active_seller_id')) || '';
 
         const queryParams = new URLSearchParams();
         if (userEmail) queryParams.set('email', userEmail);
@@ -548,8 +550,8 @@ async function loadRegisteredStores() {
 function switchStore(brandName, sellerId) {
     currentActiveBrand = brandName;
     currentActiveSellerId = sellerId;
-    localStorage.setItem('shipvera_active_seller_id', sellerId);
-    localStorage.setItem('shipvera_active_brand', brandName);
+    localStorage.setItem('trustorder_active_seller_id', sellerId); localStorage.setItem('shipvera_active_seller_id', sellerId);
+    localStorage.setItem('trustorder_active_brand', brandName); localStorage.setItem('shipvera_active_brand', brandName);
 
     const storeNameEl = document.getElementById('storeName');
     if (storeNameEl) storeNameEl.textContent = brandName;
@@ -805,15 +807,15 @@ async function openTranscriptModal(orderId) {
             modalSub.textContent = `${o.city || 'India'} • Recorded via Sarvam Bulbul Engine`;
 
             const transcript = latestLog.transcript || [
-                { role: 'ai', speaker: 'Shipvera AI', text: `Namaste ${o.buyer_name} ji! Main ${currentActiveBrand} ke dispatch desk se Shipvera AI bol raha hoon. Aapka ₹${o.cod_amount} ka order pack ho gaya hai.` },
-                { role: 'ai', speaker: 'Shipvera AI', text: `Bhaiya aapne address me '${o.raw_address}' likha hai par landmark missing hai. Aas-paas konsi dukaan ya mandir hai bata dijiye?` },
+                { role: 'ai', speaker: 'TrustOrder AI', text: `Namaste ${o.buyer_name} ji! Main ${currentActiveBrand} ke dispatch desk se TrustOrder AI bol raha hoon. Aapka ₹${o.cod_amount} ka order pack ho gaya hai.` },
+                { role: 'ai', speaker: 'TrustOrder AI', text: `Bhaiya aapne address me '${o.raw_address}' likha hai par landmark missing hai. Aas-paas konsi dukaan ya mandir hai bata dijiye?` },
                 { role: 'user', speaker: `Buyer (${o.buyer_name})`, text: 'Haan bhaiya, Bikaner sweets ke samne safed gate hai 2nd floor, wahi deliver kar dena.' },
-                { role: 'ai', speaker: 'Shipvera AI', text: 'Acha note kar liya! 3-4 din me parcel mil jayega. Dhanyawad!' }
+                { role: 'ai', speaker: 'TrustOrder AI', text: 'Acha note kar liya! 3-4 din me parcel mil jayega. Dhanyawad!' }
             ];
 
             stream.innerHTML = transcript.map(t => `
                 <div class="t-bubble ${t.role === 'ai' ? 'ai' : 'user'}">
-                    <span class="t-bubble-speaker">${t.speaker || (t.role === 'ai' ? 'Shipvera AI' : 'Customer')}</span>
+                    <span class="t-bubble-speaker">${t.speaker || (t.role === 'ai' ? 'TrustOrder AI' : 'Customer')}</span>
                     <p style="margin: 0;">"${t.text || t.message || ''}"</p>
                 </div>
             `).join('');
@@ -858,7 +860,7 @@ function openTrustLockModal(orderId) {
     const msg = `Hi ${order.buyer_name}, humne aapka ₹${order.cod_amount} ka parcel dispatch karne ke liye call kiya tha par connect nahi hua. Parcel hold na ho isliye bas ₹19 ka chota token UPI karke apna address lock kar dein. Baaki ₹${remaining} delivery pe hi dena hai!`;
 
     document.getElementById('tlWaMessage').textContent = msg;
-    document.getElementById('tlRazorpayLink').textContent = `https://rzp.io/l/shipvera_tl_${order.id.slice(0, 6)}`;
+    document.getElementById('tlRazorpayLink').textContent = `https://rzp.io/l/trustorder_tl_${order.id.slice(0, 6)}`;
     document.getElementById('tlShopifyNote').textContent = `Prepaid Token: ₹19 | Remaining COD: ₹${remaining}`;
 
     document.getElementById('trustLockModal').classList.add('open');
@@ -995,7 +997,7 @@ function openBackendConfigModal() {
     if (input) {
         const currentUrl = (window.ShipveraConfig && typeof window.ShipveraConfig.getBackendBaseUrl === 'function')
             ? window.ShipveraConfig.getBackendBaseUrl()
-            : (localStorage.getItem('SHIPVERA_BACKEND_URL') || 'https://shipvera-backend.onrender.com');
+            : ((localStorage.getItem('TRUSTORDER_BACKEND_URL') || localStorage.getItem('SHIPVERA_BACKEND_URL')) || 'https://trustorder-backend.onrender.com');
         input.value = currentUrl;
     }
 
@@ -1016,7 +1018,7 @@ async function testBackendConnection() {
     const details = document.getElementById('bprDetails');
 
     if (!input || !resultBox) return;
-    const testUrl = input.value.trim() || 'https://shipvera-backend.onrender.com';
+    const testUrl = input.value.trim() || 'https://trustorder-backend.onrender.com';
 
     btn.disabled = true;
     btn.innerHTML = '<span>Pinging...</span>';
@@ -1037,7 +1039,7 @@ async function testBackendConnection() {
             const feats = ping.data.features || {};
             details.innerHTML = `
                 <div style="margin-top: 6px; line-height: 1.5; font-size: 0.8rem; color: #18181B;">
-                    <strong>Platform:</strong> ${ping.data.platform || 'Shipvera Voice AI Engine'}<br>
+                    <strong>Platform:</strong> ${ping.data.platform || 'TrustOrder Voice AI Engine'}<br>
                     <strong>Brand:</strong> ${seller.brand || 'Enterprise Workspace'}<br>
                     <strong>Wallet Balance:</strong> ${seller.wallet_balance || '₹0.00'} (${seller.available_verifications || 0} verifications)<br>
                     <strong>Voice AI Telephony:</strong> <span style="color: #058A5E;">${feats.landmark_interrogator_voice_ai || 'Active'}</span><br>
@@ -1073,14 +1075,14 @@ function saveBackendConfiguration() {
 
     const newUrl = input.value.trim();
     if (!newUrl) {
-        alert('Please enter a valid Render service URL (e.g., https://shipvera-backend.onrender.com)');
+        alert('Please enter a valid Render service URL (e.g., https://trustorder-backend.onrender.com)');
         return;
     }
 
     if (window.ShipveraConfig && typeof window.ShipveraConfig.setBackendUrl === 'function') {
         window.ShipveraConfig.setBackendUrl(newUrl);
     } else {
-        localStorage.setItem('SHIPVERA_BACKEND_URL', newUrl);
+        localStorage.setItem('TRUSTORDER_BACKEND_URL', newUrl); localStorage.setItem('SHIPVERA_BACKEND_URL', newUrl);
     }
 
     closeBackendConfigModal();
@@ -1111,21 +1113,21 @@ function openShopifyModal() {
     if (webhookInput) {
         const base = (window.ShipveraConfig && typeof window.ShipveraConfig.getBackendBaseUrl === 'function')
             ? window.ShipveraConfig.getBackendBaseUrl()
-            : (localStorage.getItem('SHIPVERA_BACKEND_URL') || window.location.origin);
+            : ((localStorage.getItem('TRUSTORDER_BACKEND_URL') || localStorage.getItem('SHIPVERA_BACKEND_URL')) || window.location.origin);
         webhookInput.value = `${base}/api/webhooks/shopify/orders-create`;
     }
 
-    const savedDomain = localStorage.getItem('shipvera_shopify_domain') || 'snitch-streetwear.myshopify.com';
+    const savedDomain = (localStorage.getItem('trustorder_shopify_domain') || localStorage.getItem('shipvera_shopify_domain')) || '';
     const domainInput = document.getElementById('shopifyDomainInput');
     if (domainInput && !domainInput.value) {
         domainInput.value = savedDomain;
     }
 
-    // Auto-detect store display
+    // Store display in connect modal
     const odbStoreName = document.getElementById('odbStoreName');
     const odbStoreDomain = document.getElementById('odbStoreDomain');
-    if (odbStoreName) odbStoreName.textContent = currentActiveBrand || 'Snitch Apparel & Streetwear';
-    if (odbStoreDomain) odbStoreDomain.textContent = savedDomain;
+    if (odbStoreName) odbStoreName.textContent = currentActiveBrand || 'Connect Store';
+    if (odbStoreDomain) odbStoreDomain.textContent = savedDomain || 'Enter domain and token below';
 
     // Reset progress
     const progressWrap = document.getElementById('oneClickShopifyProgress');
@@ -1135,7 +1137,7 @@ function openShopifyModal() {
     if (progressWrap) progressWrap.style.display = 'none';
     if (fill) fill.style.width = '0%';
     if (btn) btn.disabled = false;
-    if (btnText) btnText.textContent = '⚡ Yes, Connect in 1-Click (Boom!) →';
+    if (btnText) btnText.textContent = '⚡ Connect Shopify Store →';
 
     const statusBox = document.getElementById('shopifyConnectionStatus');
     if (statusBox) statusBox.style.display = 'none';
@@ -1154,7 +1156,7 @@ function toggleManualShopifySetup() {
     if (!section) return;
     if (section.style.display === 'none') {
         section.style.display = 'block';
-        if (toggleText) toggleText.textContent = '⚙ Hide Manual Webhook Setup ▲';
+        if (toggleText) toggleText.textContent = '⚙ Hide Manual Credentials ▲';
     } else {
         section.style.display = 'none';
         if (toggleText) toggleText.textContent = '⚙ Connect Different Store / Manual Webhook (Advanced) ▼';
@@ -1167,16 +1169,28 @@ async function executeOneClickShopify() {
     const progressWrap = document.getElementById('oneClickShopifyProgress');
     const fill = document.getElementById('ocShopifyFill');
     const status = document.getElementById('ocShopifyStatus');
+    const domainInput = document.getElementById('shopifyDomainInput');
+    const tokenInput = document.getElementById('shopifyTokenInput');
+
+    const domain = (domainInput && domainInput.value.trim()) || (localStorage.getItem('trustorder_shopify_domain') || localStorage.getItem('shipvera_shopify_domain')) || '';
+    const token = (tokenInput && tokenInput.value.trim()) || '';
+
+    if (!domain || !token) {
+        const section = document.getElementById('manualShopifySection');
+        if (section) section.style.display = 'block';
+        if (!domain && domainInput) domainInput.focus();
+        else if (!token && tokenInput) tokenInput.focus();
+        alert('Please enter your Shopify store domain and Admin API Access Token (shpat_...) below.');
+        return;
+    }
 
     if (btn) btn.disabled = true;
     if (progressWrap) progressWrap.style.display = 'block';
 
-    const detectedDomain = localStorage.getItem('shipvera_shopify_domain') || 'snitch-streetwear.myshopify.com';
-
     // Step 1: Handshake
     if (fill) fill.style.width = '35%';
-    if (status) status.textContent = `Authenticating session with ${detectedDomain}...`;
-    await new Promise(r => setTimeout(r, 350));
+    if (status) status.textContent = `Authenticating session with ${domain}...`;
+    await new Promise(r => setTimeout(r, 200));
 
     // Step 2: Register Webhook
     if (fill) fill.style.width = '75%';
@@ -1188,18 +1202,18 @@ async function executeOneClickShopify() {
             headers: getAuthHeaders(),
             body: JSON.stringify({
                 seller_id: currentActiveSellerId,
-                shopify_domain: detectedDomain,
-                shopify_access_token: 'shpat_auto_provisioned_1click_token'
+                shopify_domain: domain,
+                shopify_access_token: token
             })
         });
         const data = await res.json();
 
         if (data.success) {
-            // Step 3: Success Boom!
+            // Step 3: Success
             if (fill) fill.style.width = '100%';
             if (status) {
                 status.style.color = '#058A5E';
-                status.textContent = '🎉 BOOM! Store Connected in 1-Click!';
+                status.textContent = '🎉 Store Connected Successfully!';
             }
             if (btnText) btnText.textContent = '✓ Store Protected & Active!';
 
@@ -1211,17 +1225,18 @@ async function executeOneClickShopify() {
                 tag.className = 'dib-status-tag active';
             }
             if (desc) {
-                desc.textContent = `1-Click Auto-Syncing real-time COD checkouts from ${data.shopify_domain}`;
+                desc.textContent = `Auto-syncing real-time COD checkouts from ${data.shopify_domain}`;
             }
-            localStorage.setItem('shipvera_shopify_domain', data.shopify_domain);
+            localStorage.setItem('trustorder_shopify_domain', data.shopify_domain); localStorage.setItem('shipvera_shopify_domain', data.shopify_domain);
 
             setTimeout(() => {
                 closeShopifyModal();
+                if (typeof loadSellerProfile === 'function') loadSellerProfile();
             }, 1200);
         } else {
             if (status) {
                 status.style.color = '#DC2626';
-                status.textContent = `Error: ${data.error || 'Failed to auto-connect'}`;
+                status.textContent = `Error: ${data.error || 'Failed to connect'}`;
             }
             if (btn) btn.disabled = false;
         }
@@ -1313,7 +1328,7 @@ async function saveShopifyConnection() {
             if (desc) {
                 desc.textContent = `Auto-syncs shipping labels via official webhook from ${data.shopify_domain}`;
             }
-            localStorage.setItem('shipvera_shopify_domain', data.shopify_domain);
+            localStorage.setItem('trustorder_shopify_domain', data.shopify_domain); localStorage.setItem('shipvera_shopify_domain', data.shopify_domain);
             setTimeout(() => {
                 closeShopifyModal();
             }, 1200);
@@ -1360,7 +1375,7 @@ function openLogisticsModal() {
     if (btn) btn.disabled = false;
     if (btnText) btnText.textContent = '⚡ Activate 1-Click Courier Sync (Boom!) →';
 
-    const savedProvider = localStorage.getItem('shipvera_logistics_provider') || 'shiprocket';
+    const savedProvider = (localStorage.getItem('trustorder_logistics_provider') || localStorage.getItem('shipvera_logistics_provider')) || 'shiprocket';
     selectLogisticsProvider(savedProvider);
 
     modal.classList.add('open');
@@ -1432,8 +1447,8 @@ async function executeOneClickLogistics() {
             if (desc) {
                 desc.textContent = '1-Click Synced: Verified landmarks auto-print on Shiprocket & Delhivery AWB labels';
             }
-            localStorage.setItem('shipvera_logistics_provider', 'shopify_native');
-            localStorage.setItem('shipvera_logistics_name', '1-Click Courier Sync');
+            localStorage.setItem('trustorder_logistics_provider', 'shopify_native'); localStorage.setItem('shipvera_logistics_provider', 'shopify_native');
+            localStorage.setItem('trustorder_logistics_name', '1-Click Courier Sync'); localStorage.setItem('shipvera_logistics_name', '1-Click Courier Sync');
 
             setTimeout(() => {
                 closeLogisticsModal();
@@ -1535,8 +1550,8 @@ async function saveLogisticsConnection() {
             if (desc) {
                 desc.textContent = `Auto-rewrites verified landmarks onto ${data.providerName} AWB labels before pickup`;
             }
-            localStorage.setItem('shipvera_logistics_provider', selectedLogisticsProvider);
-            localStorage.setItem('shipvera_logistics_name', data.providerName);
+            localStorage.setItem('trustorder_logistics_provider', selectedLogisticsProvider); localStorage.setItem('shipvera_logistics_provider', selectedLogisticsProvider);
+            localStorage.setItem('trustorder_logistics_name', data.providerName); localStorage.setItem('shipvera_logistics_name', data.providerName);
             
             setTimeout(() => {
                 closeLogisticsModal();
@@ -1600,6 +1615,305 @@ async function fetchIntegrationsStatus() {
         }
     } catch (e) {
         console.warn('[DASHBOARD] Notice loading integrations status:', e.message);
+    }
+}
+
+// ---------- 16. Wallet Recharge Modal (Part 3 Exact Pricing) ----------
+let currentSelectedPack = 'voice_100';
+let currentSelectedAmount = 999;
+
+function openRechargeModal() {
+    const modal = document.getElementById('rechargeModal');
+    if (modal) modal.classList.add('open');
+    selectRechargePack('voice_100', 999);
+}
+
+function closeRechargeModal() {
+    const modal = document.getElementById('rechargeModal');
+    if (modal) modal.classList.remove('open');
+}
+
+function selectRechargePack(packId, priceExGst) {
+    currentSelectedPack = packId;
+    currentSelectedAmount = priceExGst;
+
+    document.querySelectorAll('.recharge-card').forEach(c => c.classList.remove('selected'));
+    const radio = document.querySelector(`input[name="rechargePack"][value="${packId}"]`);
+    if (radio) {
+        radio.checked = true;
+        const card = radio.closest('.recharge-card');
+        if (card) card.classList.add('selected');
+    }
+
+    const base = Number(priceExGst);
+    const gst = Number((base * 0.18).toFixed(2));
+    const total = Number((base + gst).toFixed(2));
+
+    const baseEl = document.getElementById('gstBaseAmount');
+    const taxEl = document.getElementById('gstTaxAmount');
+    const totalEl = document.getElementById('gstTotalAmount');
+    const btn = document.getElementById('btnConfirmRecharge');
+
+    if (baseEl) baseEl.textContent = `₹${base.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+    if (taxEl) taxEl.textContent = `₹${gst.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+    if (totalEl) totalEl.textContent = `₹${total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+    if (btn) btn.innerHTML = `<span>Pay ₹${total.toLocaleString('en-IN', { minimumFractionDigits: 2 })} via Razorpay →</span>`;
+}
+
+async function executeRecharge() {
+    const btn = document.getElementById('btnConfirmRecharge');
+    if (!currentActiveSellerId) {
+        alert('Please connect or select a seller workspace before recharging.');
+        return;
+    }
+
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span>Connecting Razorpay...</span>';
+    }
+
+    try {
+        const res = await fetch(getApiUrl('/api/wallet/recharge'), {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({
+                pack_id: currentSelectedPack,
+                seller_id: currentActiveSellerId
+            })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            alert(`Recharge successful! Added ₹${data.checkout ? data.checkout.base_amount_ex_gst : currentSelectedAmount} ex-GST to your wallet.`);
+            closeRechargeModal();
+            fetchWallet();
+        } else {
+            alert(data.error || 'Recharge failed.');
+        }
+    } catch (e) {
+        alert('Connection error during recharge: ' + e.message);
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            selectRechargePack(currentSelectedPack, currentSelectedAmount);
+        }
+    }
+}
+
+// ---------- 17. RTO Recovery Console Engine (Part 2) ----------
+async function fetchRecoveryData() {
+    try {
+        const [statsRes, ordersRes] = await Promise.all([
+            fetch(getApiUrl('/api/recovery/stats'), { headers: getAuthHeaders() }),
+            fetch(getApiUrl('/api/recovery/orders'), { headers: getAuthHeaders() })
+        ]);
+
+        const statsData = await statsRes.json();
+        const ordersData = await ordersRes.json();
+
+        if (statsData.success && statsData.stats) {
+            const s = statsData.stats;
+            const revEl = document.getElementById('recoveryTotalRevenue');
+            const commEl = document.getElementById('recoveryTotalCommission');
+            const lossEl = document.getElementById('recoveryLossAvoided');
+
+            if (revEl) revEl.textContent = `₹${Number(s.total_recovered_revenue || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+            if (commEl) commEl.textContent = `₹${Number(s.total_recovery_commission_paid || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+            if (lossEl) lossEl.textContent = `₹${Number(s.total_rto_loss_avoided || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+        }
+
+        if (ordersData.success && Array.isArray(ordersData.orders)) {
+            renderRecoveryOrders(ordersData.orders);
+        }
+    } catch (e) {
+        console.warn('[RECOVERY] Notice fetching recovery data:', e.message);
+    }
+}
+
+function renderRecoveryOrders(orders) {
+    const tbody = document.getElementById('recoveryOrdersTableBody');
+    if (!tbody) return;
+
+    if (!orders || orders.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="8" style="text-align: center; padding: 24px; color: var(--ink-muted, #7A726A);">
+                    No RTO returned orders currently in recovery pipeline. Real returns from Shopify/Shiprocket will automatically appear here.
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    tbody.innerHTML = orders.map(o => {
+        const price = Number(o.cod_amount || 0);
+        const sunk = Number(o.sunk_rto_cost || 120);
+        const qc = o.return_qc_status || 'pending';
+        const calc = o.worth_it_preview;
+
+        let qcHtml = '';
+        if (qc === 'undamaged') {
+            qcHtml = `<span class="dib-status-tag green">✓ Undamaged (Reshippable)</span>`;
+        } else if (qc === 'damaged') {
+            qcHtml = `<span class="dib-status-tag" style="background: #FFF1F2; color: #E11D48;">⚠ Damaged (Needs Replacement)</span>`;
+        } else {
+            qcHtml = `
+                <div style="display: flex; gap: 4px;">
+                    <button class="btn-dab btn-ghost" onclick="markOrderQc('${o.id}', 'undamaged')" style="padding: 2px 6px; font-size: 0.72rem; color: #058A5E; border-color: #A7F3D0;" title="Mark undamaged and reshippable">✓ Good</button>
+                    <button class="btn-dab btn-ghost" onclick="markOrderQc('${o.id}', 'damaged')" style="padding: 2px 6px; font-size: 0.72rem; color: #E11D48; border-color: #FECACA;" title="Mark damaged (replacement unit needed)">⚠ Damaged</button>
+                </div>
+            `;
+        }
+
+        let worthItHtml = '';
+        if (qc === 'pending') {
+            worthItHtml = `<span style="color: var(--ink-muted); font-size: 0.8rem;">Pending QC inspection</span>`;
+        } else if (calc) {
+            if (calc.is_worth_it) {
+                worthItHtml = `
+                    <span style="color: #058A5E; font-weight: 700; font-size: 0.85rem;">✓ Worth-It</span>
+                    <div style="font-size: 0.72rem; color: #64748B; margin-top: 2px;">
+                        P(₹${calc.prepaid_price_P}) &gt; Cost(₹${calc.total_cost})
+                    </div>
+                `;
+            } else {
+                worthItHtml = `
+                    <span style="color: #E11D48; font-weight: 700; font-size: 0.85rem;">✕ Not Worth-It</span>
+                    <div style="font-size: 0.72rem; color: #64748B; margin-top: 2px;">
+                        Cost(₹${calc.total_cost}) &gt; P(₹${calc.prepaid_price_P})
+                    </div>
+                `;
+            }
+        }
+
+        let payStatusHtml = `<span class="dib-status-tag" style="background: #F1EFEA; color: #64748B;">Pending</span>`;
+        if (o.verification_status === 'rto_recovered_reshipped') {
+            payStatusHtml = `<span class="dib-status-tag green">Paid & Reshipped</span>`;
+        } else if (o.recovery_payment_status === 'paid') {
+            payStatusHtml = `<span class="dib-status-tag green">Paid ₹${price} (Prepaid)</span>`;
+        } else if (o.recovery_payment_link) {
+            payStatusHtml = `<span class="dib-status-tag" style="background: #FFFBEB; color: #D97706;">Link Sent (Unpaid)</span>`;
+        }
+
+        let actionHtml = '';
+        if (o.verification_status === 'rto_recovered_reshipped') {
+            actionHtml = `<span style="color: #058A5E; font-weight: 600; font-size: 0.82rem;">✓ Reshipped</span>`;
+        } else if (o.recovery_payment_status === 'paid') {
+            actionHtml = `
+                <button class="btn-dab btn-primary" onclick="approveReship('${o.id}')" style="background: var(--oxblood, #6B1228); color: #fff; padding: 4px 10px; font-size: 0.78rem;">
+                    Approve Reship →
+                </button>
+            `;
+        } else if (calc && calc.is_worth_it && qc !== 'pending') {
+            actionHtml = `
+                <button class="btn-dab btn-secondary" onclick="triggerRecovery('${o.id}')" style="padding: 4px 10px; font-size: 0.78rem;">
+                    Offer Recovery →
+                </button>
+            `;
+        } else {
+            actionHtml = `<span style="color: var(--ink-muted); font-size: 0.78rem;">Blocked</span>`;
+        }
+
+        return `
+            <tr>
+                <td><strong>${o.external_order_id || o.id}</strong></td>
+                <td>
+                    <div style="font-weight: 600;">${o.buyer_name || 'Customer'}</div>
+                    <div style="font-size: 0.78rem; color: var(--ink-muted);">${o.buyer_phone || '—'}</div>
+                </td>
+                <td>₹${price.toLocaleString('en-IN')}</td>
+                <td style="color: #E11D48;">-₹${sunk.toLocaleString('en-IN')}</td>
+                <td>${qcHtml}</td>
+                <td>${worthItHtml}</td>
+                <td>${payStatusHtml}</td>
+                <td style="text-align: right;">${actionHtml}</td>
+            </tr>
+        `;
+    }).join('');
+}
+
+async function markOrderQc(orderId, qcStatus) {
+    try {
+        const res = await fetch(getApiUrl('/api/recovery/mark-qc'), {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({ order_id: orderId, qc_status: qcStatus })
+        });
+        const data = await res.json();
+        if (data.success) {
+            fetchRecoveryData();
+        } else {
+            alert(data.error || 'Failed to update QC status.');
+        }
+    } catch (e) {
+        alert('Error updating Return QC: ' + e.message);
+    }
+}
+
+async function triggerRecovery(orderId) {
+    try {
+        const maxDiscount = Number(document.getElementById('recoveryDiscountMax')?.value || 10);
+        const res = await fetch(getApiUrl('/api/recovery/trigger'), {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({
+                order_id: orderId,
+                discount_percent: maxDiscount
+            })
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert(`Prepaid recovery link created! Link: ${data.payment_url}\nBuyer will be contacted with discounted prepaid offer.`);
+            fetchRecoveryData();
+        } else {
+            alert(`Recovery blocked: ${data.reason || data.error || 'Check requirements'}`);
+        }
+    } catch (e) {
+        alert('Error triggering recovery: ' + e.message);
+    }
+}
+
+async function approveReship(orderOrAttemptId) {
+    try {
+        const res = await fetch(getApiUrl('/api/recovery/approve-reship'), {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({
+                recovery_attempt_id: orderOrAttemptId,
+                payment_mode: 'PREPAID'
+            })
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert('Reshipment approved! Order created for courier dispatch as 100% PREPAID.');
+            fetchRecoveryData();
+            fetchOrders();
+        } else {
+            alert(`Reshipment blocked: ${data.error || 'Payment or address requirements not met'}`);
+        }
+    } catch (e) {
+        alert('Error approving reshipment: ' + e.message);
+    }
+}
+
+async function saveRecoverySettings() {
+    try {
+        const discountMax = Number(document.getElementById('recoveryDiscountMax')?.value || 10);
+        const minPrice = Number(document.getElementById('recoveryMinPrice')?.value || 300);
+        const autoApprove = Boolean(document.getElementById('recoveryAutoApprove')?.checked);
+
+        await fetch(getApiUrl('/api/recovery/settings'), {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({
+                seller_id: currentActiveSellerId,
+                discount_max: discountMax,
+                min_product_price: minPrice,
+                auto_approve: autoApprove
+            })
+        });
+    } catch (e) {
+        console.warn('Could not save recovery settings:', e.message);
     }
 }
 

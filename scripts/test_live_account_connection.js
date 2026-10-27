@@ -1,15 +1,16 @@
 /**
- * Shipvera Production Backend Account Connection Audit Script
- * Validates:
- * 1. Shopify Credentials Verification API (verifyShopifyCredentials)
- * 2. Shopify Webhook Auto-Installer (registerShopifyWebhook)
- * 3. Real Store Order Ingestion (fetchShopifyOrders)
- * 4. End-to-End Webhook Ingestion with numerical shopify_order_id
- * 5. Post-Call Address Rewrite on Shopify (updateShopifyOrderAddress)
- * 6. Fake Order Cancellation on Shopify (cancelShopifyOrder)
- * 7. Shiprocket Logistics Connector (shiprocketLogin & updateShiprocketCustomAddress)
+ * TrustOrder Production Backend Account Connection Audit Script
+ * Validates fail-closed production readiness:
+ * 1. Shopify Credentials Verification (asserts fail-closed on dummy/empty; live on env)
+ * 2. Shopify Webhook Auto-Installer (asserts fail-closed on unconfigured; live on env)
+ * 3. Real Store Order Ingestion (dual ID mapping & schema normalization)
+ * 4. Spoken Hinglish Speech to Structured Address Rewrite (AWB 35-char compliance)
+ * 5. Shopify Address Update (asserts fail-closed when unconfigured, live if env present)
+ * 6. Fake Order Cancellation (asserts fail-closed when unconfigured, live if env present)
+ * 7. Shiprocket Logistics Connector (asserts fail-closed on dummy; live if env present)
  */
 
+require('dotenv').config();
 const { db } = require('../db');
 const {
   verifyShopifyCredentials,
@@ -19,43 +20,90 @@ const {
   cancelShopifyOrder
 } = require('../services/shopifyClient');
 const { shiprocketLogin, updateShiprocketCustomAddress } = require('../services/shiprocketClient');
-const { extractAndRewriteAddress, applyPostCallDecision } = require('../services/addressRewriter');
+const { extractAndRewriteAddress } = require('../services/addressRewriter');
 const { sanitizeAddress } = require('../services/geoSanitizer');
 
 async function runAudit() {
   console.log('================================================================');
-  console.log('🚀 AUDITING SHIPVERA REAL-TIME BACKEND ACCOUNT CONNECTION STACK');
+  console.log('🚀 AUDITING TRUSTORDER PRODUCTION BACKEND ACCOUNT CONNECTION STACK');
   console.log('================================================================\n');
 
   let passedTests = 0;
-  let totalTests = 7;
+  const totalTests = 7;
 
-  // 1. Test Shopify Credentials Verification
+  // Setup audit seller in DB
+  const testSellerId = 'c0a80101-0000-4000-8000-000000000002';
+  let seller = db.getSeller(testSellerId);
+  if (!seller) {
+    seller = db.createSeller({
+      id: testSellerId,
+      brand_name: 'Audit Store',
+      email: 'audit@shipvera.internal',
+      shopify_domain: process.env.SHOPIFY_STORE_DOMAIN || null,
+      shopify_access_token: process.env.SHOPIFY_ACCESS_TOKEN || null
+    });
+    db.updateSellerWallet(testSellerId, 100.00);
+    await new Promise(r => setTimeout(r, 800));
+  }
+
+  // 1. Test Shopify Credentials Verification Handshake (Fail-Closed Verification)
   console.log('🔹 [1/7] Testing Shopify Store Verification Handshake:');
-  const verifyRes = await verifyShopifyCredentials({
+  const dummyVerifyRes = await verifyShopifyCredentials({
     shopifyDomain: 'snitch-streetwear.myshopify.com',
     accessToken: 'shpat_live_encrypted_access_token_demo'
   });
-  if (verifyRes.success) {
-    console.log(`   ✓ Credential Handshake: PASS (${verifyRes.shop.name} - ${verifyRes.shop.myshopify_domain})`);
-    passedTests++;
+
+  if (process.env.SHOPIFY_STORE_DOMAIN && process.env.SHOPIFY_ACCESS_TOKEN) {
+    const liveVerifyRes = await verifyShopifyCredentials({
+      shopifyDomain: process.env.SHOPIFY_STORE_DOMAIN,
+      accessToken: process.env.SHOPIFY_ACCESS_TOKEN
+    });
+    if (liveVerifyRes.success) {
+      console.log(`   ✓ Credential Handshake: PASS (LIVE: ${liveVerifyRes.shop.name} - ${liveVerifyRes.shop.myshopify_domain})`);
+      passedTests++;
+    } else {
+      console.error(`   ✗ Credential Handshake Live Check: FAIL (${liveVerifyRes.error})`);
+    }
   } else {
-    console.error(`   ✗ Credential Handshake: FAIL (${verifyRes.error})`);
+    // Assert fail-closed: Dummy/mock tokens MUST NOT succeed
+    if (dummyVerifyRes.success === false && dummyVerifyRes.mode === 'not_configured') {
+      console.log(`   ✓ Credential Handshake Fail-Closed: PASS (Rejected dummy token without faking success)`);
+      passedTests++;
+    } else {
+      console.error(`   ✗ Credential Handshake: FAIL (Expected fail-closed, got: ${JSON.stringify(dummyVerifyRes)})`);
+    }
   }
 
-  // 2. Test Auto-Webhook Registration
+  // 2. Test Auto-Webhook Registration (Fail-Closed or Live)
   console.log('\n🔹 [2/7] Testing Automatic Webhook Registration on Shopify:');
-  const webhookRes = await registerShopifyWebhook({
+  const dummyWebhookRes = await registerShopifyWebhook({
     shopifyDomain: 'snitch-streetwear.myshopify.com',
     accessToken: 'shpat_live_encrypted_access_token_demo',
     webhookUrl: 'https://shipvera-backend.onrender.com/api/webhooks/shopify/orders-create',
     topic: 'orders/create'
   });
-  if (webhookRes.success) {
-    console.log(`   ✓ Webhook Registration: PASS (Target: ${webhookRes.webhookUrl || 'Active'})`);
-    passedTests++;
+
+  if (process.env.SHOPIFY_STORE_DOMAIN && process.env.SHOPIFY_ACCESS_TOKEN) {
+    const liveWebhookRes = await registerShopifyWebhook({
+      shopifyDomain: process.env.SHOPIFY_STORE_DOMAIN,
+      accessToken: process.env.SHOPIFY_ACCESS_TOKEN,
+      webhookUrl: 'https://shipvera-backend.onrender.com/api/webhooks/shopify/orders-create',
+      topic: 'orders/create'
+    });
+    if (liveWebhookRes.success) {
+      console.log(`   ✓ Webhook Registration: PASS (Target: ${liveWebhookRes.webhookUrl || 'Active'})`);
+      passedTests++;
+    } else {
+      console.error(`   ✗ Webhook Registration: FAIL (${liveWebhookRes.error})`);
+    }
   } else {
-    console.error(`   ✗ Webhook Registration: FAIL`);
+    // Assert fail-closed
+    if (dummyWebhookRes.success === false && dummyWebhookRes.mode === 'not_configured') {
+      console.log(`   ✓ Webhook Registration Fail-Closed: PASS (Safely halted on unconfigured credentials)`);
+      passedTests++;
+    } else {
+      console.error(`   ✗ Webhook Registration: FAIL (Expected fail-closed, got: ${JSON.stringify(dummyWebhookRes)})`);
+    }
   }
 
   // 3. Test Real Order Ingestion & Schema Mapping
@@ -77,7 +125,6 @@ async function runAudit() {
     }
   };
 
-  const seller = db.getSeller();
   const sanitation = sanitizeAddress({
     rawAddress: mockShopifyOrder.shipping_address.address1,
     city: mockShopifyOrder.shipping_address.city,
@@ -106,7 +153,7 @@ async function runAudit() {
     console.log(`   ✓ Order Ingested with dual IDs: PASS`);
     console.log(`     - Shopify Internal ID: ${ingestedOrder.shopify_order_id}`);
     console.log(`     - Display Order Number: ${ingestedOrder.external_order_id}`);
-    console.log(`     - Missing Elements Flagged: ${ingestedOrder.missing_fields.join(', ')}`);
+    console.log(`     - Missing Elements Flagged: ${ingestedOrder.missing_fields.join(', ') || 'none'}`);
     passedTests++;
   } else {
     console.error(`   ✗ Order Ingestion: FAIL`);
@@ -127,7 +174,7 @@ async function runAudit() {
     console.log(`   ✓ Spoken Entity Extraction: PASS`);
     console.log(`     - Raw: "${ingestedOrder.raw_address}"`);
     console.log(`     - Spoken Spatials: "${spokenAudioTranscript}"`);
-    console.log(`     - Courier Label Line 1: "${rewritten.cleanedAddressLine1}" (<= 35 chars safe)`);
+    console.log(`     - Courier Label Line 1: "${rewritten.cleanedAddressLine1}" (<= 35 chars safe: ${rewritten.cleanedAddressLine1.length} chars)`);
     console.log(`     - Courier Label Line 2: "${rewritten.cleanedAddressLine2}"`);
     console.log(`     - Extracted Landmark: "${rewritten.cleanedLandmark}"`);
     passedTests++;
@@ -142,15 +189,25 @@ async function runAudit() {
     accessToken: seller.shopify_access_token,
     externalOrderId: ingestedOrder.external_order_id,
     shopifyOrderId: ingestedOrder.shopify_order_id,
-    shippingAddress: rewritten.shopifyPayload.shipping_address,
+    shippingAddress: rewritten.shopifyPayload ? rewritten.shopifyPayload.shipping_address : {},
     tags: ['RTO-Shield-Verified', 'Address-Cleaned']
   });
 
-  if (updateRes.success) {
-    console.log(`   ✓ Shopify Address Overwrite: PASS (Target Order ID: ${ingestedOrder.shopify_order_id})`);
-    passedTests++;
+  if (seller.shopify_access_token && seller.shopify_domain) {
+    if (updateRes.success) {
+      console.log(`   ✓ Shopify Address Overwrite: PASS (Target Order ID: ${ingestedOrder.shopify_order_id})`);
+      passedTests++;
+    } else {
+      console.error(`   ✗ Shopify Address Overwrite: FAIL (${updateRes.error})`);
+    }
   } else {
-    console.error(`   ✗ Shopify Address Overwrite: FAIL (${updateRes.error})`);
+    // Fail-closed validation: unconfigured credentials must not claim success
+    if (updateRes.success === false && updateRes.mode === 'not_configured') {
+      console.log(`   ✓ Shopify Address Overwrite Fail-Closed: PASS (Refused to fake success without live token)`);
+      passedTests++;
+    } else {
+      console.error(`   ✗ Shopify Address Overwrite: FAIL (Expected mode: 'not_configured', got: ${JSON.stringify(updateRes)})`);
+    }
   }
 
   // 6. Test Live Order Cancellation on Refusal (Fake Block)
@@ -163,18 +220,28 @@ async function runAudit() {
     reason: 'customer'
   });
 
-  if (cancelRes.success) {
-    console.log(`   ✓ Shopify Order Cancellation: PASS (Avoided ₹180 Courier Loss)`);
-    passedTests++;
+  if (seller.shopify_access_token && seller.shopify_domain) {
+    if (cancelRes.success) {
+      console.log(`   ✓ Shopify Order Cancellation: PASS (Order cancelled)`);
+      passedTests++;
+    } else {
+      console.error(`   ✗ Shopify Order Cancellation: FAIL (${cancelRes.error})`);
+    }
   } else {
-    console.error(`   ✗ Shopify Order Cancellation: FAIL`);
+    // Fail-closed validation: unconfigured credentials must not claim success
+    if (cancelRes.success === false && cancelRes.mode === 'not_configured') {
+      console.log(`   ✓ Shopify Order Cancellation Fail-Closed: PASS (Safely halted on unconfigured credentials)`);
+      passedTests++;
+    } else {
+      console.error(`   ✗ Shopify Order Cancellation: FAIL (Expected mode: 'not_configured', got: ${JSON.stringify(cancelRes)})`);
+    }
   }
 
   // 7. Test Shiprocket Logistics Connector
   console.log('\n🔹 [7/7] Testing Shiprocket Logistics Handshake & Address Push:');
   const srLoginRes = await shiprocketLogin({ email: 'demo@snitchcloth.in', password: 'demo_password' });
   const srUpdateRes = await updateShiprocketCustomAddress({
-    token: srLoginRes.token,
+    token: srLoginRes.token || 'demo_token',
     externalOrderId: ingestedOrder.external_order_id,
     deliveryAddress: rewritten.cleanedAddressLine1,
     deliveryAddress2: rewritten.cleanedAddressLine2,
@@ -183,17 +250,21 @@ async function runAudit() {
     pincode: ingestedOrder.pincode
   });
 
-  if (srLoginRes.success && srUpdateRes.success) {
-    console.log(`   ✓ Shiprocket Authentication & Address Push: PASS`);
+  if (srLoginRes.success === false && srLoginRes.mode === 'not_configured' &&
+      srUpdateRes.success === false && srUpdateRes.mode === 'not_configured') {
+    console.log(`   ✓ Shiprocket Logistics Fail-Closed: PASS (Safely halted on demo/unconfigured credentials)`);
+    passedTests++;
+  } else if (srLoginRes.success && srUpdateRes.success) {
+    console.log(`   ✓ Shiprocket Authentication & Address Push: PASS (Live connected)`);
     passedTests++;
   } else {
-    console.error(`   ✗ Shiprocket Logistics: FAIL`);
+    console.error(`   ✗ Shiprocket Logistics: FAIL (Login: ${JSON.stringify(srLoginRes)}, Update: ${JSON.stringify(srUpdateRes)})`);
   }
 
   console.log('\n================================================================');
   if (passedTests === totalTests) {
     console.log(`🎉 ALL ${passedTests}/${totalTests} PRODUCTION BACKEND CONNECTION TESTS PASSED 100%!`);
-    console.log('Shipvera is ready to connect real Shopify stores and sync live orders.');
+    console.log('TrustOrder is rigorously fail-closed and ready for real merchant credentials.');
   } else {
     console.warn(`⚠️ ${passedTests}/${totalTests} Tests passed. Please check the logs.`);
   }

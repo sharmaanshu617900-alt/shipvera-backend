@@ -1,5 +1,5 @@
 // ============================================
-// SHIPVERA — Core Interactive Engine
+// TRUSTORDER — Core Interactive Engine
 // Voice AI Waveform, RTO Calculator, Waitlist
 // ============================================
 
@@ -428,9 +428,9 @@ window.updateCalculator = function() {
     const returnedOrders = Math.round(orders * (rtoRate / 100));
     const monthlyBurn = returnedOrders * lossPerReturn;
 
-    // Shipvera cuts RTO by 70%
-    const monthlySavings = Math.round(monthlyBurn * 0.70);
-    const toolCost = orders * 6; // ₹6 per verified order
+    // Estimated verified prevention benchmark
+    const monthlySavings = Math.round(monthlyBurn * 0.50);
+    const toolCost = orders * 12; // ₹12 ex-GST per verified order
     const netProfit = monthlySavings - toolCost;
     const roiMultiplier = (monthlySavings / (toolCost || 1)).toFixed(1);
 
@@ -457,7 +457,7 @@ window.handleInlineWaitlist = function(event) {
     const phone = phoneInput.value.trim();
     saveWaitlistEntry({ phone, source: 'hero_inline', date: new Date().toISOString() });
 
-    // Send to live Shipvera backend
+    // Send to live TrustOrder backend
     const waitlistUrl = (typeof window !== 'undefined' && window.getApiUrl) ? window.getApiUrl('/api/waitlist') : '/api/waitlist';
     fetch(waitlistUrl, {
         method: 'POST',
@@ -478,7 +478,7 @@ window.handleWaitlist = function(event) {
 
     saveWaitlistEntry({ name, phone, email, volume, source: 'main_form', date: new Date().toISOString() });
 
-    // Send to live Shipvera backend
+    // Send to live TrustOrder backend
     const waitlistUrl = (typeof window !== 'undefined' && window.getApiUrl) ? window.getApiUrl('/api/waitlist') : '/api/waitlist';
     fetch(waitlistUrl, {
         method: 'POST',
@@ -507,8 +507,9 @@ window.handleWaitlist = function(event) {
 
 function saveWaitlistEntry(entry) {
     try {
-        const existing = JSON.parse(localStorage.getItem('shipvera_waitlist') || '[]');
+        const existing = JSON.parse(localStorage.getItem('trustorder_waitlist') || localStorage.getItem('shipvera_waitlist') || '[]');
         existing.push(entry);
+        localStorage.setItem('trustorder_waitlist', JSON.stringify(existing));
         localStorage.setItem('shipvera_waitlist', JSON.stringify(existing));
     } catch (e) {
         // Storage fallback

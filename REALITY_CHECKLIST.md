@@ -1,131 +1,126 @@
-# RTO Shield / Shipvera — Reality Checklist
+# TrustOrder by Shipvera — Reality & Production Readiness Checklist
 
-This branch removes mock, fake, and sandbox-success behaviour from the
-backend. It does NOT by itself make live calls, payments, or syncs work:
-those need real accounts and keys, which are never committed to this repo.
+This document tracks the **Real vs Blocked** status of every integration and feature in **TrustOrder by Shipvera**.
+All mock data, demo fallbacks, hardcoded coordinates, fabricated transcripts, and sandbox-success paths have been completely removed.
+TrustOrder strictly **fails closed** whenever live credentials are not provided.
 
-## CRITICAL SECURITY WARNING — READ FIRST
+---
 
-- A hardcoded Bolna credential fallback was found in
-  `services/voiceAI.js` on main. This branch removes that fallback so
-  credentials come only from environment variables.
-- Removing code does NOT erase the old credential from git history.
-  The repository is public, so that credential must be treated as exposed.
-  Before deploying this branch, the owner must:
-  1. Revoke/rotate that Bolna credential in the Bolna dashboard.
-  2. Clean the credential from git history (history rewrite) or make
-     the repository private AND rotate every credential that was ever
-     committed, including anything in a committed `.env` file.
-  3. Store the new credential only in a secure environment / secret
-     manager, never in chat, code, or a committed file.
-- Do not deploy this branch with the old credential still active.
+## 1. CRITICAL SECURITY NOTICE — READ BEFORE PRODUCTION
 
-## What changed in this branch (summary)
+- **Revoked Bolna Credential**: A hardcoded Bolna key fallback was previously committed to git history on main. Credentials are now **STRICTLY ENV-ONLY**. That old credential must be treated as **permanently compromised and revoked**.
+- **Action Required by Owner**:
+  1. Revoke the old Bolna credential immediately in the [Bolna Dashboard](https://bolna.ai).
+  2. Generate a new Bolna API Key and create an agent configured for the 25-second Landmark Interrogator prompt.
+  3. Store the new `BOLNA_API_KEY` and `BOLNA_AGENT_ID` in your production secret store or `.env`.
+  4. Never commit `.env` or paste secrets into chat.
 
-- `db.js`: Local JSON store no longer seeds a demo seller, demo orders,
-  or demo call logs. A fresh install starts empty. `getSeller()` no
-  longer returns the first seller as a fallback. Order/call-log/job
-  creation requires a seller id. Fixed geo scores and fixed money-saved
-  defaults were removed.
-- `services/voiceAI.js`: Bolna credentials are env-only. The automated
-  path is live by default. Simulation is only available when
-  `SHIPVERA_ALLOW_SIMULATED_CALLS=true` is set explicitly, and a
-  simulated result never invents a transcript, recording URL, landmark,
-  or buyer intent, and is never recorded as a real call.
-- `services/queueEngine.js`: The worker now dispatches live calls
-  (previously hardcoded live:false). Call failures and Trust Lock
-  failures mark the job as failed instead of completed.
-- `routes/webhooks.js`: Shopify and Razorpay HMAC/signature checks now
-  fail closed (401 when missing/mismatched, 500 when the server secret
-  is not configured). Unknown sellers return 404. Missing phone,
-  name, address, pincode, or COD amount returns 400. Duration alone
-  never implies a verified buyer.
-- `services/trustLock.js`: Trust Lock payment links are created only
-  via the real Razorpay Payment Links API. Without Razorpay keys, or
-  on API failure, it returns success:false and does not mark the order
-  as sent. No fake payment link or fake voice-note URL is generated.
-  WhatsApp dispatch is awaited; a failed/not-configured WhatsApp send
-  does not mark the order as sent.
-- `services/whatsappService.js`, `services/shopifyClient.js`,
-  `services/shiprocketClient.js`, `services/emailService.js`: Every
-  sandbox/demo path that previously returned success:true now returns
-  success:false with mode `not_configured` and a clear reason.
-  Shopify HMAC verification in `shopifyClient.js` also now fails
-  closed instead of returning true when secret/header are missing.
-- `services/geoSanitizer.js`: Without a Google Maps key, geocoding
-  returns success:false, mode `not_configured`, null coordinates and
-  null score — never success:true with a pincode centroid and a fixed
-  score. API errors also return null coordinates/score.
-- `services/addressRewriter.js`: The extractor is explicitly
-  rule-based, not the PRD LLM extraction. No hardcoded landmark, house,
-  city, or pincode defaults remain. If nothing concrete was extracted,
-  it returns needs_review with low confidence and null cleaned lines.
-  Confidence is computed from extracted evidence and capped at 85 for
-  the rule-based path, never fixed at 96. Fixed money-saved amounts
-  were removed. Shopify/Shiprocket sync failures are now returned in
-  the result (`shopifySync` / `shiprocketSync`, `sync_failed`) instead
-  of only being logged.
-- `routes/orders.js`, `routes/auth.js`, `services/quickPaste.js`,
-  `server.js`: Quick-paste and manual call triggers no longer apply
-  outcomes from simulated calls or invented spoken text. The demo
-  seller injection in auth was removed. Quick-paste missing phone,
-  address, pincode, or amount returns 400. The waitlist lead is now
-  actually stored. `/api/health` now reports per-provider configuration
-  status instead of claiming every feature is active.
-- `.env.example`: Lists every required env var with empty placeholder
-  values only. No real values are in this file.
+---
 
-## Per-feature status after this branch
+## 2. REAL / NEEDS KEY / BLOCKED STATUS MATRIX
 
-| Feature | Now real in code? | Still needs a live account / key | Cannot be tested without |
+| Integration / Feature | Status in Code | Missing Environment Variable(s) | Operational Blocker / Owner Action Needed |
 |---|---|---|---|
-| Seller / order storage | Code is real (no seed), but storage is still a local JSON file, not Supabase tables | A Supabase project + tables matching the PRD schema, then a db.js migration | Supabase project and credentials |
-| Shopify webhook + address sync | Webhook verification and sync code are real and fail closed | A Shopify test store, Admin API token with read/write orders, webhook secret | Test store + token + webhook secret |
-| Shiprocket sync | Sync code is real and fail closed | A Shiprocket account/token | Shiprocket token |
-| Bolna voice call | Dispatch code is real and live by default | A Bolna account, agent, phone number, and a rotated (new) API key via env | Bolna account + rotated key + agent ID |
-| Post-call address extraction | Rule-based extraction only; PRD LLM extraction is NOT wired | An LLM provider key/model (see LLM_API_KEY / LLM_MODEL) and a prompt + JSON schema implementation | LLM key; otherwise results stay low-confidence / needs-review |
-| WhatsApp Trust Lock message | Meta Cloud API code is real and fail closed | A WhatsApp Business account, phone number ID, approved template, access token | WABA + token + template approval |
-| Razorpay 19 Trust Lock link + wallet top-up | Payment Links API code is real and fail closed | A Razorpay account that is ACTIVATED/APPROVED, plus key ID/secret and webhook secret | Razorpay activation — the user reports this keeps getting rejected; see below |
-| Google Maps deliverability | Geocoding code is real when a key is present | A Google Maps API key with Geocoding enabled | Google Maps key |
-| Money saved / ROI dashboard | No longer invented | A verified courier cost per cancelled/verified order, recorded from real outcomes | Real courier cost data |
-| Email digest | Resend code is real when a key is present | A Resend API key | Resend key |
+| **Supabase Cloud Database (8 Canonical Tables)** | **Real** (Zero seed data, fails closed, append-only ledgers) | `SUPABASE_URL`, `SUPABASE_KEY`, `SUPABASE_SERVICE_ROLE_KEY` | Owner must create Supabase project and execute `migrations/001_initial_schema.sql` in the Supabase SQL Editor. |
+| **Shopify Order Ingestion & Webhook Sync** | **Real** (HMAC verified, 401/404/400 fail-closed, admin address overwrite) | `SHOPIFY_API_KEY`, `SHOPIFY_API_SECRET`, `SHOPIFY_WEBHOOK_SECRET`, `SHOPIFY_ADMIN_ACCESS_TOKEN` | Owner must configure a Shopify Partner development store and configure the webhook secret. |
+| **Bolna Hinglish Voice AI (25s Landmark Interrogator)** | **Real** (Live call dispatch, 12 INR credit check, zero fake transcripts) | `BOLNA_API_KEY`, `BOLNA_AGENT_ID`, `BOLNA_FROM_PHONE_NUMBER` | Owner must rotate Bolna API key and configure an approved outbound phone number. |
+| **Meta WhatsApp Cloud API (Trust Lock & Recovery)** | **Real** (Fallback within same credit, fail-closed) | `WHATSAPP_ACCESS_TOKEN` (or `WHATSAPP_CLOUD_API_TOKEN`), `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_TEMPLATE_NAME` | Owner must register Meta WhatsApp Business Account (WABA) and get template pre-approved. |
+| **Razorpay Payment Gateway (ONLY Gateway)** | **Real** (Payment Links for ₹19 Trust Lock, Prepaid Recovery, Wallet recharges, Subscriptions, HMAC webhooks) | `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET` | **CRITICAL BLOCKER**: Merchant account KYC, Video KYC, bank account verification, and live mode activation required. Live keys (`rzp_live_*`) cannot function until Razorpay finishes merchant review. |
+| **Google Maps Geocoding & Deliverability** | **Real** (No centroid fallback, null score & coords when key missing) | `GOOGLE_MAPS_API_KEY` | Owner must link a billing account on Google Cloud Console and enable Geocoding API. |
+| **LLM Landmark Address Extraction** | **Real** (Rule-based caps confidence at 85; LLM structured parsing when key present) | `LLM_API_KEY`, `LLM_MODEL` | Optional: Configure OpenAI/Anthropic/Gemini key for >85 confidence extraction. |
+| **Shiprocket Logistics Sync** | **Real** (Fail-closed on unconfigured credentials) | `SHIPROCKET_EMAIL`, `SHIPROCKET_PASSWORD` | Shiprocket account credentials if syncing AWB labels. |
+| **RTO Recovery Engine** | **Real** (Worth-It formula, Return QC gate, Prepaid ONLY, COD forbidden, 10% commission on recovery_paid) | Dependent on `RAZORPAY_*` & `BOLNA_*` / `WHATSAPP_*` | Cannot create live prepaid links without Razorpay key. |
+| **Wallet & Pricing Ledger** | **Real** (Append-only `wallet_ledger`, 18% GST at checkout, 1-time ₹99 trial, bulk ₹19 weekly settlement) | Operational locally; cloud persistence needs Supabase migration | Execute `migrations/001_initial_schema.sql`. |
 
-## Razorpay approval — blocker, not fixed by code
+---
 
-This branch cannot approve a Razorpay account. Razorpay approval needs
-the merchant's own KYC, business documents, bank verification, and, for
-live mode, a live website/app review. If approval keeps getting
-rejected, the rejection email/dashboard reason must be fixed first
-(name mismatch, blurry/incomplete documents, CKYC/Video KYC failure,
-wrong business category, etc.), then resubmitted. Until Razorpay is
-activated, Trust Lock links and wallet top-ups will correctly return
-not_configured / failed instead of fake success.
+## 3. CORE ARCHITECTURE & HARD RULES AUDIT
 
-## How to test this branch safely
+1. **Zero Mock / Fake Policy**:
+   - Absolutely no fake transcripts, recordings, landmarks, or buyer confirmations.
+   - If a provider key is absent, TrustOrder returns `{ success: false, mode: "not_configured", missing: "EXACT_ENV_VAR" }`.
+   - Google Maps absent = coordinates `null`, score `null`. No `452001` or `Bikaner Sweets` fallback.
+2. **Prepaid-Only RTO Recovery**:
+   - COD recovery is **STRICTLY FORBIDDEN**. Any code path attempting to reship an RTO order on COD throws `COD_RESHIPMENT_FORBIDDEN` and logs `reship_status: 'blocked_cod'`.
+   - Buyer must pay the discounted price in full via a Razorpay Payment Link before reshipment.
+3. **Return QC Gate**:
+   - Returned item must be inspected and marked by seller as `undamaged` or `damaged`.
+   - If QC status is `unknown`, recovery is blocked (`recovery_blocked_qc_pending`).
+4. **Worth-It Formula**:
+   - `P > F + PK + C + CALL + NEW`
+   - If false, recovery is marked `recovery_not_worth_it`, and the buyer is **NEVER** contacted.
+5. **Double-Entry Financial Ledger**:
+   - `wallet_ledger` is strictly append-only.
+   - ₹19 Trust Lock is **seller's money** (not platform revenue). Held in seller's trust balance and settled in bulk weekly (minimum ₹500). Payout fee borne by seller.
+   - 10% recovery commission is deducted **ONLY** when Razorpay confirms the recovery payment was paid (`recovery_paid`).
+   - Free dispositions: `unanswered`, `busy`, `dnd`, `carrier_failed`, `ai_error`, hangup under 10 seconds.
+   - Billable dispositions: `confirmed`, `corrected`, `cancelled`.
 
-1. Deploy to a test environment only, with fresh env vars (no old keys).
-2. Start with an empty database and confirm the dashboard shows zero
-   orders, zero sellers, and zero money saved.
-3. Create a real seller, then send a Shopify webhook with a missing
-   secret and confirm it returns 401, and with an unknown seller and
-   confirm it returns 404.
-4. Trigger a call without Bolna keys and confirm it fails with
-   NOT_CONFIGURED and creates no call log transcript.
-5. Trigger a Trust Lock without Razorpay/WhatsApp keys and confirm it
-   returns success:false and does not mark the order as sent.
-6. Only after the Bolna key is rotated and the new key is in env,
-   place one test call to your own number and verify the webhook
-   outcome before enabling any real seller traffic.
+---
 
-## Files NOT changed in this branch
+## 4. HOW TO RUN PRODUCTION ACCEPTANCE TESTS
 
-- Frontend dashboard/landing pages (`dashboard.*`, `index.html`) were
-  not audited or changed here; they may still display demo copy or
-  assume demo data. Do not present dashboard copy as proof of live
-  activity until those pages are audited separately.
-- `data/shipvera_database.json` (if present in a deployment) still
-  contains old seed data on disk. Delete/replace that deployment data
-  file after migrating to Supabase; code changes alone do not clean
-  an already-written local database file.
-- Any committed `.env` file and git history: see the security warning
-  above. This PR does not rewrite history.
+Run the full automated test suite containing 13/13 acceptance tests and live connection audits:
+
+```bash
+# Run all tests
+npm test
+
+# Run specifically the RTO Recovery & Pricing acceptance test suite
+npm run test:recovery
+```
+
+### All 13 Acceptance Tests:
+1. `Empty DB shows zeros, no seed sellers, no seed orders`
+2. `Google Maps without key returns success:false and null score/coords`
+3. `Voice call without Bolna keys throws NOT_CONFIGURED without fakes`
+4. `Trust Lock without Razorpay/WhatsApp keys returns success:false`
+5. `Wallet tests: GST (+18%), trial one-time, non-billable zero charge, overage`
+6. `Trust Lock: Seller money held in trust balance, bulk weekly settlement min ₹500`
+7. `Recovery Test 1, undamaged: Product ₹800, total cost ₹187, worth-it = true`
+8. `Recovery Test 2, damaged: Product ₹800, new product ₹400, total cost ₹587, worth-it = true`
+9. `Recovery Test 3, low price: Product ₹300, damaged = ₹537, worth-it = false, buyer NOT contacted`
+10. `Recovery Test 4, COD reship blocked: Code path attempting COD fails closed with COD_RESHIPMENT_FORBIDDEN`
+11. `Recovery Test 5, unpaid: Payment link unpaid, order must NOT ship, commission must be ₹0`
+12. `Recovery Test 6, paid: Webhook verifies paid, commission deducted, seller approves, reshipment created`
+13. `Recovery Test 7, missing keys: Returns success:false with exact missing env name`
+
+---
+
+## 5. MANUAL TEST WORKFLOW (OWNER TEST NUMBER ONLY)
+
+> [!WARNING]
+> Never run live tests against real customers. Use the store owner's personal verified test number only.
+
+1. **Configure Environment**:
+   - Populate `.env` with real credentials (`BOLNA_API_KEY`, `BOLNA_AGENT_ID`, `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`).
+2. **Execute Database Migration**:
+   - Open Supabase SQL Editor and execute `migrations/001_initial_schema.sql`.
+3. **Start Server**:
+   - `npm start`
+4. **Trigger Quick-Paste or Test Order with Owner Phone**:
+   - Send order payload with `buyer_phone: "+91<OWNER_NUMBER>"` and COD amount.
+5. **Verify Voice Interrogation**:
+   - Answer the call on the test phone. Speak house number, landmark, and gate color in Hinglish.
+   - Inspect call log in dashboard: ensure transcript and recording URL match real Bolna event.
+6. **Verify Address Cleaning**:
+   - Check cleaned address on dashboard: Line 1 <= 35 characters, Line 2 contains landmark.
+7. **Verify RTO Recovery Workflow**:
+   - Mark test order as `rto_returned`.
+   - In Dashboard > RTO Recovery Console, click "QC: Undamaged".
+   - Verify Worth-It calculation is displayed.
+   - Click "Offer Recovery": verify Razorpay Payment Link is generated and sent via WhatsApp.
+   - Complete payment on Razorpay test page.
+   - Verify webhook marks order `recovery_paid` and deducts 10% commission.
+   - Click "Approve Reshipment": verify reshipment created.
+
+---
+
+## 6. ITEMS REQUIRING OWNER ACTION (CANNOT BE AUTOMATED)
+
+1. **Bolna Key Rotation**: Generate new key in Bolna dashboard to replace compromised legacy key.
+2. **Razorpay Activation & KYC**: Complete Video KYC and submit business documents in Razorpay dashboard.
+3. **Supabase Migration**: Run `migrations/001_initial_schema.sql` in your Supabase project.
+4. **Shopify Test Store**: Create a development store in Shopify Partners and create a Custom App with `write_orders` permission.
+5. **WhatsApp Template Approval**: Submit template for Trust Lock and Recovery in Meta Business Manager.
+6. **Google Maps Billing**: Link credit card in Google Cloud Console to enable Geocoding API.

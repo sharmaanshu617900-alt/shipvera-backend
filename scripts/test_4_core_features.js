@@ -1,5 +1,5 @@
 /**
- * Shipvera 4 Core Backend Features Validation Script
+ * TrustOrder 4 Core Backend Features Validation Script
  * Tests:
  * 1. Shopify Webhook 60s Ingestion & COD Filter
  * 2. Hinglish Voice AI Landmark Interrogator Prompt & Payload
@@ -7,6 +7,7 @@
  * 4. Fake/Impulse Cancellation & ₹180 Courier Loss Shield
  */
 
+require('dotenv').config();
 const { db } = require('../db');
 const { buildShipveraSystemPrompt, triggerOutboundCall } = require('../services/voiceAI');
 const { extractAndRewriteAddress, applyPostCallDecision } = require('../services/addressRewriter');
@@ -14,8 +15,23 @@ const { sanitizeAddress } = require('../services/geoSanitizer');
 
 async function runValidation() {
   console.log('========================================================');
-  console.log('🧪 SHIPVERA 4 CORE BACKEND FEATURES AUDIT & VERIFICATION');
+  console.log('🧪 TRUSTORDER 4 CORE BACKEND FEATURES AUDIT & VERIFICATION');
   console.log('========================================================\n');
+
+  // Ensure test seller exists with valid balance for testing
+  const TEST_SELLER_ID = 'c0a80101-0000-4000-8000-000000000001';
+  let seller = db.getSeller(TEST_SELLER_ID);
+  if (!seller) {
+    seller = db.createSeller({
+      id: TEST_SELLER_ID,
+      brand_name: 'Snitch Apparel',
+      email: 'aditya_audit@teststore.in'
+    });
+    db.updateSellerWallet(seller.id, 60.00);
+    await new Promise(r => setTimeout(r, 800));
+  } else if ((Number(seller.wallet_balance_inr) || 0) < 12.00) {
+    db.updateSellerWallet(seller.id, 60.00);
+  }
 
   // --- FEATURE 1: 60s Shopify COD Ingestion ---
   console.log('🔹 [1/4] Testing Shopify Webhook COD Ingestion:');
@@ -51,7 +67,7 @@ async function runValidation() {
   console.log(`   ✓ Risk Score Calculated: ${sanitation.riskScore}`);
 
   const order = db.createOrder({
-    seller_id: 'sel_d2c_enterprise_001',
+    seller_id: TEST_SELLER_ID,
     external_order_id: sampleWebhook.name,
     source: 'shopify',
     buyer_name: 'Aditya Verma',
@@ -77,11 +93,11 @@ async function runValidation() {
     missingFields: order.missing_fields.join(', ')
   });
 
-  const hasHinglish = systemPrompt.includes('dispatch desk se Shipvera AI bol raha hoon') &&
+  const hasHinglish = (systemPrompt.includes('TrustOrder AI bol raha hoon') || systemPrompt.includes('Shipvera AI bol raha hoon')) &&
                       systemPrompt.includes('aas-paas konsi mashhoor dukaan, mandir ya makan ka number');
   console.log(`   ✓ Colloquial Hinglish Dialog Persona: ${hasHinglish ? 'PASS (100% Native Hinglish)' : 'FAIL'}`);
   console.log(`   ✓ Strict 2-Sentence Constraint Included: ${systemPrompt.includes('Never speak long paragraphs') ? 'PASS' : 'FAIL'}`);
-  console.log(`   ✓ Sample Greeting Preview: "Namaste ${order.buyer_name} ji! Main Snitch Apparel ke dispatch desk se Shipvera AI bol raha hoon..."\n`);
+  console.log(`   ✓ Sample Greeting Preview: "Namaste ${order.buyer_name} ji! Main Snitch Apparel ke dispatch desk se TrustOrder AI bol raha hoon..."\n`);
 
   // --- FEATURE 3: Courier Label Rewrite (Shopify & Shiprocket) ---
   console.log('🔹 [3/4] Testing Courier Label AWB Rewrite Brain:');
@@ -106,7 +122,7 @@ async function runValidation() {
     orderId: order.id,
     buyerIntent: 'VERIFIED_GENUINE',
     spokenText: spokenResponse,
-    sellerId: 'sel_d2c_enterprise_001'
+    sellerId: TEST_SELLER_ID
   });
   console.log(`   ✓ Order Status Updated: ${verifiedResult.order.verification_status}`);
   console.log(`   ✓ Shopify Synced Tags: ${verifiedResult.order.tags.join(', ')}\n`);
@@ -114,7 +130,7 @@ async function runValidation() {
   // --- FEATURE 4: Fake/Refusal Cancellation & ₹180 Loss Shield ---
   console.log('🔹 [4/4] Testing Fake / Impulse Cancellation & ₹180 Saved Shield:');
   const fakeOrder = db.createOrder({
-    seller_id: 'sel_d2c_enterprise_001',
+    seller_id: TEST_SELLER_ID,
     external_order_id: '#UK-99402',
     source: 'shopify',
     buyer_name: 'Bored Teenager',
@@ -129,13 +145,12 @@ async function runValidation() {
   const cancelResult = await applyPostCallDecision({
     orderId: fakeOrder.id,
     buyerIntent: 'CANCEL_REQUESTED',
-    sellerId: 'sel_d2c_enterprise_001'
+    sellerId: TEST_SELLER_ID
   });
 
   console.log(`   ✓ Buyer Refusal Detected: "Nahi chahiye bhaiya, galti se order ho gaya tha."`);
   console.log(`   ✓ Order Status: ${cancelResult.order.verification_status}`);
-  console.log(`   ✓ Risk Score Set to: ${cancelResult.order.risk_score} (Extreme Risk)`);
-  console.log(`   ✓ Freight Loss Prevented: ₹${cancelResult.order.rto_money_saved} SAVED`);
+  console.log(`   ✓ Freight Loss Status: ${cancelResult.order.rto_money_saved !== null ? '₹' + cancelResult.order.rto_money_saved + ' SAVED' : 'Real courier loss calculation unconfirmed (no fabricated default)'}`);
   console.log(`   ✓ Shopify Auto-Cancellation Dispatched: PASS (status: cancelled)\n`);
 
   console.log('========================================================');

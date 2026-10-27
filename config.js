@@ -1,11 +1,12 @@
 /**
- * Shipvera Configuration & Cloud Backend Bridge
+ * TrustOrder Configuration & Cloud Backend Bridge
  * Connects Frontend Dashboard & Landing Page to Render / Cloud Backend
  */
 
 (function (window) {
-    const STORAGE_KEY = 'SHIPVERA_BACKEND_URL';
-    const DEFAULT_RENDER_URL = 'https://shipvera-backend.onrender.com';
+    const STORAGE_KEY = 'TRUSTORDER_BACKEND_URL';
+    const LEGACY_STORAGE_KEY = 'SHIPVERA_BACKEND_URL';
+    const DEFAULT_RENDER_URL = 'https://trustorder-backend.onrender.com';
 
     /**
      * Resolve the active backend base URL
@@ -16,7 +17,7 @@
      */
     function getBackendBaseUrl() {
         try {
-            const saved = localStorage.getItem(STORAGE_KEY);
+            const saved = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
             if (saved && saved.trim()) {
                 return saved.trim().replace(/\/+$/, '');
             }
@@ -39,7 +40,7 @@
     /**
      * Construct absolute API endpoint URL
      * @param {string} endpoint - e.g. '/api/orders'
-     * @returns {string} - e.g. 'https://shipvera-backend.onrender.com/api/orders'
+     * @returns {string} - e.g. 'https://trustorder-backend.onrender.com/api/orders'
      */
     function getApiUrl(endpoint) {
         const base = getBackendBaseUrl();
@@ -54,6 +55,7 @@
     function setBackendUrl(url) {
         if (!url || !url.trim()) {
             localStorage.removeItem(STORAGE_KEY);
+            localStorage.removeItem(LEGACY_STORAGE_KEY);
             return DEFAULT_RENDER_URL;
         }
         let clean = url.trim().replace(/\/+$/, '');
@@ -61,6 +63,7 @@
             clean = 'https://' + clean;
         }
         localStorage.setItem(STORAGE_KEY, clean);
+        localStorage.setItem(LEGACY_STORAGE_KEY, clean);
         return clean;
     }
 
@@ -115,15 +118,19 @@
         }
     }
 
-    // Expose globally
-    window.ShipveraConfig = {
+    const configObj = {
         STORAGE_KEY,
+        LEGACY_STORAGE_KEY,
         DEFAULT_RENDER_URL,
         getBackendBaseUrl,
         getApiUrl,
         setBackendUrl,
         pingBackend
     };
+
+    // Expose globally under both names for compatibility
+    window.TrustOrderConfig = configObj;
+    window.ShipveraConfig = configObj;
 
     // Helper alias
     window.getApiUrl = getApiUrl;

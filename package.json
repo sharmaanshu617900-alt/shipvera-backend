@@ -1,11 +1,15 @@
 {
-  "name": "shipvera-backend",
+  "name": "trustorder-backend",
   "version": "1.0.0",
-  "description": "Shipvera - India's First Voice AI Dispatch Engine & COD RTO Prevention Platform",
+  "description": "TrustOrder - India's Hinglish Voice AI Dispatch Engine & COD RTO Prevention Platform",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node --watch server.js"
+    "dev": "node --watch server.js",
+    "test": "node scripts/test_4_core_features.js && node scripts/test_live_account_connection.js && node scripts/test_rto_recovery_and_pricing.js",
+    "test:features": "node scripts/test_4_core_features.js",
+    "test:connections": "node scripts/test_live_account_connection.js",
+    "test:recovery": "node scripts/test_rto_recovery_and_pricing.js"
   },
   "keywords": [
     "voice-ai",
@@ -14,7 +18,7 @@
     "shopify",
     "shiprocket"
   ],
-  "author": "Shipvera Team",
+  "author": "TrustOrder Team",
   "license": "ISC",
   "dependencies": {
     "@supabase/supabase-js": "^2.118.0",

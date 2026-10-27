@@ -1,5 +1,5 @@
 /**
- * Shipvera - Fullstack Platform Server
+ * TrustOrder - Fullstack Platform Server
  * India's First Voice AI Dispatch Engine & COD RTO Prevention Platform
  */
 
@@ -25,6 +25,7 @@ const ordersRouter = require('./routes/orders');
 const analyticsRouter = require('./routes/analytics');
 const walletRouter = require('./routes/wallet');
 const authRouter = require('./routes/auth');
+const recoveryRouter = require('./routes/recovery');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -66,6 +67,7 @@ app.use('/api/webhooks', webhooksRouter);
 app.use('/api/orders', ordersRouter);
 app.use('/api/analytics', analyticsRouter);
 app.use('/api/wallet', walletRouter);
+app.use('/api/recovery', recoveryRouter);
 
 // Lead Waitlist Endpoint. The lead is actually stored (db.addLead),
 // not just echoed back, and no seller wallet is invented for a lead.
@@ -102,7 +104,7 @@ app.get('/api/health', (req, res) => {
   };
   res.status(200).json({
     status: 'healthy',
-    platform: 'Shipvera Autonomous Voice AI Dispatch Engine',
+    platform: 'TrustOrder Autonomous Voice AI Dispatch Engine',
     version: '2.0.0-enterprise',
     timestamp: new Date().toISOString(),
     configured,
@@ -113,7 +115,7 @@ app.get('/api/health', (req, res) => {
       upi_trust_lock: configured.razorpay && configured.whatsapp ? 'configured' : 'not_configured',
       quick_paste_mode: 'available - creates orders only with validated seller, phone, pincode and amount',
       trai_night_window_hold: 'available',
-      autonomous_queue_worker: 'available - live calls only; simulation requires SHIPVERA_ALLOW_SIMULATED_CALLS=true',
+      autonomous_queue_worker: 'available - live calls only; simulation requires TRUSTORDER_ALLOW_SIMULATED_CALLS=true',
       financial_ledger: 'available'
     }
   });
@@ -137,7 +139,7 @@ app.get('*', (req, res) => {
 // Start Server and Autonomous Queue Engine
 const server = app.listen(PORT, () => {
   console.log(`====================================================`);
-  console.log(`🚀 SHIPVERA BILLIONAIRE ENTERPRISE BACKEND IS LIVE!`);
+  console.log(`🚀 TRUSTORDER ENTERPRISE BACKEND IS LIVE!`);
   console.log(`📡 URL: http://localhost:${PORT}`);
   console.log(`📊 Health Endpoint: http://localhost:${PORT}/api/health`);
   console.log(`📦 Orders API:      http://localhost:${PORT}/api/orders`);
@@ -155,7 +157,7 @@ function handleShutdown(signal) {
   console.log(`\n[SYSTEM] Received ${signal}. Shutting down queue and server gracefully...`);
   queueEngine.stopWorker();
   server.close(() => {
-    console.log('[SYSTEM] Shipvera server terminated cleanly.');
+    console.log('[SYSTEM] TrustOrder server terminated cleanly.');
     process.exit(0);
   });
 }

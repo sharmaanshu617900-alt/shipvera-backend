@@ -1,6 +1,6 @@
 /**
  * Feature 2: "The Landmark Interrogator" (25-Second Hinglish Voice AI)
- * Orchestrates calls via Bolna with the Shipvera Dispatch AI persona.
+ * Orchestrates calls via Bolna with the TrustOrder Dispatch AI persona.
  *
  * REAL-ONLY RULES (enforced in this file):
  * - Bolna credentials come ONLY from environment variables.
@@ -9,7 +9,7 @@
  *   a NOT_CONFIGURED error instead of pretending a call happened.
  * - The automated path is LIVE by default. triggerOutboundCall treats a
  *   missing `live` argument as live=true. An explicit live=false is
- *   only honoured when SHIPVERA_ALLOW_SIMULATED_CALLS is exactly "true"
+ *   only honoured when TRUSTORDER_ALLOW_SIMULATED_CALLS or SHIPVERA_ALLOW_SIMULATED_CALLS is exactly "true"
  *   (local testing only). A simulated result never invents a transcript,
  *   a recording URL, a landmark, or buyer intent, and it is never
  *   recorded as a real call log.
@@ -22,9 +22,10 @@
 const https = require('https');
 const { db } = require('../db');
 
-function buildShipveraSystemPrompt({ brandName = '{{brand_name}}', buyerName = '{{buyer_name}}', itemName = '{{item_name}}', codAmount = '{{cod_amount}}', rawAddress = '{{raw_address}}', city = '{{city}}', pincode = '{{pincode}}', missingFields = '{{missing_fields}}' } = {}) {
-  return `# Role & Persona\nYou are Shipvera AI, an efficient, polite, street-smart dispatch assistant calling directly on behalf of ${brandName}'s warehouse dispatch desk in India. You speak natural conversational Hinglish (70% Hindi, 30% English words written in Roman script). You NEVER sound like a robotic call center agent. Keep every response under 2 short sentences.\n\n# Context of Current Order\n- Buyer Name: ${buyerName}\n- Brand / Store: ${brandName}\n- Item Ordered: ${itemName}\n- COD Amount: \u20B9${codAmount}\n- Raw Address Provided: "${rawAddress}, ${city} - ${pincode}"\n- Missing Details Detected: ${missingFields}\n\n# Your Exact Objective\n1. Greet ${buyerName} quickly and mention their \u20B9${codAmount} parcel from ${brandName} is ready for dispatch.\n   Example: "Namaste ${buyerName} ji! Main ${brandName} ke dispatch desk se Shipvera AI bol raha hoon. Aapka \u20B9${codAmount} ka order pack ho gaya hai."\n2. Point out the specific missing detail in "${rawAddress}" (for example, missing house/flat number or missing nearby landmark).\n3. Ask them casually: "Wahan aas-paas konsi mashhoor dukaan, mandir ya makan ka number/gate ka rang padta hai bata dijiye, taaki courier boy bina bhatke seedha deliver kar de?"\n4. Listen carefully:\n   - If they give a real landmark/house detail: Repeat the key landmark once to confirm ("Acha, note kar liya!"), thank them warmly, and end the call.\n   - If they say they ordered by mistake, don't want it, or sound like they are pranking: Say "Koi baat nahi ji, main system mein abhi cancel kar deta hoon. Dhanyawad!" and end the call.\n\n# Strict Guardrails\n- Never speak long paragraphs.\n- Never ask them to "Press 1 or 2".\n- Never give human fake names. Always identify as Shipvera AI on behalf of ${brandName}.\n- If interrupted, stop talking immediately and listen.`;
+function buildTrustOrderSystemPrompt({ brandName = '{{brand_name}}', buyerName = '{{buyer_name}}', itemName = '{{item_name}}', codAmount = '{{cod_amount}}', rawAddress = '{{raw_address}}', city = '{{city}}', pincode = '{{pincode}}', missingFields = '{{missing_fields}}' } = {}) {
+  return `# Role & Persona\nYou are TrustOrder AI, an efficient, polite, street-smart dispatch assistant calling directly on behalf of ${brandName}'s warehouse dispatch desk in India. You speak natural conversational Hinglish (70% Hindi, 30% English words written in Roman script). You NEVER sound like a robotic call center agent. Keep every response under 2 short sentences.\n\n# Context of Current Order\n- Buyer Name: ${buyerName}\n- Brand / Store: ${brandName}\n- Item Ordered: ${itemName}\n- COD Amount: \u20B9${codAmount}\n- Raw Address Provided: "${rawAddress}, ${city} - ${pincode}"\n- Missing Details Detected: ${missingFields}\n\n# Your Exact Objective\n1. Greet ${buyerName} quickly and mention their \u20B9${codAmount} parcel from ${brandName} is ready for dispatch.\n   Example: "Namaste ${buyerName} ji! Main ${brandName} ke dispatch desk se TrustOrder AI bol raha hoon. Aapka \u20B9${codAmount} ka order pack ho gaya hai."\n2. Point out the specific missing detail in "${rawAddress}" (for example, missing house/flat number or missing nearby landmark).\n3. Ask them casually: "Wahan aas-paas konsi mashhoor dukaan, mandir ya makan ka number/gate ka rang padta hai bata dijiye, taaki courier boy bina bhatke seedha deliver kar de?"\n4. Listen carefully:\n   - If they give a real landmark/house detail: Repeat the key landmark once to confirm ("Acha, note kar liya!"), thank them warmly, and end the call.\n   - If they say they ordered by mistake, don't want it, or sound like they are pranking: Say "Koi baat nahi ji, main system mein abhi cancel kar deta hoon. Dhanyawad!" and end the call.\n\n# Strict Guardrails\n- Never speak long paragraphs.\n- Never ask them to "Press 1 or 2".\n- Never give human fake names. Always identify as TrustOrder AI on behalf of ${brandName}.\n- If interrupted, stop talking immediately and listen.`;
 }
+const buildShipveraSystemPrompt = buildTrustOrderSystemPrompt;
 
 /**
  * Dispatches a REAL live voice AI phone call using the Bolna.ai Calling API.
@@ -56,7 +57,7 @@ async function dispatchBolnaLiveCall({ order, seller, recipientPhone = null }) {
     throw new Error(`Invalid phone number: ${phone}. Needs 10 digits with country code (+91XXXXXXXXXX).`);
   }
 
-  const brandName = seller.brand_name || 'Shipvera Dispatch';
+  const brandName = seller.brand_name || 'TrustOrder Dispatch';
   const buyerName = order.buyer_name || 'Customer';
   const codAmount = String(order.cod_amount || 0);
   const rawAddress = order.raw_address || '';
@@ -128,7 +129,7 @@ async function dispatchBolnaLiveCall({ order, seller, recipientPhone = null }) {
 }
 
 function simulationAllowed() {
-  return process.env.SHIPVERA_ALLOW_SIMULATED_CALLS === 'true';
+  return process.env.TRUSTORDER_ALLOW_SIMULATED_CALLS === 'true' || process.env.SHIPVERA_ALLOW_SIMULATED_CALLS === 'true';
 }
 
 /**
@@ -151,7 +152,7 @@ async function triggerOutboundCall({ order, seller, forcedIntent = null, live, r
 
   if (!wantLive) {
     if (!simulationAllowed()) {
-      const err = new Error('Simulated calls are disabled. Set SHIPVERA_ALLOW_SIMULATED_CALLS=true for local testing only, or omit live to place a real Bolna call. No call was placed and no call log was created.');
+      const err = new Error('Simulated calls are disabled. Set TRUSTORDER_ALLOW_SIMULATED_CALLS=true for local testing only, or omit live to place a real Bolna call. No call was placed and no call log was created.');
       err.code = 'SIMULATION_DISABLED';
       throw err;
     }
@@ -170,8 +171,8 @@ async function triggerOutboundCall({ order, seller, forcedIntent = null, live, r
     };
   }
 
-  if (seller.wallet_balance_inr < 6.00) {
-    throw new Error('Insufficient wallet balance. Recharge required before calls can be dispatched.');
+  if (seller.wallet_balance_inr < 12.00) {
+    throw new Error('Insufficient wallet balance. Recharge required before calls can be dispatched (₹12 ex-GST per verified order).');
   }
 
   db.updateOrder(order.id, { verification_status: 'calling' });
@@ -209,6 +210,7 @@ async function triggerOutboundCall({ order, seller, forcedIntent = null, live, r
 }
 
 module.exports = {
+  buildTrustOrderSystemPrompt,
   buildShipveraSystemPrompt,
   dispatchBolnaLiveCall,
   triggerOutboundCall

@@ -1,5 +1,5 @@
 /**
- * Shipvera Institutional Dispatch Controller (v6.0)
+ * TrustOrder Institutional Dispatch Controller (v6.0)
  * Ultra-Premium Fintech & Logistics Interface (Zero AI Tropes, Pure High-Trust Architecture)
  */
 
@@ -231,7 +231,7 @@ function toggleAuthMode() {
         formSubheading.textContent = 'Access your live dispatch console, orders stream, and billing ledger.';
         btnText.textContent = 'Sign In to Workspace →';
         toggleLink.textContent = 'Create Workspace';
-        switchPrompt.textContent = "New to Shipvera?";
+        switchPrompt.textContent = "New to TrustOrder?";
         if (dividerText) dividerText.textContent = 'Or sign in with work email';
         if (forgotLink) forgotLink.style.display = 'block';
 
@@ -245,8 +245,8 @@ function toggleAuthMode() {
         if (document.getElementById('sellerPhone')) document.getElementById('sellerPhone').required = false;
     } else {
         formHeading.textContent = 'Create your seller workspace';
-        formSubheading.textContent = 'Pure Pay-As-You-Go billing. No monthly software retainer. Billed strictly ₹6 per verified order.';
-        btnText.textContent = 'Create Workspace — ₹0 Upfront →';
+        formSubheading.textContent = 'Pure Pay-As-You-Go billing. No monthly software retainer. Billed strictly ₹12 ex-GST per verified order.';
+        btnText.textContent = 'Create Workspace →';
         toggleLink.textContent = 'Sign In';
         switchPrompt.textContent = 'Already have a seller account?';
         if (dividerText) dividerText.textContent = 'Or register with work email';
@@ -286,8 +286,9 @@ async function handleAuthSubmit(event) {
     const shopifyDomain = document.getElementById('shopifyDomain') ? document.getElementById('shopifyDomain').value.trim() : '';
 
     const endpoint = isLoginMode ? '/api/auth/login' : '/api/auth/signup';
-    const apiUrl = (window.ShipveraConfig && typeof window.ShipveraConfig.getApiUrl === 'function')
-        ? window.ShipveraConfig.getApiUrl(endpoint)
+    const config = window.TrustOrderConfig || window.ShipveraConfig;
+    const apiUrl = (config && typeof config.getApiUrl === 'function')
+        ? config.getApiUrl(endpoint)
         : endpoint;
 
     const payload = isLoginMode ? {
@@ -317,6 +318,8 @@ async function handleAuthSubmit(event) {
             alertBox.style.display = 'block';
             alertBox.innerHTML = `<strong>Workspace Ready:</strong> ${data.seller.brand_name}. Entering console...`;
 
+            localStorage.setItem('trustorder_active_seller', JSON.stringify(data.seller));
+            localStorage.setItem('trustorder_active_seller_id', data.seller.id);
             localStorage.setItem('shipvera_active_seller', JSON.stringify(data.seller));
             localStorage.setItem('shipvera_active_seller_id', data.seller.id);
 
@@ -329,7 +332,7 @@ async function handleAuthSubmit(event) {
             alertBox.style.display = 'block';
             alertBox.textContent = data.error || 'Authentication failed. Please verify your credentials.';
             btn.disabled = false;
-            btnText.textContent = isLoginMode ? 'Sign In to Workspace →' : 'Create Workspace — ₹0 Upfront →';
+            btnText.textContent = isLoginMode ? 'Sign In to Workspace →' : 'Create Workspace →';
         }
 
     } catch (err) {
@@ -337,20 +340,20 @@ async function handleAuthSubmit(event) {
         alertBox.style.display = 'block';
         alertBox.textContent = `Backend notice: ${err.message}. If the server is restarting, please retry in a few seconds.`;
         btn.disabled = false;
-        btnText.textContent = isLoginMode ? 'Sign In to Workspace →' : 'Create Workspace — ₹0 Upfront →';
+        btnText.textContent = isLoginMode ? 'Sign In to Workspace →' : 'Create Workspace →';
     }
 }
 
 function checkExistingSession() {
     try {
-        const active = localStorage.getItem('shipvera_active_seller');
+        const active = localStorage.getItem('trustorder_active_seller') || localStorage.getItem('shipvera_active_seller');
         if (active) {
             const seller = JSON.parse(active);
             const alertBox = document.getElementById('authAlert');
             if (alertBox && seller && seller.brand_name) {
                 alertBox.className = 'auth-alert success';
                 alertBox.style.display = 'block';
-                alertBox.innerHTML = `Active workspace: <strong>${seller.brand_name}</strong>. <a href="/dashboard" style="color: #065F46; font-weight: 700; text-decoration: underline;">Open Console →</a>`;
+                alertBox.innerHTML = `Active workspace: <strong>${seller.brand_name}</strong>. <a href="/dashboard" style="color: var(--oxblood, #6B1228); font-weight: 700; text-decoration: underline;">Open Console →</a>`;
             }
         }
     } catch (e) {}
@@ -364,7 +367,7 @@ function socialAuthNotice(provider) {
             const alertBox = document.getElementById('authAlert');
             alertBox.className = 'auth-alert success';
             alertBox.style.display = 'block';
-            alertBox.innerHTML = `<strong>Shopify Fast Connect:</strong> Enter your store domain below and choose a password to instantly link Shipvera's webhook engine.`;
+            alertBox.innerHTML = `<strong>Shopify Fast Connect:</strong> Enter your store domain below and choose a password to instantly link TrustOrder's webhook engine.`;
         }
     } else {
         alert(`${provider} Single Sign-On connects with your official ${provider} account. Use email registration to configure your custom COD voice prompts.`);

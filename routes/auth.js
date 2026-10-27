@@ -261,9 +261,9 @@ router.post('/connect-shopify', async (req, res) => {
     const cleanDomain = shopify_domain.trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
     const cleanToken = (shopify_access_token || '').trim();
 
-    const seller = db.getSeller(sellerId) || defaultSeller;
+    const seller = db.getSeller(sellerId);
     if (!seller) {
-      return res.status(404).json({ error: 'Seller workspace not found.' });
+      return res.status(404).json({ error: 'Seller workspace not found. Provide a valid seller_id.' });
     }
 
     // Step 1: Live Credential Handshake with Shopify Admin API
@@ -299,7 +299,7 @@ router.post('/connect-shopify', async (req, res) => {
     // Step 3: Update local DB & seller metadata
     seller.shopify_domain = cleanDomain;
     if (cleanToken) seller.shopify_access_token = cleanToken;
-    if (shopMeta.name && (!seller.brand_name || seller.brand_name === 'Snitch Apparel & Streetwear')) {
+    if (shopMeta.name) {
       seller.brand_name = shopMeta.name;
     }
     seller.shopify_connected_at = new Date().toISOString();
@@ -538,9 +538,9 @@ router.post('/connect-logistics', async (req, res) => {
       return res.status(400).json({ error: 'Active seller ID is required.' });
     }
 
-    const seller = db.getSeller(sellerId) || defaultSeller;
+    const seller = db.getSeller(sellerId);
     if (!seller) {
-      return res.status(404).json({ error: 'Seller workspace not found.' });
+      return res.status(404).json({ error: 'Seller workspace not found. Provide a valid seller_id.' });
     }
 
     // Save logistics provider configuration
@@ -558,15 +558,30 @@ router.post('/connect-logistics', async (req, res) => {
         }
         seller.shiprocket_token = loginRes.token;
         seller.shiprocket_email = email;
-      } else if (token) {
+      } else if (token && token.trim()) {
         seller.shiprocket_token = token.trim();
       } else {
-        seller.shiprocket_token = `sr_token_connected_${Date.now()}`;
+        return res.status(400).json({
+          success: false,
+          error: 'Shiprocket connection requires either email and password, or an active Shiprocket API token.'
+        });
       }
     } else if (provider === 'delhivery') {
-      seller.delhivery_token = token || client_id || 'delhivery_live_token';
+      if (!token && !client_id) {
+        return res.status(400).json({
+          success: false,
+          error: 'Delhivery connection requires an API token or Client ID.'
+        });
+      }
+      seller.delhivery_token = (token || client_id).trim();
     } else if (provider === 'nimbuspost') {
-      seller.nimbuspost_key = token || 'nimbus_live_key';
+      if (!token) {
+        return res.status(400).json({
+          success: false,
+          error: 'NimbusPost connection requires an API key.'
+        });
+      }
+      seller.nimbuspost_key = token.trim();
     }
 
     seller.logistics_connected_at = new Date().toISOString();
@@ -607,9 +622,14 @@ router.post('/connect-logistics', async (req, res) => {
  */
 router.get('/me', (req, res) => {
   try {
-    const defaultSeller = db.getSeller();
-    const sellerId = req.headers['x-seller-id'] || req.query.seller_id || defaultSeller?.id;
-    const seller = db.getSeller(sellerId) || defaultSeller;
+    const sellerId = req.headers['x-seller-id'] || req.query.seller_id;
+    if (!sellerId) {
+      return res.status(400).json({ error: 'x-seller-id header or seller_id query param is required' });
+    }
+    const seller = db.getSeller(sellerId);
+    if (!seller) {
+      return res.status(404).json({ error: 'Seller workspace not found' });
+    }
     return res.status(200).json({ success: true, seller });
   } catch (err) {
     return res.status(500).json({ error: err.message });

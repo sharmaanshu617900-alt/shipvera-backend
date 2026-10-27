@@ -84,6 +84,29 @@ function extractAndRewriteAddress({ rawAddress, spokenText, city, pincode, buyer
     }
   }
 
+  // Support Indian Hindi/Hinglish postfix spatial phrases: "<Entity> ke piche / ke samne / ke paas / se left"
+  if (!landmark) {
+    const postfixMatch = spoken.match(/([a-z0-9\s]{3,30}?)\s+(?:ke\s*(?:piche|samne|paas|pass|upar|baju|side)|se\s*(?:left|right)(?:\s*leke)?)/i);
+    if (postfixMatch && postfixMatch[1]) {
+      const entity = postfixMatch[1].replace(/^(?:(?:haan|arre|ji|sir|madam|mera|humara|yahan|bhaiya|bhai)\s+)+/i, '').trim();
+      if (entity.length > 2) {
+        if (/ke\s*piche/i.test(spoken)) {
+          landmark = `Behind ${capitalizeWords(entity)}`;
+        } else if (/ke\s*samne/i.test(spoken)) {
+          landmark = `Opp. ${capitalizeWords(entity)}`;
+        } else if (/ke\s*upar/i.test(spoken)) {
+          landmark = `Above ${capitalizeWords(entity)}`;
+        } else if (/se\s*left/i.test(spoken)) {
+          landmark = `Left of ${capitalizeWords(entity)}`;
+        } else if (/se\s*right/i.test(spoken)) {
+          landmark = `Right of ${capitalizeWords(entity)}`;
+        } else {
+          landmark = `Near ${capitalizeWords(entity)}`;
+        }
+      }
+    }
+  }
+
   // No hardcoded landmark, house, city, or pincode defaults.
   // If nothing concrete was extracted, this is a review case, not a
   // cleaned address.
@@ -206,11 +229,12 @@ async function applyPostCallDecision({ orderId, buyerIntent, spokenText, sellerI
       tags: ['RTO-Shield-Verified', 'Address-Cleaned']
     });
 
-    // Deduct ₹6 via Financial Ledger
+    // Deduct Voice verification fee via Financial Ledger (₹12 ex-GST on confirmed disposition)
     try {
       recordUsageDebit({
         sellerId: seller.id,
-        amount: 6.00,
+        channel: 'voice',
+        disposition: 'confirmed',
         purpose: 'VOICE_AI_VERIFICATION',
         referenceId: order.external_order_id,
         meta: { orderId: order.id, buyerPhone: order.buyer_phone }
@@ -278,11 +302,12 @@ async function applyPostCallDecision({ orderId, buyerIntent, spokenText, sellerI
       tags: ['RTO-Shield-Fake-Cancelled']
     });
 
-    // Deduct ₹6 verification charge
+    // Deduct Voice verification fee on cancelled disposition (₹12 ex-GST)
     try {
       recordUsageDebit({
         sellerId: seller.id,
-        amount: 6.00,
+        channel: 'voice',
+        disposition: 'cancelled',
         purpose: 'VOICE_AI_FAKE_BLOCKED',
         referenceId: order.external_order_id,
         meta: { orderId: order.id, buyerPhone: order.buyer_phone }

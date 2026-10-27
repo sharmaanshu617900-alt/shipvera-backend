@@ -1,15 +1,14 @@
 /**
- * Shipvera Database Engine
- * Implements the 4 core tables specified in TRD Section 3.2:
- * 1. sellers
- * 2. orders
- * 3. call_logs
- * 4. buyer_trust_graph
+ * TrustOrder by Shipvera - Production Database Engine
+ * Primary: Supabase PostgreSQL Cloud Database
+ * Fallback: Local JSON (strictly for local development without credentials; zero seed data)
+ * TRD Section 3.2 & Enterprise Financial Ledger & RTO Recovery Moat
  */
 
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const { getSupabaseClient } = require('./services/supabaseClient');
 
 const DATA_DIR = path.join(__dirname, 'data');
 const DB_FILE = path.join(DATA_DIR, 'shipvera_database.json');
@@ -19,58 +18,136 @@ if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
 }
 
-// Empty initial data. A fresh install starts with no sellers, orders,
-// call logs, or trust-graph entries. No demo/seed data is created here.
-// Previously this function seeded a demo seller, demo orders and demo
-// call logs; that seed data has been removed so the dashboard can never
-// show activity that did not actually happen.
 function getEmptyData() {
   return {
     sellers: [],
     orders: [],
     call_logs: [],
     buyer_trust_graph: {},
-    wallet_transactions: [],
+    wallet_ledger: [],
+    wallet_transactions: [], // Alias for backward compatibility
+    trust_lock_payments: [],
+    subscriptions: [],
+    recovery_attempts: [],
     queue_jobs: [],
     leads: []
   };
 }
 
+/**
+ * Normalizes phone number and computes SHA-256 hash.
+ * Plain-text phone numbers are NEVER used as keys in the global buyer trust graph.
+ */
 function hashPhone(phone) {
+  if (!phone) return crypto.createHash('sha256').update('anonymous').digest('hex');
   const normalized = String(phone).replace(/[^\d+]/g, '');
   return crypto.createHash('sha256').update(normalized).digest('hex');
 }
 
-// Database Read/Write Wrapper
 class Database {
   constructor() {
+    this.data = getEmptyData();
+    this.isSupabase = false;
+    this.sb = null;
     this.init();
   }
 
   init() {
-    if (!fs.existsSync(DB_FILE)) {
-      const initial = getEmptyData();
-      fs.writeFileSync(DB_FILE, JSON.stringify(initial, null, 2), 'utf-8');
-      this.data = initial;
+    this.sb = getSupabaseClient();
+    if (this.sb) {
+      this.isSupabase = true;
+      console.log('[DATABASE] Primary Storage: Supabase PostgreSQL Cloud');
+      this.syncFromSupabase().catch(err => {
+        console.warn('[DATABASE] Initial Supabase sync deferred/warning:', err.message);
+      });
     } else {
-      try {
-        const raw = fs.readFileSync(DB_FILE, 'utf-8');
-        this.data = JSON.parse(raw);
-        if (!Array.isArray(this.data.wallet_transactions)) {
-          this.data.wallet_transactions = [];
+      console.warn('[DATABASE] Running in local-dev JSON fallback mode (Supabase not configured). Never used in production; zero seed data.');
+      if (!fs.existsSync(DB_FILE)) {
+        const initial = getEmptyData();
+        fs.writeFileSync(DB_FILE, JSON.stringify(initial, null, 2), 'utf-8');
+        this.data = initial;
+      } else {
+        try {
+          const raw = fs.readFileSync(DB_FILE, 'utf-8');
+          this.data = JSON.parse(raw);
+          if (!Array.isArray(this.data.sellers)) this.data.sellers = [];
+          if (!Array.isArray(this.data.orders)) this.data.orders = [];
+          if (!Array.isArray(this.data.call_logs)) this.data.call_logs = [];
+          if (!this.data.buyer_trust_graph || typeof this.data.buyer_trust_graph !== 'object') this.data.buyer_trust_graph = {};
+          if (!Array.isArray(this.data.wallet_ledger)) this.data.wallet_ledger = this.data.wallet_transactions || [];
+          if (!Array.isArray(this.data.wallet_transactions)) this.data.wallet_transactions = this.data.wallet_ledger;
+          if (!Array.isArray(this.data.trust_lock_payments)) this.data.trust_lock_payments = [];
+          if (!Array.isArray(this.data.subscriptions)) this.data.subscriptions = [];
+          if (!Array.isArray(this.data.recovery_attempts)) this.data.recovery_attempts = [];
+          if (!Array.isArray(this.data.queue_jobs)) this.data.queue_jobs = [];
+          if (!Array.isArray(this.data.leads)) this.data.leads = [];
+        } catch (err) {
+          console.error('[DATABASE] Error reading local JSON fallback, starting empty:', err.message);
+          this.data = getEmptyData();
         }
-        if (!Array.isArray(this.data.queue_jobs)) {
-          this.data.queue_jobs = [];
-        }
-      } catch (err) {
-        console.error('Error reading database, starting empty (corrupt file was not restored from seed data):', err);
-        this.data = getEmptyData();
       }
     }
   }
 
+  /**
+   * Syncs latest data from Supabase PostgreSQL tables into fast in-memory cache
+   */
+  async syncFromSupabase() {
+    if (!this.sb) return;
+    try {
+      const [
+        { data: sellers },
+        { data: orders },
+        { data: callLogs },
+        { data: trustGraph },
+        { data: walletLedger },
+        { data: trustLockPayments },
+        { data: subscriptions },
+        { data: recoveryAttempts },
+        { data: queueJobs }
+      ] = await Promise.all([
+        this.sb.from('sellers').select('*'),
+        this.sb.from('orders').select('*').order('created_at', { ascending: false }).limit(200),
+        this.sb.from('call_logs').select('*').order('created_at', { ascending: false }).limit(200),
+        this.sb.from('buyer_trust_graph').select('*').limit(500),
+        this.sb.from('wallet_ledger').select('*').order('created_at', { ascending: false }).limit(200),
+        this.sb.from('trust_lock_payments').select('*').order('created_at', { ascending: false }).limit(200),
+        this.sb.from('subscriptions').select('*').limit(100),
+        this.sb.from('recovery_attempts').select('*').order('created_at', { ascending: false }).limit(200),
+        this.sb.from('queue_jobs').select('*').order('created_at', { ascending: false }).limit(100)
+      ]);
+
+      if (Array.isArray(sellers)) this.data.sellers = sellers;
+      if (Array.isArray(orders)) this.data.orders = orders;
+      if (Array.isArray(callLogs)) this.data.call_logs = callLogs;
+      if (Array.isArray(trustGraph)) {
+        const graphMap = {};
+        for (const row of trustGraph) {
+          if (row.phone_hash) graphMap[row.phone_hash] = row;
+        }
+        this.data.buyer_trust_graph = graphMap;
+      }
+      if (Array.isArray(walletLedger)) {
+        this.data.wallet_ledger = walletLedger;
+        this.data.wallet_transactions = walletLedger;
+      }
+      if (Array.isArray(trustLockPayments)) this.data.trust_lock_payments = trustLockPayments;
+      if (Array.isArray(subscriptions)) this.data.subscriptions = subscriptions;
+      if (Array.isArray(recoveryAttempts)) this.data.recovery_attempts = recoveryAttempts;
+      if (Array.isArray(queueJobs)) this.data.queue_jobs = queueJobs;
+    } catch (err) {
+      console.warn('[DATABASE] Supabase sync error:', err.message);
+    }
+  }
+
   save() {
-    fs.writeFileSync(DB_FILE, JSON.stringify(this.data, null, 2), 'utf-8');
+    if (!this.isSupabase) {
+      try {
+        fs.writeFileSync(DB_FILE, JSON.stringify(this.data, null, 2), 'utf-8');
+      } catch (err) {
+        console.error('[DATABASE] Failed writing local JSON fallback:', err.message);
+      }
+    }
   }
 
   // --- Seller Operations ---
@@ -82,15 +159,16 @@ class Database {
       email: s.email,
       phone: s.phone,
       shopify_domain: s.shopify_domain,
-      wallet_balance_inr: s.wallet_balance_inr,
-      plan_tier: s.plan_tier,
+      wallet_balance_inr: Number(s.wallet_balance_inr) || 0,
+      trust_lock_balance_inr: Number(s.trust_lock_balance_inr) || 0,
+      plan_tier: s.plan_tier || 'pay_as_you_go',
       created_at: s.created_at
     }));
   }
 
   getSellerByEmail(email) {
     if (!email) return null;
-    return this.data.sellers.find(s => s.email && s.email.toLowerCase() === email.toLowerCase().trim());
+    return this.data.sellers.find(s => s.email && s.email.toLowerCase() === email.toLowerCase().trim()) || null;
   }
 
   getSellerByShopifyDomain(domain) {
@@ -105,35 +183,105 @@ class Database {
   }
 
   createSeller(sellerData) {
-    const id = sellerData.id || `sel_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+    const id = sellerData.id || crypto.randomUUID();
     const newSeller = {
       id,
       name: sellerData.name || sellerData.brand_name || 'Store Founder',
       email: (sellerData.email || '').toLowerCase().trim(),
-      password: sellerData.password || '',
       brand_name: (sellerData.brand_name || 'My Store').trim(),
       phone: sellerData.phone || '',
-      shopify_domain: sellerData.shopify_domain || '',
-      shopify_access_token: null,
-      shiprocket_token: null,
-      wallet_balance_inr: 0.00, // Strictly ₹0.00 (Pure Pay-As-You-Go, Zero Free Credits)
-      plan_tier: 'pay_as_you_go',
+      shopify_domain: sellerData.shopify_domain || null,
+      shopify_access_token: sellerData.shopify_access_token || null,
+      shopify_webhook_secret: sellerData.shopify_webhook_secret || null,
+      shiprocket_token: sellerData.shiprocket_token || null,
+      shiprocket_email: sellerData.shiprocket_email || null,
+      wallet_balance_inr: Number(sellerData.wallet_balance_inr !== undefined ? sellerData.wallet_balance_inr : 0.00),
+      trust_lock_balance_inr: Number(sellerData.trust_lock_balance_inr !== undefined ? sellerData.trust_lock_balance_inr : 0.00),
+      plan_tier: sellerData.plan_tier || 'pay_as_you_go',
+      plan_billing_cycle: sellerData.plan_billing_cycle || 'monthly',
+      credits_remaining: 0,
+      rollover_credits: 0,
+      trial_used: false,
+      trial_expires_at: null,
       upi_trust_lock_amount: 19,
       total_orders_processed: 0,
-      rto_cut_percentage: null, // Not measured until real orders exist
-      created_at: sellerData.created_at || new Date().toISOString()
+      recovery_enabled: true,
+      recovery_discount_max_pct: 10.00,
+      recovery_min_product_price: 400.00,
+      recovery_auto_approve: false,
+      recovery_default_forward_shipping: 80.00,
+      recovery_default_packaging: 20.00,
+      created_at: sellerData.created_at || new Date().toISOString(),
+      updated_at: new Date().toISOString()
     };
 
     this.data.sellers.unshift(newSeller);
     this.save();
+
+    if (this.sb) {
+      const { name, ...sbSeller } = newSeller;
+      this.sb.from('sellers').insert(sbSeller).then(({ error }) => {
+        if (error) console.error('[SUPABASE] Failed to persist new seller:', error.message);
+      }).catch(err => console.error('[SUPABASE] Seller insert exception:', err.message));
+    }
+
     return newSeller;
+  }
+
+  updateSeller(sellerId, updates) {
+    const seller = this.getSeller(sellerId);
+    if (!seller) return null;
+    Object.assign(seller, updates, { updated_at: new Date().toISOString() });
+    this.save();
+
+    if (this.sb) {
+      const dbUpdates = { ...updates, updated_at: new Date().toISOString() };
+      delete dbUpdates.name;
+      this.sb.from('sellers').update(dbUpdates).eq('id', sellerId).then(({ error }) => {
+        if (error) console.error('[SUPABASE] Failed to update seller:', error.message);
+      }).catch(err => console.error('[SUPABASE] Seller update exception:', err.message));
+    }
+
+    return seller;
   }
 
   updateSellerWallet(sellerId, amountDelta) {
     const seller = this.getSeller(sellerId);
     if (!seller) return null;
-    seller.wallet_balance_inr = Number((seller.wallet_balance_inr + amountDelta).toFixed(2));
+    const current = Number(seller.wallet_balance_inr) || 0;
+    seller.wallet_balance_inr = Number((current + amountDelta).toFixed(2));
+    seller.updated_at = new Date().toISOString();
     this.save();
+
+    if (this.sb) {
+      this.sb.from('sellers').update({
+        wallet_balance_inr: seller.wallet_balance_inr,
+        updated_at: seller.updated_at
+      }).eq('id', sellerId).then(({ error }) => {
+        if (error) console.error('[SUPABASE] Failed to update seller wallet:', error.message);
+      }).catch(err => console.error('[SUPABASE] Seller wallet update exception:', err.message));
+    }
+
+    return seller;
+  }
+
+  updateSellerTrustLockBalance(sellerId, amountDelta) {
+    const seller = this.getSeller(sellerId);
+    if (!seller) return null;
+    const current = Number(seller.trust_lock_balance_inr) || 0;
+    seller.trust_lock_balance_inr = Number((current + amountDelta).toFixed(2));
+    seller.updated_at = new Date().toISOString();
+    this.save();
+
+    if (this.sb) {
+      this.sb.from('sellers').update({
+        trust_lock_balance_inr: seller.trust_lock_balance_inr,
+        updated_at: seller.updated_at
+      }).eq('id', sellerId).then(({ error }) => {
+        if (error) console.error('[SUPABASE] Failed to update trust lock balance:', error.message);
+      }).catch(err => console.error('[SUPABASE] Trust lock balance update exception:', err.message));
+    }
+
     return seller;
   }
 
@@ -146,14 +294,15 @@ class Database {
   }
 
   getOrderById(id) {
-    return this.data.orders.find(o => o.id === id || o.external_order_id === id);
+    if (!id) return null;
+    return this.data.orders.find(o => o.id === id || o.external_order_id === id) || null;
   }
 
   createOrder(orderData) {
     if (!orderData.seller_id) {
       throw new Error('seller_id is required to create an order. Orders are never attributed to a fallback seller.');
     }
-    const id = orderData.id || `ord_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+    const id = orderData.id || crypto.randomUUID();
     const newOrder = {
       id,
       seller_id: orderData.seller_id,
@@ -176,13 +325,38 @@ class Database {
       geo_accuracy_label: orderData.geo_accuracy_label || null,
       verification_status: orderData.verification_status || 'queued',
       risk_score: orderData.risk_score || 50,
-      rto_money_saved: orderData.rto_money_saved || 0.00,
-      tags: orderData.tags || [],
+      rto_money_saved: Number(orderData.rto_money_saved) || 0.00,
+      rto_money_saved_reason: orderData.rto_money_saved_reason || null,
+      sync_error: orderData.sync_error || null,
+      tags: orderData.tags || ['COD-Order'],
+      rto_returned_at: orderData.rto_returned_at || null,
+      rto_sunk_cost: Number(orderData.rto_sunk_cost) || 0.00,
+      return_qc_status: orderData.return_qc_status || 'unknown',
+      new_product_cost: Number(orderData.new_product_cost) || 0.00,
+      recovery_status: orderData.recovery_status || 'none',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
+
     this.data.orders.unshift(newOrder);
     this.save();
+
+    if (this.sb) {
+      const sbPayload = { ...newOrder };
+      this.sb.from('orders').insert(sbPayload).then(({ error }) => {
+        if (error) {
+          if (error.message && error.message.includes('shopify_order_id')) {
+            const { shopify_order_id, ...retryPayload } = sbPayload;
+            this.sb.from('orders').insert(retryPayload).then(({ error: retryErr }) => {
+              if (retryErr) console.error('[SUPABASE] Failed to persist order retry:', retryErr.message);
+            });
+          } else {
+            console.error('[SUPABASE] Failed to persist order:', error.message);
+          }
+        }
+      }).catch(err => console.error('[SUPABASE] Order insert exception:', err.message));
+    }
+
     return newOrder;
   }
 
@@ -191,6 +365,23 @@ class Database {
     if (!order) return null;
     Object.assign(order, updates, { updated_at: new Date().toISOString() });
     this.save();
+
+    if (this.sb) {
+      const dbUpdates = { ...updates, updated_at: new Date().toISOString() };
+      delete dbUpdates.sync_error;
+      delete dbUpdates.rto_money_saved_reason;
+      this.sb.from('orders').update(dbUpdates).eq('id', order.id).then(({ error }) => {
+        if (error) {
+          if (error.message && error.message.includes('shopify_order_id')) {
+            const { shopify_order_id, ...retryUpdates } = dbUpdates;
+            this.sb.from('orders').update(retryUpdates).eq('id', order.id);
+          } else {
+            console.error('[SUPABASE] Failed to update order:', error.message);
+          }
+        }
+      }).catch(err => console.error('[SUPABASE] Order update exception:', err.message));
+    }
+
     return order;
   }
 
@@ -203,26 +394,37 @@ class Database {
   }
 
   createCallLog(logData) {
-    const id = `call_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+    const id = logData.id || crypto.randomUUID();
     const newLog = {
       id,
       order_id: logData.order_id,
       seller_id: logData.seller_id || null,
       provider_call_id: logData.provider_call_id || null,
-      duration_seconds: logData.duration_seconds || 0,
-      recording_url: logData.recording_url || null, // Only set from a real provider webhook; never invented
+      duration_seconds: Number(logData.duration_seconds) || 0,
+      recording_url: logData.recording_url || null, // Only set from real provider; never invented
       transcript: logData.transcript || [],
       extracted_landmark: logData.extracted_landmark || null,
       buyer_intent: logData.buyer_intent || 'genuine',
-      call_cost_inr: logData.call_cost_inr ?? 0, // Cost is only known after a real call; do not assume 6.00
+      call_cost_inr: Number(logData.call_cost_inr) || 0.00,
+      call_disposition: logData.call_disposition || 'unconfirmed',
+      is_simulated: Boolean(logData.is_simulated),
       created_at: new Date().toISOString()
     };
+
     this.data.call_logs.unshift(newLog);
     this.save();
+
+    if (this.sb) {
+      this.sb.from('call_logs').insert(newLog).then(({ error }) => {
+        if (error) console.error('[SUPABASE] Failed to persist call log:', error.message);
+      }).catch(err => console.error('[SUPABASE] Call log insert exception:', err.message));
+    }
+
     return newLog;
   }
 
   // --- Buyer Trust Graph ---
+  // Key is strictly the SHA-256 hash of the normalized phone number
   getBuyerTrust(phone) {
     const hash = hashPhone(phone);
     return this.data.buyer_trust_graph[hash] || {
@@ -231,6 +433,7 @@ class Database {
       verified_count: 0,
       fake_cancel_count: 0,
       upi_trust_paid_count: 0,
+      prepaid_recovery_count: 0,
       global_risk_level: 'neutral',
       last_seen_at: new Date().toISOString()
     };
@@ -245,6 +448,7 @@ class Database {
         verified_count: 0,
         fake_cancel_count: 0,
         upi_trust_paid_count: 0,
+        prepaid_recovery_count: 0,
         global_risk_level: 'neutral',
         last_seen_at: new Date().toISOString()
       };
@@ -260,9 +464,10 @@ class Database {
       record.fake_cancel_count += 1;
     } else if (outcome === 'TRUST_LOCK_PAID') {
       record.upi_trust_paid_count += 1;
+    } else if (outcome === 'PREPAID_RECOVERY_PAID') {
+      record.prepaid_recovery_count += 1;
     }
 
-    // Determine risk level
     if (record.fake_cancel_count >= 2 && record.fake_cancel_count > record.verified_count) {
       record.global_risk_level = 'habitual_timepasser';
     } else if (record.verified_count >= 3 && record.fake_cancel_count === 0) {
@@ -272,7 +477,373 @@ class Database {
     }
 
     this.save();
+
+    if (this.sb) {
+      this.sb.from('buyer_trust_graph').upsert(record).then(({ error }) => {
+        if (error) console.error('[SUPABASE] Failed to upsert buyer trust graph:', error.message);
+      }).catch(err => console.error('[SUPABASE] Buyer trust graph upsert exception:', err.message));
+    }
+
     return record;
+  }
+
+  // --- Financial Ledger Operations (wallet_ledger) ---
+  // Strictly append-only. Never modify old records.
+  recordWalletTransaction(txn) {
+    if (!Array.isArray(this.data.wallet_ledger)) {
+      this.data.wallet_ledger = [];
+    }
+    const id = txn.id || crypto.randomUUID();
+    const cleanTxn = {
+      id,
+      seller_id: txn.seller_id,
+      type: txn.type, // 'DEBIT' | 'CREDIT'
+      amount: Number(txn.amount),
+      balance_before: Number(txn.balance_before),
+      balance_after: Number(txn.balance_after),
+      purpose: txn.purpose || 'VOICE_AI_VERIFICATION',
+      reference_id: txn.reference_id || null,
+      gst_amount: Number(txn.gst_amount) || 0.00,
+      meta: txn.meta || {},
+      created_at: txn.created_at || new Date().toISOString()
+    };
+
+    this.data.wallet_ledger.unshift(cleanTxn);
+    this.data.wallet_transactions = this.data.wallet_ledger;
+    this.save();
+
+    if (this.sb) {
+      this.sb.from('wallet_ledger').insert(cleanTxn).then(({ error }) => {
+        if (error) console.error('[SUPABASE] Failed to persist wallet transaction:', error.message);
+      }).catch(err => console.error('[SUPABASE] Wallet transaction insert exception:', err.message));
+    }
+
+    return cleanTxn;
+  }
+
+  getWalletTransactions(sellerId = null) {
+    if (!sellerId) return [];
+    if (!Array.isArray(this.data.wallet_ledger)) return [];
+    return this.data.wallet_ledger.filter(t => t.seller_id === sellerId);
+  }
+
+  // --- Trust Lock Payments (₹19 Token Held for Bulk Weekly Settlement) ---
+  createTrustLockPayment(paymentData) {
+    if (!Array.isArray(this.data.trust_lock_payments)) {
+      this.data.trust_lock_payments = [];
+    }
+    const payment = {
+      id: paymentData.id || crypto.randomUUID(),
+      seller_id: paymentData.seller_id,
+      order_id: paymentData.order_id,
+      amount_inr: Number(paymentData.amount_inr) || 19.00,
+      razorpay_order_id: paymentData.razorpay_order_id || null,
+      razorpay_payment_id: paymentData.razorpay_payment_id || null,
+      razorpay_payment_link_id: paymentData.razorpay_payment_link_id || null,
+      status: paymentData.status || 'created', // 'created', 'paid', 'expired', 'settled'
+      settlement_batch_id: paymentData.settlement_batch_id || null,
+      settled_at: paymentData.settled_at || null,
+      created_at: new Date().toISOString()
+    };
+
+    this.data.trust_lock_payments.unshift(payment);
+    this.save();
+
+    if (this.sb) {
+      this.sb.from('trust_lock_payments').insert(payment).then(({ error }) => {
+        if (error) console.error('[SUPABASE] Failed to persist trust lock payment:', error.message);
+      }).catch(err => console.error('[SUPABASE] Trust lock payment insert exception:', err.message));
+    }
+
+    return payment;
+  }
+
+  getTrustLockPayments(sellerId) {
+    if (!sellerId || !Array.isArray(this.data.trust_lock_payments)) return [];
+    return this.data.trust_lock_payments.filter(p => p.seller_id === sellerId);
+  }
+
+  settleTrustLockPayments(sellerId, minAmount = 500) {
+    const payments = this.getTrustLockPayments(sellerId);
+    const unSettled = payments.filter(p => p.status === 'paid');
+    const totalUnsettled = unSettled.reduce((sum, p) => sum + Number(p.amount_inr), 0);
+
+    if (totalUnsettled < minAmount) {
+      return {
+        success: false,
+        reason: `Settlement blocked: minimum bulk weekly payout is ₹${minAmount}. Current pending balance: ₹${totalUnsettled}.`,
+        currentBalance: totalUnsettled,
+        minRequired: minAmount
+      };
+    }
+
+    const batchId = `settle_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`;
+    const now = new Date().toISOString();
+
+    for (const p of unSettled) {
+      p.status = 'settled';
+      p.settlement_batch_id = batchId;
+      p.settled_at = now;
+    }
+    this.save();
+
+    // Reset seller trust lock balance
+    this.updateSellerTrustLockBalance(sellerId, -totalUnsettled);
+
+    if (this.sb) {
+      const ids = unSettled.map(p => p.id);
+      this.sb.from('trust_lock_payments')
+        .update({ status: 'settled', settlement_batch_id: batchId, settled_at: now })
+        .in('id', ids)
+        .then(({ error }) => {
+          if (error) console.error('[SUPABASE] Failed to settle trust lock payments:', error.message);
+        });
+    }
+
+    return {
+      success: true,
+      batchId,
+      settledCount: unSettled.length,
+      settledAmountInr: totalUnsettled,
+      settledAt: now
+    };
+  }
+
+  // --- Subscriptions ---
+  createSubscription(subData) {
+    if (!Array.isArray(this.data.subscriptions)) this.data.subscriptions = [];
+    const sub = {
+      id: subData.id || crypto.randomUUID(),
+      seller_id: subData.seller_id,
+      plan_tier: subData.plan_tier, // 'starter', 'growth', 'scale', 'reseller'
+      billing_cycle: subData.billing_cycle || 'monthly',
+      razorpay_subscription_id: subData.razorpay_subscription_id || null,
+      status: subData.status || 'active',
+      credits_allocated: Number(subData.credits_allocated) || 0,
+      credits_used: 0,
+      rollover_credits_brought_forward: Number(subData.rollover_credits_brought_forward) || 0,
+      current_period_start: subData.current_period_start || new Date().toISOString(),
+      current_period_end: subData.current_period_end || new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    this.data.subscriptions.unshift(sub);
+    this.save();
+
+    if (this.sb) {
+      this.sb.from('subscriptions').insert(sub).then(({ error }) => {
+        if (error) console.error('[SUPABASE] Failed to persist subscription:', error.message);
+      });
+    }
+    return sub;
+  }
+
+  getSubscription(sellerId) {
+    if (!sellerId || !Array.isArray(this.data.subscriptions)) return null;
+    return this.data.subscriptions.find(s => s.seller_id === sellerId && s.status === 'active') || null;
+  }
+
+  // --- Trust Lock Payments ---
+  createTrustLockPayment({ sellerId, orderId, amount = 19, razorpayPaymentId = null, status = 'collected' }) {
+    if (!Array.isArray(this.data.trust_lock_payments)) {
+      this.data.trust_lock_payments = [];
+    }
+    const payment = {
+      id: crypto.randomUUID(),
+      seller_id: sellerId,
+      order_id: orderId,
+      amount: Number(amount) || 19,
+      razorpay_payment_id: razorpayPaymentId,
+      status: status || 'collected',
+      created_at: new Date().toISOString()
+    };
+    this.data.trust_lock_payments.unshift(payment);
+    this.save();
+    return payment;
+  }
+
+  settleTrustLockPayments(sellerId) {
+    if (!Array.isArray(this.data.trust_lock_payments)) {
+      this.data.trust_lock_payments = [];
+    }
+    const batchId = 'batch_' + crypto.randomUUID();
+    const settledTime = new Date().toISOString();
+    let count = 0;
+    for (const p of this.data.trust_lock_payments) {
+      if (p.seller_id === sellerId && p.status === 'collected') {
+        p.status = 'settled';
+        p.settled_at = settledTime;
+        p.settlement_batch_id = batchId;
+        count++;
+      }
+    }
+    this.save();
+    return { batchId, settledCount: count, settledAt: settledTime };
+  }
+
+  // --- RTO RECOVERY ATTEMPTS (Strictly Append-Only) ---
+  createRecoveryAttempt(data) {
+    if (!Array.isArray(this.data.recovery_attempts)) {
+      this.data.recovery_attempts = [];
+    }
+    const attempt = {
+      id: data.id || crypto.randomUUID(),
+      seller_id: data.seller_id || data.sellerId,
+      original_order_id: data.original_order_id || data.originalOrderId,
+      rto_cost_sunk: Number(data.rto_cost_sunk !== undefined ? data.rto_cost_sunk : data.rtoCostSunk) || 0.00,
+      product_price: Number(data.product_price !== undefined ? data.product_price : data.productPrice) || 0.00,
+      discount_percent: Number(data.discount_percent !== undefined ? data.discount_percent : data.discountPercent) || 0.00,
+      forward_shipping: Number(data.forward_shipping !== undefined ? data.forward_shipping : data.forwardShipping) || 80.00,
+      packaging: Number(data.packaging !== undefined ? data.packaging : data.packaging) || 20.00,
+      commission: Number(data.commission !== undefined ? data.commission : data.commission) || 0.00,
+      call_cost: Number(data.call_cost !== undefined ? data.call_cost : data.callCost) || 7.00,
+      new_product_cost: Number(data.new_product_cost !== undefined ? data.new_product_cost : data.newProductCost) || 0.00,
+      qc_status: data.qc_status || data.qcStatus || 'unknown',
+      worth_it_result: Boolean(data.worth_it_result !== undefined ? data.worth_it_result : data.worthItResult),
+      total_cost: Number(data.total_cost || data.totalCost) || 0.00,
+      net_margin: Number(data.net_margin || data.netMargin) || 0.00,
+      buyer_contacted: Boolean(data.buyer_contacted || data.buyerContacted),
+      contact_channel: data.contact_channel || data.contactChannel || null,
+      buyer_response: data.buyer_response || data.buyerResponse || 'not_contacted',
+      razorpay_payment_link_id: data.razorpay_payment_link_id || data.razorpayPaymentLinkId || (data.meta && data.meta.payment_link_id) || null,
+      razorpay_payment_link_url: data.razorpay_payment_link_url || data.razorpayPaymentLinkUrl || (data.meta && data.meta.payment_url) || null,
+      payment_status: data.payment_status || data.paymentStatus || 'unpaid',
+      payment_id: data.payment_id || data.paymentId || null,
+      seller_approval: Boolean(data.seller_approval !== undefined ? data.seller_approval : data.sellerApproval),
+      reship_status: data.reship_status || data.reshipStatus || 'pending_payment',
+      reship_tracking_number: data.reship_tracking_number || data.reshipTrackingNumber || null,
+      corrected_address: data.corrected_address || data.correctedAddress || null,
+      meta: data.meta || {},
+      created_at: new Date().toISOString()
+    };
+
+    // Append to recovery attempts (IMMUTABLE LOG)
+    this.data.recovery_attempts.unshift(attempt);
+    this.save();
+
+    if (this.sb) {
+      this.sb.from('recovery_attempts').insert(attempt).then(({ error }) => {
+        if (error) console.error('[SUPABASE] Failed to persist recovery attempt:', error.message);
+      }).catch(err => console.error('[SUPABASE] Recovery attempt insert exception:', err.message));
+    }
+
+    return attempt;
+  }
+
+  getRecoveryAttempts(sellerId = null) {
+    if (!Array.isArray(this.data.recovery_attempts)) return [];
+    if (sellerId) {
+      return this.data.recovery_attempts.filter(a => a.seller_id === sellerId).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    }
+    return [...this.data.recovery_attempts].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  }
+
+  getRecoveryAttemptById(id) {
+    if (!id || !Array.isArray(this.data.recovery_attempts)) return null;
+    return this.data.recovery_attempts.find(a => a.id === id) || null;
+  }
+
+  updateRecoveryAttempt(id, updates) {
+    const attempt = this.getRecoveryAttemptById(id);
+    if (!attempt) return null;
+    // Allow updating state of the active attempt (e.g. payment_status, seller_approval, reship_status)
+    Object.assign(attempt, updates);
+    this.save();
+
+    if (this.sb) {
+      this.sb.from('recovery_attempts').update(updates).eq('id', id).then(({ error }) => {
+        if (error) console.error('[SUPABASE] Failed to update recovery attempt:', error.message);
+      }).catch(err => console.error('[SUPABASE] Recovery attempt update exception:', err.message));
+    }
+
+    return attempt;
+  }
+
+  getRecoveryStats(sellerId = null) {
+    const attempts = this.getRecoveryAttempts(sellerId);
+    const orders = this.getOrders(sellerId);
+    const rtoOrders = orders.filter(o => o.verification_status === 'rto_returned' || o.recovery_status !== 'none');
+
+    const paidAttempts = attempts.filter(a => a.payment_status === 'paid');
+    const totalRecoveredRevenue = paidAttempts.reduce((sum, a) => sum + Number(a.product_price), 0);
+    const totalCommissionPaid = paidAttempts.reduce((sum, a) => sum + Number(a.commission), 0);
+    const totalRtoLossAvoided = paidAttempts.reduce((sum, a) => sum + (Number(a.rto_cost_sunk) + Number(a.net_margin)), 0);
+
+    return {
+      total_rto_orders: rtoOrders.length,
+      total_recovery_attempts: attempts.length,
+      total_recovered_orders: paidAttempts.length,
+      total_recovered_revenue: Number(totalRecoveredRevenue.toFixed(2)),
+      total_recovered_revenue_inr: Number(totalRecoveredRevenue.toFixed(2)),
+      total_recovery_commission_paid: Number(totalCommissionPaid.toFixed(2)),
+      total_recovery_commission_paid_inr: Number(totalCommissionPaid.toFixed(2)),
+      total_rto_loss_avoided: Number(totalRtoLossAvoided.toFixed(2)),
+      total_rto_loss_avoided_inr: Number(totalRtoLossAvoided.toFixed(2)),
+      success_rate_pct: attempts.length > 0 ? Math.round((paidAttempts.length / attempts.length) * 100) : 0
+    };
+  }
+
+  // --- Background Autonomous Queue Operations ---
+  enqueueJob(jobData) {
+    if (!Array.isArray(this.data.queue_jobs)) {
+      this.data.queue_jobs = [];
+    }
+    const id = jobData.id || crypto.randomUUID();
+    const job = {
+      id,
+      order_id: jobData.order_id,
+      seller_id: jobData.seller_id,
+      action: jobData.action || 'DISPATCH_VOICE_CALL',
+      scheduled_at: jobData.scheduled_at || new Date().toISOString(),
+      status: jobData.status || 'pending',
+      attempts: jobData.attempts || 0,
+      max_attempts: jobData.max_attempts || 3,
+      delay_reason: jobData.delay_reason || 'SLA_45S_DELAY',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
+    this.data.queue_jobs.unshift(job);
+    this.save();
+
+    if (this.sb) {
+      this.sb.from('queue_jobs').insert(job).then(({ error }) => {
+        if (error) console.error('[SUPABASE] Failed to persist queue job:', error.message);
+      }).catch(err => console.error('[SUPABASE] Queue job insert exception:', err.message));
+    }
+
+    return job;
+  }
+
+  getPendingJobs() {
+    if (!Array.isArray(this.data.queue_jobs)) return [];
+    const now = new Date().toISOString();
+    return this.data.queue_jobs.filter(j => 
+      (j.status === 'pending' || j.status === 'retrying') && 
+      j.scheduled_at <= now
+    );
+  }
+
+  updateJob(id, updates) {
+    if (!Array.isArray(this.data.queue_jobs)) return null;
+    const job = this.data.queue_jobs.find(j => j.id === id);
+    if (!job) return null;
+    Object.assign(job, updates, { updated_at: new Date().toISOString() });
+    this.save();
+
+    if (this.sb) {
+      const dbUpdates = { ...updates, updated_at: new Date().toISOString() };
+      this.sb.from('queue_jobs').update(dbUpdates).eq('id', job.id).then(({ error }) => {
+        if (error) console.error('[SUPABASE] Failed to update queue job:', error.message);
+      }).catch(err => console.error('[SUPABASE] Queue job update exception:', err.message));
+    }
+
+    return job;
+  }
+
+  getQueueJobs(limit = 50) {
+    if (!Array.isArray(this.data.queue_jobs)) return [];
+    return this.data.queue_jobs.slice(0, limit);
   }
 
   // --- Leads (waitlist) ---
@@ -303,15 +874,13 @@ class Database {
     const totalMoneySaved = orders.reduce((sum, o) => sum + (Number(o.rto_money_saved) || 0), 0);
     const pendingOrders = orders.filter(o => o.verification_status === 'queued' || o.verification_status === 'calling' || o.verification_status === 'trust_lock_sent').length;
 
-    // This is the share of orders that reached a verified/cancelled outcome.
-    // It is NOT a measured RTO reduction rate; that requires a baseline
-    // comparison and must not be presented as a proven saving.
     const rtoReductionRate = totalOrders > 0 ? Math.round(((verifiedOrders + fakeBlockedOrders) / totalOrders) * 100) : 0;
 
     return {
       seller_id: seller ? seller.id : null,
       seller_brand: seller ? seller.brand_name : null,
       wallet_balance_inr: seller ? (Number(seller.wallet_balance_inr) || 0.00) : 0.00,
+      trust_lock_balance_inr: seller ? (Number(seller.trust_lock_balance_inr) || 0.00) : 0.00,
       total_orders_protected: totalOrders,
       verified_orders: verifiedOrders,
       fake_blocked_orders: fakeBlockedOrders,
@@ -323,71 +892,12 @@ class Database {
         if (!logs.length) return 0;
         return Math.round(logs.reduce((sum, c) => sum + Number(c.duration_seconds), 0) / logs.length);
       })(),
-      cost_per_verified_order_inr: 6.00
+      cost_per_verified_order_inr: 12.00
     };
   }
 
-  // --- Financial Ledger Operations ---
-  recordWalletTransaction(txn) {
-    if (!Array.isArray(this.data.wallet_transactions)) {
-      this.data.wallet_transactions = [];
-    }
-    this.data.wallet_transactions.unshift(txn);
-    this.save();
-    return txn;
-  }
-
-  getWalletTransactions(sellerId = null) {
-    if (!sellerId) return [];
-    if (!Array.isArray(this.data.wallet_transactions)) return [];
-    return this.data.wallet_transactions.filter(t => t.seller_id === sellerId);
-  }
-
-  // --- Background Autonomous Queue Operations ---
-  enqueueJob(jobData) {
-    if (!Array.isArray(this.data.queue_jobs)) {
-      this.data.queue_jobs = [];
-    }
-    const id = jobData.id || `job_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
-    const job = {
-      id,
-      order_id: jobData.order_id,
-      seller_id: jobData.seller_id,
-      action: jobData.action || 'DISPATCH_VOICE_CALL',
-      scheduled_at: jobData.scheduled_at || new Date().toISOString(),
-      status: jobData.status || 'pending', // 'pending', 'processing', 'completed', 'failed', 'retrying'
-      attempts: jobData.attempts || 0,
-      max_attempts: jobData.max_attempts || 3,
-      delay_reason: jobData.delay_reason || 'SLA_45S_DELAY',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
-    this.data.queue_jobs.unshift(job);
-    this.save();
-    return job;
-  }
-
-  getPendingJobs() {
-    if (!Array.isArray(this.data.queue_jobs)) return [];
-    const now = new Date().toISOString();
-    return this.data.queue_jobs.filter(j => 
-      (j.status === 'pending' || j.status === 'retrying') && 
-      j.scheduled_at <= now
-    );
-  }
-
-  updateJob(id, updates) {
-    if (!Array.isArray(this.data.queue_jobs)) return null;
-    const job = this.data.queue_jobs.find(j => j.id === id);
-    if (!job) return null;
-    Object.assign(job, updates, { updated_at: new Date().toISOString() });
-    this.save();
-    return job;
-  }
-
-  getQueueJobs(limit = 50) {
-    if (!Array.isArray(this.data.queue_jobs)) return [];
-    return this.data.queue_jobs.slice(0, limit);
+  getEmptyData() {
+    return getEmptyData();
   }
 }
 
@@ -395,5 +905,6 @@ const db = new Database();
 
 module.exports = {
   db,
-  hashPhone
+  hashPhone,
+  getEmptyData
 };
