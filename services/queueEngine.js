@@ -132,7 +132,7 @@ class QueueEngine {
     }
 
     // Check wallet balance
-    if (seller.wallet_balance_inr < 6.00) {
+    if (seller.wallet_balance_inr < 12.00) {
       db.updateOrder(order.id, { verification_status: 'payment_required' });
       db.updateJob(job.id, { status: 'failed', error: 'Wallet balance insufficient (₹0.00)' });
       console.warn(`[QUEUE] Order ${order.external_order_id} halted: Zero wallet balance.`);
@@ -145,7 +145,7 @@ class QueueEngine {
 
     // Automated path is LIVE by default. triggerOutboundCall only
     // simulates when SHIPVERA_ALLOW_SIMULATED_CALLS=true is set
-    // explicitly for local testing; otherwise a live Bolna call is placed.
+    // explicitly for local testing; otherwise a live Sarvam call is placed (OTP-first gate applies).
     let callResult;
     try {
       callResult = await triggerOutboundCall({ order, seller, live: true });
