@@ -145,21 +145,23 @@ const https = require('https');
  */
 async function geocodeAddressGoogleMaps({ address, city, pincode }) {
   const query = `${address || ''}, ${city || ''} ${pincode || ''}, India`.trim();
-  const apiKey = process.env.GOOGLE_MAPS_API_KEY || process.env.MAPS_DEMO_KEY;
+  const apiKey = process.env.GOOGLE_MAPS_API_KEY; // No demo key fallback.
 
-  // If no Google Maps key configured, return high-accuracy deterministic geo resolution
+  // If no Google Maps key is configured, fail visibly with unknown
+  // deliverability. Never return success:true with a pincode centroid
+  // and a fixed score when no geocoding actually happened.
   if (!apiKey) {
-    const defaultCoords = getCityCentroid(city, pincode);
     return {
-      success: true,
-      isDemoMode: true,
-      coordinates: defaultCoords,
-      locationType: 'APPROXIMATE',
-      partialMatch: true,
+      success: false,
+      mode: 'not_configured',
+      reason: 'GOOGLE_MAPS_API_KEY is not set. No geocoding was performed.',
+      coordinates: null,
+      locationType: 'UNKNOWN',
+      partialMatch: false,
       formattedAddress: query,
-      placeId: `demo_plc_${Date.now()}`,
-      deliverabilityScore: 68,
-      accuracyLabel: 'Pincode Level Centroid (Plug GOOGLE_MAPS_API_KEY for Rooftop)',
+      placeId: null,
+      deliverabilityScore: null,
+      accuracyLabel: 'Unknown - Google Maps not configured',
       riskImpact: 'NEEDS_LANDMARK_VERIFICATION'
     };
   }
@@ -213,8 +215,8 @@ async function geocodeAddressGoogleMaps({ address, city, pincode }) {
             resolve({
               success: false,
               error: json.status,
-              coordinates: getCityCentroid(city, pincode),
-              deliverabilityScore: 30,
+              coordinates: null,
+              deliverabilityScore: null,
               accuracyLabel: 'UNRESOLVED_BY_MAPS',
               riskImpact: 'SEVERE_RTO_RISK'
             });
@@ -241,6 +243,8 @@ async function geocodeAddressGoogleMaps({ address, city, pincode }) {
   });
 }
 
+// NOTE: This helper is retained only for explicit display fallbacks.
+// It must never be returned as a geocoding result.
 function getCityCentroid(city = '', pincode = '') {
   const c = city.toLowerCase();
   if (c.includes('indore')) return { lat: 22.7196, lng: 75.8577 };

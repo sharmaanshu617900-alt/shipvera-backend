@@ -60,7 +60,7 @@ function parseQuickPaste(rawText) {
   }
 
   // 5. Extract Buyer Name (usually first 1-3 words before phone or comma)
-  let buyerName = 'Valued Buyer';
+  let buyerName = '';
   const nameCandidate = text.split(/[\n,]/)[0].replace(/[0-9+]/g, '').trim();
   if (nameCandidate && nameCandidate.split(/\s+/).length <= 4) {
     buyerName = nameCandidate;
@@ -80,7 +80,7 @@ function parseQuickPaste(rawText) {
   const rawAddress = cleanAddress.slice(0, 150).trim();
 
   // 7. Extract Item description if specified
-  let itemName = 'Apparel / D2C Item';
+  let itemName = '';
   const itemKeywords = ['hoodie', 'tshirt', 'shirt', 'sneakers', 'shoes', 'jeans', 'watch', 'jacket', 'kurti', 'dress', 'bag'];
   for (const kw of itemKeywords) {
     if (textLower.includes(kw)) {
@@ -95,7 +95,7 @@ function parseQuickPaste(rawText) {
     rawAddress,
     city: detectedCity,
     pincode,
-    buyerPhone: phone || '+919999999999',
+    buyerPhone: phone || '',
     buyerName
   });
 
@@ -103,9 +103,9 @@ function parseQuickPaste(rawText) {
     buyerName,
     buyerPhone: phone ? (phone.startsWith('+91') ? phone : `+91${phone}`) : '',
     rawAddress,
-    city: detectedCity || 'Unspecified',
-    pincode: pincode || 'Unspecified',
-    codAmount: codAmount || 999,
+    city: detectedCity || '',
+    pincode: pincode || '',
+    codAmount: codAmount || 0,
     itemName,
     sanitation
   };

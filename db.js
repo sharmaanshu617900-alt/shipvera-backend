@@ -19,176 +19,20 @@ if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
 }
 
-// Initial Database Schema and Seed Data
-function getInitialData() {
-  const defaultSellerId = 'sel_d2c_enterprise_001';
-  
+// Empty initial data. A fresh install starts with no sellers, orders,
+// call logs, or trust-graph entries. No demo/seed data is created here.
+// Previously this function seeded a demo seller, demo orders and demo
+// call logs; that seed data has been removed so the dashboard can never
+// show activity that did not actually happen.
+function getEmptyData() {
   return {
-    sellers: [
-      {
-        id: defaultSellerId,
-        email: 'founder@snitchcloth.in',
-        brand_name: 'Snitch Apparel & Streetwear',
-        phone: '+919876500001',
-        shopify_domain: 'snitch-streetwear.myshopify.com',
-        shopify_access_token: 'shpat_live_encrypted_access_token_demo',
-        shiprocket_token: 'sr_token_live_encrypted_demo',
-        wallet_balance_inr: 0.00, // Strictly ₹0.00 (Pure Pay-As-You-Go, Zero Free Credits)
-        plan_tier: 'pay_as_you_go', // 'pay_as_you_go', 'starter', 'pro', 'scale'
-        upi_trust_lock_amount: 19,
-        total_orders_processed: 12,
-        rto_cut_percentage: 70,
-        created_at: new Date(Date.now() - 7 * 86400000).toISOString()
-      }
-    ],
-    orders: [
-      {
-        id: 'ord_9402_indore',
-        seller_id: defaultSellerId,
-        external_order_id: '#UK-9402',
-        source: 'shopify',
-        buyer_name: 'Priya Sharma',
-        buyer_phone: '+919876543210',
-        cod_amount: 1799.00,
-        raw_address: 'gali no 2 mg road indore',
-        pincode: '452001',
-        city: 'Indore',
-        missing_fields: ['house_number', 'landmark'],
-        cleaned_address_line1: 'Plot No. 14, 2nd Floor, White Gate',
-        cleaned_address_line2: 'Behind 56 Dukan, Opp. Bikaner Sweets, MG Road',
-        cleaned_landmark: 'Opposite Bikaner Sweets, Behind 56 Dukan',
-        verification_status: 'verified_cleaned',
-        risk_score: 12,
-        rto_money_saved: 180.00,
-        tags: ['RTO-Shield-Verified', 'Address-Cleaned'],
-        created_at: new Date(Date.now() - 3600000).toISOString(),
-        updated_at: new Date(Date.now() - 3400000).toISOString()
-      },
-      {
-        id: 'ord_9403_rohtak',
-        seller_id: defaultSellerId,
-        external_order_id: '#UK-9403',
-        source: 'shopify',
-        buyer_name: 'Rohan Sharma',
-        buyer_phone: '+919812345678',
-        cod_amount: 2499.00,
-        raw_address: 'sharma dairy ke piche gali 4 rohtak',
-        pincode: '124001',
-        city: 'Rohtak',
-        missing_fields: ['house_number'],
-        cleaned_address_line1: 'Plot No. 42, Yellow House, 1st Left after Sharma Dairy',
-        cleaned_address_line2: 'Gali No. 4, Behind Sharma Dairy',
-        cleaned_landmark: 'Sharma Dairy',
-        verification_status: 'verified_cleaned',
-        risk_score: 15,
-        rto_money_saved: 180.00,
-        tags: ['RTO-Shield-Verified', 'Address-Cleaned'],
-        created_at: new Date(Date.now() - 7200000).toISOString(),
-        updated_at: new Date(Date.now() - 7000000).toISOString()
-      },
-      {
-        id: 'ord_9404_fake_jaipur',
-        seller_id: defaultSellerId,
-        external_order_id: '#UK-9404',
-        source: 'shopify',
-        buyer_name: 'Amit Verma',
-        buyer_phone: '+919999999999',
-        cod_amount: 1299.00,
-        raw_address: 'asdfghjkl jaipur',
-        pincode: '302001',
-        city: 'Jaipur',
-        missing_fields: ['house_number', 'landmark', 'street'],
-        cleaned_address_line1: null,
-        cleaned_address_line2: null,
-        cleaned_landmark: null,
-        verification_status: 'cancelled_fake',
-        risk_score: 95,
-        rto_money_saved: 180.00,
-        tags: ['RTO-Shield-Fake-Cancelled'],
-        created_at: new Date(Date.now() - 10800000).toISOString(),
-        updated_at: new Date(Date.now() - 10600000).toISOString()
-      },
-      {
-        id: 'ord_9405_dicey_lucknow',
-        seller_id: defaultSellerId,
-        external_order_id: '#UK-9405',
-        source: 'shopify',
-        buyer_name: 'Kavita Singh',
-        buyer_phone: '+919839012345',
-        cod_amount: 999.00,
-        raw_address: 'Gomti Nagar sector 4',
-        pincode: '226010',
-        city: 'Lucknow',
-        missing_fields: ['house_number'],
-        cleaned_address_line1: null,
-        cleaned_address_line2: null,
-        cleaned_landmark: null,
-        verification_status: 'trust_lock_sent',
-        risk_score: 65,
-        rto_money_saved: 0.00,
-        tags: ['RTO-Shield-Trust-Lock-Pending'],
-        created_at: new Date(Date.now() - 14400000).toISOString(),
-        updated_at: new Date(Date.now() - 14200000).toISOString()
-      }
-    ],
-    call_logs: [
-      {
-        id: 'call_indore_001',
-        order_id: 'ord_9402_indore',
-        seller_id: defaultSellerId,
-        provider_call_id: 'bolna_call_9482019482',
-        duration_seconds: 24,
-        recording_url: 'https://cdn.shipvera.com/recordings/call_indore_001.mp3',
-        transcript: [
-          { role: 'ai', speaker: 'Shipvera AI', text: 'Namaste Priya ji! Main Snitch Apparel ke dispatch desk se bol raha hoon. Aapka ₹1,799 ka order pack ho gaya hai.' },
-          { role: 'ai', speaker: 'Shipvera AI', text: 'Bhaiya, aapne address mein Gali no 2 likha hai par makan number ya exact landmark nahi hai. Wahan aas-paas konsi dukaan ya gate ka rang bata denge taaki Delhivery wala bhatke na?' },
-          { role: 'user', speaker: 'Buyer (Priya S.)', text: 'Haan bhaiya, 56 Dukan ke piche Bikaner Sweets ke samne safed gate hai 2nd floor, wahi deliver karwana.' },
-          { role: 'ai', speaker: 'Shipvera AI', text: 'Acha, Bikaner Sweets ke samne safed gate 2nd floor, note kar liya! 3-4 din mein mil jayega. Dhanyawad!' }
-        ],
-        extracted_landmark: 'Opposite Bikaner Sweets, Behind 56 Dukan',
-        buyer_intent: 'VERIFIED_GENUINE',
-        call_cost_inr: 6.00,
-        created_at: new Date(Date.now() - 3400000).toISOString()
-      },
-      {
-        id: 'call_fake_002',
-        order_id: 'ord_9404_fake_jaipur',
-        seller_id: defaultSellerId,
-        provider_call_id: 'bolna_call_9999999999',
-        duration_seconds: 9,
-        recording_url: 'https://cdn.shipvera.com/recordings/call_fake_002.mp3',
-        transcript: [
-          { role: 'ai', speaker: 'Shipvera AI', text: 'Namaste Amit ji! Main Snitch ke dispatch desk se bol raha hoon. Aapka ₹1,299 ka order dispatch hona hai.' },
-          { role: 'ai', speaker: 'Shipvera AI', text: 'Bhaiya aapka address incomplete hai, aas-pass koi landmark bata denge?' },
-          { role: 'user', speaker: 'Buyer (Amit V.)', text: 'Nahi chahiye mujhe, cancel kar do galti se place hua tha.' },
-          { role: 'ai', speaker: 'Shipvera AI', text: 'Koi baat nahi ji, main abhi cancel kar deta hoon. Dhanyawad!' }
-        ],
-        extracted_landmark: null,
-        buyer_intent: 'CANCEL_REQUESTED',
-        call_cost_inr: 6.00,
-        created_at: new Date(Date.now() - 10600000).toISOString()
-      }
-    ],
-    buyer_trust_graph: {
-      [hashPhone('+919876543210')]: {
-        phone_hash: hashPhone('+919876543210'),
-        total_cod_orders: 5,
-        verified_count: 5,
-        fake_cancel_count: 0,
-        upi_trust_paid_count: 1,
-        global_risk_level: 'trusted', // 'trusted', 'neutral', 'habitual_timepasser'
-        last_seen_at: new Date().toISOString()
-      },
-      [hashPhone('+919999999999')]: {
-        phone_hash: hashPhone('+919999999999'),
-        total_cod_orders: 14,
-        verified_count: 1,
-        fake_cancel_count: 12,
-        upi_trust_paid_count: 0,
-        global_risk_level: 'habitual_timepasser',
-        last_seen_at: new Date().toISOString()
-      }
-    }
+    sellers: [],
+    orders: [],
+    call_logs: [],
+    buyer_trust_graph: {},
+    wallet_transactions: [],
+    queue_jobs: [],
+    leads: []
   };
 }
 
@@ -205,7 +49,7 @@ class Database {
 
   init() {
     if (!fs.existsSync(DB_FILE)) {
-      const initial = getInitialData();
+      const initial = getEmptyData();
       fs.writeFileSync(DB_FILE, JSON.stringify(initial, null, 2), 'utf-8');
       this.data = initial;
     } else {
@@ -219,9 +63,8 @@ class Database {
           this.data.queue_jobs = [];
         }
       } catch (err) {
-        console.error('Error reading database, restoring default:', err);
-        this.data = getInitialData();
-        this.save();
+        console.error('Error reading database, starting empty (corrupt file was not restored from seed data):', err);
+        this.data = getEmptyData();
       }
     }
   }
@@ -257,11 +100,8 @@ class Database {
   }
 
   getSeller(id = null) {
-    if (id) {
-      const match = this.data.sellers.find(s => s.id === id);
-      if (match) return match;
-    }
-    return this.data.sellers[0] || null;
+    if (!id) return null;
+    return this.data.sellers.find(s => s.id === id) || null;
   }
 
   createSeller(sellerData) {
@@ -280,7 +120,7 @@ class Database {
       plan_tier: 'pay_as_you_go',
       upi_trust_lock_amount: 19,
       total_orders_processed: 0,
-      rto_cut_percentage: 70,
+      rto_cut_percentage: null, // Not measured until real orders exist
       created_at: sellerData.created_at || new Date().toISOString()
     };
 
@@ -299,9 +139,8 @@ class Database {
 
   // --- Order Operations ---
   getOrders(sellerId = null) {
-    const targetId = sellerId || this.data.sellers[0]?.id;
-    if (targetId) {
-      return this.data.orders.filter(o => o.seller_id === targetId).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    if (sellerId) {
+      return this.data.orders.filter(o => o.seller_id === sellerId).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     }
     return [...this.data.orders].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
   }
@@ -311,10 +150,13 @@ class Database {
   }
 
   createOrder(orderData) {
+    if (!orderData.seller_id) {
+      throw new Error('seller_id is required to create an order. Orders are never attributed to a fallback seller.');
+    }
     const id = orderData.id || `ord_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
     const newOrder = {
       id,
-      seller_id: orderData.seller_id || 'sel_d2c_enterprise_001',
+      seller_id: orderData.seller_id,
       external_order_id: orderData.external_order_id || `MANUAL-${Date.now().toString().slice(-4)}`,
       shopify_order_id: orderData.shopify_order_id ? String(orderData.shopify_order_id) : null,
       source: orderData.source || 'quick_paste',
@@ -329,9 +171,9 @@ class Database {
       cleaned_address_line2: orderData.cleaned_address_line2 || null,
       cleaned_landmark: orderData.cleaned_landmark || null,
       geo_coordinates: orderData.geo_coordinates || null,
-      geo_location_type: orderData.geo_location_type || 'APPROXIMATE',
-      geo_deliverability_score: orderData.geo_deliverability_score || 70,
-      geo_accuracy_label: orderData.geo_accuracy_label || 'Pincode Centroid',
+      geo_location_type: orderData.geo_location_type || null,
+      geo_deliverability_score: orderData.geo_deliverability_score ?? null,
+      geo_accuracy_label: orderData.geo_accuracy_label || null,
       verification_status: orderData.verification_status || 'queued',
       risk_score: orderData.risk_score || 50,
       rto_money_saved: orderData.rto_money_saved || 0.00,
@@ -365,14 +207,14 @@ class Database {
     const newLog = {
       id,
       order_id: logData.order_id,
-      seller_id: logData.seller_id || 'sel_d2c_enterprise_001',
-      provider_call_id: logData.provider_call_id || `bolna_${Date.now()}`,
+      seller_id: logData.seller_id || null,
+      provider_call_id: logData.provider_call_id || null,
       duration_seconds: logData.duration_seconds || 0,
-      recording_url: logData.recording_url || `https://cdn.shipvera.com/recordings/${id}.mp3`,
+      recording_url: logData.recording_url || null, // Only set from a real provider webhook; never invented
       transcript: logData.transcript || [],
       extracted_landmark: logData.extracted_landmark || null,
       buyer_intent: logData.buyer_intent || 'genuine',
-      call_cost_inr: logData.call_cost_inr || 6.00,
+      call_cost_inr: logData.call_cost_inr ?? 0, // Cost is only known after a real call; do not assume 6.00
       created_at: new Date().toISOString()
     };
     this.data.call_logs.unshift(newLog);
@@ -433,10 +275,27 @@ class Database {
     return record;
   }
 
+  // --- Leads (waitlist) ---
+  addLead(leadData) {
+    if (!Array.isArray(this.data.leads)) this.data.leads = [];
+    const lead = {
+      id: `lead_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+      phone: leadData.phone || null,
+      name: leadData.name || null,
+      email: leadData.email || null,
+      volume: leadData.volume || null,
+      source: leadData.source || null,
+      created_at: new Date().toISOString()
+    };
+    this.data.leads.unshift(lead);
+    this.save();
+    return lead;
+  }
+
   // --- Analytics Overview ---
   getAnalytics(sellerId = null) {
-    const seller = this.getSeller(sellerId);
-    const orders = this.getOrders(seller ? seller.id : null);
+    const seller = sellerId ? this.getSeller(sellerId) : null;
+    const orders = seller ? this.getOrders(seller.id) : [];
 
     const totalOrders = orders.length;
     const verifiedOrders = orders.filter(o => o.verification_status === 'verified_cleaned' || o.verification_status === 'trust_lock_paid').length;
@@ -444,11 +303,14 @@ class Database {
     const totalMoneySaved = orders.reduce((sum, o) => sum + (Number(o.rto_money_saved) || 0), 0);
     const pendingOrders = orders.filter(o => o.verification_status === 'queued' || o.verification_status === 'calling' || o.verification_status === 'trust_lock_sent').length;
 
-    const rtoReductionRate = totalOrders > 0 ? Math.min(74, Math.round(((verifiedOrders + fakeBlockedOrders) / totalOrders) * 70)) : 0;
+    // This is the share of orders that reached a verified/cancelled outcome.
+    // It is NOT a measured RTO reduction rate; that requires a baseline
+    // comparison and must not be presented as a proven saving.
+    const rtoReductionRate = totalOrders > 0 ? Math.round(((verifiedOrders + fakeBlockedOrders) / totalOrders) * 100) : 0;
 
     return {
       seller_id: seller ? seller.id : null,
-      seller_brand: seller ? seller.brand_name : 'My Store',
+      seller_brand: seller ? seller.brand_name : null,
       wallet_balance_inr: seller ? (Number(seller.wallet_balance_inr) || 0.00) : 0.00,
       total_orders_protected: totalOrders,
       verified_orders: verifiedOrders,
@@ -456,7 +318,11 @@ class Database {
       pending_orders: pendingOrders,
       rto_money_saved_inr: totalMoneySaved,
       rto_reduction_rate_pct: rtoReductionRate,
-      avg_call_duration_seconds: totalOrders > 0 ? 24 : 0,
+      avg_call_duration_seconds: (() => {
+        const logs = this.data.call_logs.filter(c => orders.some(o => o.id === c.order_id) && Number(c.duration_seconds) > 0);
+        if (!logs.length) return 0;
+        return Math.round(logs.reduce((sum, c) => sum + Number(c.duration_seconds), 0) / logs.length);
+      })(),
       cost_per_verified_order_inr: 6.00
     };
   }
@@ -471,7 +337,8 @@ class Database {
     return txn;
   }
 
-  getWalletTransactions(sellerId = 'sel_d2c_enterprise_001') {
+  getWalletTransactions(sellerId = null) {
+    if (!sellerId) return [];
     if (!Array.isArray(this.data.wallet_transactions)) return [];
     return this.data.wallet_transactions.filter(t => t.seller_id === sellerId);
   }
@@ -485,7 +352,7 @@ class Database {
     const job = {
       id,
       order_id: jobData.order_id,
-      seller_id: jobData.seller_id || 'sel_d2c_enterprise_001',
+      seller_id: jobData.seller_id,
       action: jobData.action || 'DISPATCH_VOICE_CALL',
       scheduled_at: jobData.scheduled_at || new Date().toISOString(),
       status: jobData.status || 'pending', // 'pending', 'processing', 'completed', 'failed', 'retrying'

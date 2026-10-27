@@ -10,9 +10,10 @@ function isLiveShopifyCredentials(domain, token) {
   if (!domain || !token) return false;
   const d = domain.toLowerCase().trim();
   const t = token.toLowerCase().trim();
-  if (d.includes('snitch-streetwear') || d.includes('demo') || d.includes('sandbox') || d.includes('test') || d.includes('example')) {
-    return false;
-  }
+  // Do not reject a store merely for its name containing 'test'/'demo'.
+  // Only placeholder tokens are rejected below; a real dev store is
+  // verified by an actual Shopify API call, not by its name.
+  void d;
   if (t.includes('demo') || t.includes('token_demo') || t.includes('auto_provisioned') || t.includes('provisioned') || t.includes('sandbox') || t.includes('test') || t.includes('mock')) {
     return false;
   }
@@ -29,10 +30,11 @@ async function updateShopifyOrderAddress({ shopifyDomain, accessToken, externalO
   }
 
   if (!isLiveShopifyCredentials(shopifyDomain, accessToken)) {
-    console.log(`[SHOPIFY SYNC - SANDBOX MODE] Order ${externalOrderId} (ID: ${targetId}) updated with cleaned address:`, shippingAddress);
+    console.warn(`[SHOPIFY SYNC - NOT CONFIGURED] Order ${externalOrderId} was NOT synced to Shopify; no live credentials.`);
     return {
-      success: true,
-      mode: 'sandbox',
+      success: false,
+      mode: 'not_configured',
+      reason: 'Shopify domain and access token are required. No Shopify update was made.',
       updatedFields: { shippingAddress, tags, note }
     };
   }
@@ -101,8 +103,8 @@ async function cancelShopifyOrder({ shopifyDomain, accessToken, externalOrderId,
   const targetId = shopifyOrderId || String(externalOrderId).replace(/[^\d]/g, '');
 
   if (!isLiveShopifyCredentials(shopifyDomain, accessToken)) {
-    console.log(`[SHOPIFY CANCEL - SANDBOX MODE] Order ${externalOrderId} (ID: ${targetId}) cancelled. ₹180 courier loss avoided.`);
-    return { success: true, mode: 'sandbox', status: 'cancelled' };
+    console.warn(`[SHOPIFY CANCEL - NOT CONFIGURED] Order ${externalOrderId} was NOT cancelled on Shopify; no live credentials.`);
+    return { success: false, mode: 'not_configured', reason: 'Shopify domain and access token are required. No Shopify cancellation was made.', status: 'not_cancelled' };
   }
 
   const cleanDomain = shopifyDomain.trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
@@ -192,15 +194,9 @@ async function verifyShopifyCredentials({ shopifyDomain, accessToken }) {
 
   if (!isLiveShopifyCredentials(shopifyDomain, accessToken)) {
     return {
-      success: true,
-      mode: 'sandbox',
-      shop: {
-        name: 'Demo Sandbox Store',
-        email: 'merchant@store.in',
-        myshopify_domain: cleanDomain,
-        currency: 'INR',
-        country_name: 'India'
-      }
+      success: false,
+      mode: 'not_configured',
+      reason: 'Shopify domain and access token are required. No shop was verified.'
     };
   }
 
@@ -254,7 +250,7 @@ async function verifyShopifyCredentials({ shopifyDomain, accessToken }) {
  */
 async function registerShopifyWebhook({ shopifyDomain, accessToken, webhookUrl, topic = 'orders/create' }) {
   if (!isLiveShopifyCredentials(shopifyDomain, accessToken)) {
-    return { success: true, mode: 'sandbox', topic, webhookUrl };
+    return { success: false, mode: 'not_configured', reason: 'Shopify domain and access token are required. No webhook was registered.', topic, webhookUrl };
   }
 
   const cleanDomain = shopifyDomain.trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
@@ -354,7 +350,7 @@ async function registerShopifyWebhook({ shopifyDomain, accessToken, webhookUrl, 
  */
 async function fetchShopifyOrders({ shopifyDomain, accessToken, limit = 10, status = 'open' }) {
   if (!isLiveShopifyCredentials(shopifyDomain, accessToken)) {
-    return { success: true, mode: 'sandbox', orders: [] };
+    return { success: false, mode: 'not_configured', reason: 'Shopify domain and access token are required. No orders were fetched.', orders: [] };
   }
 
   const cleanDomain = shopifyDomain.trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
@@ -394,7 +390,7 @@ async function fetchShopifyOrders({ shopifyDomain, accessToken, limit = 10, stat
  * Cryptographic HMAC verification for real Shopify webhooks
  */
 function verifyShopifyHmac(rawBody, hmacHeader, apiSecret) {
-  if (!apiSecret || !hmacHeader) return true;
+  if (!apiSecret || !hmacHeader) return false; // Fail closed: missing secret/header must never verify.
   try {
     const crypto = require('crypto');
     const generatedHash = crypto.createHmac('sha256', apiSecret).update(rawBody).digest('base64');

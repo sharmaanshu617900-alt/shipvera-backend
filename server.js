@@ -67,48 +67,54 @@ app.use('/api/orders', ordersRouter);
 app.use('/api/analytics', analyticsRouter);
 app.use('/api/wallet', walletRouter);
 
-// Lead Waitlist Endpoint
+// Lead Waitlist Endpoint. The lead is actually stored (db.addLead),
+// not just echoed back, and no seller wallet is invented for a lead.
 app.post('/api/waitlist', (req, res) => {
   try {
     const { phone, name, email, volume, source } = req.body || {};
-    const seller = db.getSeller();
+    if (!phone && !email) {
+      return res.status(400).json({ error: 'phone or email is required to join the waitlist.' });
+    }
+    const lead = db.addLead({ phone, name, email, volume, source });
     res.status(200).json({
       success: true,
-      message: 'Early access reserved! Zero monthly software fees. Pure ₹6/order pay-as-you-go.',
-      lead: { phone, name, email, volume, source },
-      wallet: {
-        balance_inr: seller.wallet_balance_inr,
-        available_verifications: Math.floor(seller.wallet_balance_inr / 6)
-      }
+      message: 'Early access reserved.',
+      lead
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// Health & System Information
+// Health & System Information. This reports configuration status only:
+// a feature is 'configured' only when its required env vars are present.
+// It never claims a feature is active when its provider is not configured.
 app.get('/api/health', (req, res) => {
-  const seller = db.getSeller();
+  const configured = {
+    supabase: Boolean(process.env.SUPABASE_URL && (process.env.SUPABASE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY)),
+    bolna: Boolean(process.env.BOLNA_API_KEY && process.env.BOLNA_AGENT_ID),
+    razorpay: Boolean(process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET),
+    whatsapp: Boolean(process.env.WHATSAPP_ACCESS_TOKEN && process.env.WHATSAPP_PHONE_NUMBER_ID),
+    google_maps: Boolean(process.env.GOOGLE_MAPS_API_KEY),
+    shopify_webhook_secret: Boolean(process.env.SHOPIFY_WEBHOOK_SECRET),
+    razorpay_webhook_secret: Boolean(process.env.RAZORPAY_WEBHOOK_SECRET),
+    llm: Boolean(process.env.LLM_API_KEY)
+  };
   res.status(200).json({
     status: 'healthy',
     platform: 'Shipvera Autonomous Voice AI Dispatch Engine',
     version: '2.0.0-enterprise',
     timestamp: new Date().toISOString(),
-    seller: {
-      brand: seller.brand_name,
-      wallet_balance: `₹${seller.wallet_balance_inr}`,
-      available_verifications: Math.floor(seller.wallet_balance_inr / 6),
-      pricing_model: 'Pure Pay-As-You-Go (₹6/Order)'
-    },
+    configured,
     features: {
-      pre_call_geo_sanitizer: 'active (Google Maps Geocoding REST API)',
-      landmark_interrogator_voice_ai: 'active (Bolna Voice AI - Sarvam Bulbul Shubh)',
-      live_address_rewriter: 'active (Shopify Admin + Shiprocket Auto-Sync)',
-      upi_trust_lock: 'active (₹19 Dynamic Razorpay UPI Links)',
-      quick_paste_mode: 'active (WhatsApp / Instagram NLP Parser)',
-      trai_night_window_hold: 'active (9:30 PM - 8:30 AM IST Morning Deferral)',
-      autonomous_queue_worker: 'active (45s SLA & Exponential Retries)',
-      financial_ledger: 'active (Double-Entry Audit Trail)'
+      pre_call_geo_sanitizer: configured.google_maps ? 'configured' : 'not_configured',
+      landmark_interrogator_voice_ai: configured.bolna ? 'configured' : 'not_configured',
+      live_address_rewriter: 'rule_based_no_llm - LLM extraction requires LLM_API_KEY (see REALITY_CHECKLIST.md)',
+      upi_trust_lock: configured.razorpay && configured.whatsapp ? 'configured' : 'not_configured',
+      quick_paste_mode: 'available - creates orders only with validated seller, phone, pincode and amount',
+      trai_night_window_hold: 'available',
+      autonomous_queue_worker: 'available - live calls only; simulation requires SHIPVERA_ALLOW_SIMULATED_CALLS=true',
+      financial_ledger: 'available'
     }
   });
 });

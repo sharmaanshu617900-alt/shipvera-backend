@@ -27,11 +27,21 @@ try {
 function verifyShopifyHmac(req, res, next) {
   const hmacHeader = req.headers['x-shopify-hmac-sha256'];
   const secret = process.env.SHOPIFY_WEBHOOK_SECRET;
-  if (secret && hmacHeader && req.rawBody) {
-    const digest = crypto.createHmac('sha256', secret).update(req.rawBody).digest('base64');
-    if (digest !== hmacHeader) {
-      return res.status(401).json({ error: 'Shopify HMAC verification failed' });
-    }
+  if (!secret) {
+    return res.status(500).json({ error: 'SHOPIFY_WEBHOOK_SECRET is not configured. Webhook rejected.' });
+  }
+  if (!hmacHeader || !req.rawBody) {
+    return res.status(401).json({ error: 'Shopify HMAC verification failed: missing signature or body.' });
+  }
+  const digest = crypto.createHmac('sha256', secret).update(req.rawBody).digest('base64');
+  let ok = false;
+  try {
+    ok = digest.length === hmacHeader.length && crypto.timingSafeEqual(Buffer.from(digest), Buffer.from(hmacHeader));
+  } catch (e) {
+    ok = false;
+  }
+  if (!ok) {
+    return res.status(401).json({ error: 'Shopify HMAC verification failed' });
   }
   next();
 }
@@ -39,11 +49,21 @@ function verifyShopifyHmac(req, res, next) {
 function verifyRazorpaySignature(req, res, next) {
   const signature = req.headers['x-razorpay-signature'];
   const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
-  if (secret && signature && req.rawBody) {
-    const expected = crypto.createHmac('sha256', secret).update(req.rawBody).digest('hex');
-    if (expected !== signature) {
-      return res.status(401).json({ error: 'Razorpay signature mismatch' });
-    }
+  if (!secret) {
+    return res.status(500).json({ error: 'RAZORPAY_WEBHOOK_SECRET is not configured. Webhook rejected.' });
+  }
+  if (!signature || !req.rawBody) {
+    return res.status(401).json({ error: 'Razorpay signature missing.' });
+  }
+  const expected = crypto.createHmac('sha256', secret).update(req.rawBody).digest('hex');
+  let ok = false;
+  try {
+    ok = expected.length === signature.length && crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature));
+  } catch (e) {
+    ok = false;
+  }
+  if (!ok) {
+    return res.status(401).json({ error: 'Razorpay signature mismatch' });
   }
   next();
 }
@@ -92,20 +112,28 @@ router.post('/shopify/orders-create', verifyShopifyHmac, async (req, res) => {
     }
 
     if (!seller) {
-      seller = db.getAllSellers()[0] || {
-        id: 'sel_d2c_enterprise_001',
-        brand_name: 'Shipvera Store',
-        wallet_balance_inr: 0.00
-      };
+      return res.status(404).json({ error: 'Seller not found for this Shopify shop. Register the seller before sending webhooks; orders are never attributed to a fallback seller.' });
     }
 
     const shipping = payload.shipping_address || {};
-    const buyerPhone = shipping.phone || payload.phone || payload.customer?.phone || '+919999999999';
-    const buyerName = `${shipping.first_name || 'Customer'} ${shipping.last_name || ''}`.trim();
+    const buyerPhone = shipping.phone || payload.phone || payload.customer?.phone || '';
+    const buyerFirst = shipping.first_name || payload.customer?.first_name || '';
+    const buyerLast = shipping.last_name || payload.customer?.last_name || '';
+    const buyerName = `${buyerFirst} ${buyerLast}`.trim();
     const rawAddress = `${shipping.address1 || ''} ${shipping.address2 || ''}`.trim();
-    const city = shipping.city || 'Unspecified';
-    const pincode = shipping.zip || '000000';
-    const codAmount = Number(payload.total_price) || 999;
+    const city = shipping.city || '';
+    const pincode = shipping.zip || '';
+    const codAmount = Number(payload.total_price);
+
+    const missingFields = [];
+    if (!buyerPhone) missingFields.push('buyer_phone');
+    if (!buyerName) missingFields.push('buyer_name');
+    if (!rawAddress) missingFields.push('shipping_address');
+    if (!pincode) missingFields.push('pincode');
+    if (!Number.isFinite(codAmount) || codAmount <= 0) missingFields.push('cod_amount');
+    if (missingFields.length) {
+      return res.status(400).json({ error: 'Missing required order fields; no order was created.', missingFields });
+    }
 
     // Run Geo-Sanitizer check (Feature 1)
     const sanitation = sanitizeAddress({
@@ -203,28 +231,31 @@ router.post('/voice/call-completed', async (req, res) => {
     }
 
     const seller = db.getSeller(order.seller_id);
+    if (!seller) {
+      return res.status(404).json({ error: 'Seller not found for this order.' });
+    }
 
-    // If intent was not provided explicitly, infer from Bolna transcript
+    // If intent was not provided explicitly, only a cancellation keyword
+    // in a real transcript may set CANCEL_REQUESTED. Duration alone must
+    // never imply VERIFIED_GENUINE. Anything else needs human review
+    // and must not apply a post-call decision.
     if (!buyerIntent && Array.isArray(payload.transcript)) {
       const userUtterances = payload.transcript
         .filter(t => t.role === 'user')
         .map(t => t.message || t.text || '')
         .join(' ');
-
       spokenText = userUtterances;
-
       if (/cancel|nahi chahiye|mat bhejo|galti se|wrong order|na bheje/i.test(userUtterances)) {
         buyerIntent = 'CANCEL_REQUESTED';
-      } else if (durationSeconds > 10 && userUtterances.length > 5) {
-        buyerIntent = 'VERIFIED_GENUINE';
-      } else {
-        buyerIntent = 'DICEY_NO_ANSWER';
       }
     }
 
-    // Default intent if still empty
     if (!buyerIntent) {
-      buyerIntent = durationSeconds > 10 ? 'VERIFIED_GENUINE' : 'DICEY_NO_ANSWER';
+      return res.status(202).json({
+        success: false,
+        status: 'needs_review',
+        reason: 'Buyer intent was not provided by the voice provider and could not be determined from a real transcript. No post-call decision was applied.'
+      });
     }
 
     // Apply Post-Call Decision Engine (Auto-rewrites address and syncs to Shopify & Shiprocket)
@@ -232,13 +263,22 @@ router.post('/voice/call-completed', async (req, res) => {
       const decision = await applyPostCallDecision({
         orderId: order.id,
         buyerIntent,
-        spokenText: spokenText || 'Landmark verified during call',
+        spokenText: spokenText || '',
         sellerId: seller.id
       });
       return res.status(200).json({ success: true, decision });
     } else {
-      // DICEY / NO_ANSWER -> Trigger ₹19 Trust Lock (Feature 4)
-      const trustLock = generateTrustLock({ order, seller });
+      // DICEY / NO_ANSWER -> Trigger 19 UPI Trust Lock (Feature 4).
+      // Await it: if Razorpay/WhatsApp is not configured, report failure.
+      const trustLock = await generateTrustLock({ order, seller });
+      if (!trustLock || trustLock.success !== true) {
+        return res.status(502).json({
+          success: false,
+          action: 'trust_lock_failed',
+          reason: (trustLock && trustLock.reason) || 'Trust Lock could not be sent.',
+          trustLock
+        });
+      }
       return res.status(200).json({
         success: true,
         action: 'trust_lock_triggered',
