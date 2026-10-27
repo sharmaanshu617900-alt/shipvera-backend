@@ -5,7 +5,7 @@
 
 /* ---------- CSS Custom Properties ---------- */
 :root {
-    /* Colors: Luxury Tech Black, Signature Emerald Green & Crisp White */
+    /* Colors: Luxury Tech Black, Signature Oxblood & Crisp White */
     --bg-main: #FFFFFF;
     --bg-card: #FFFFFF;
     --bg-secondary: #F8FAF9;
@@ -14,30 +14,30 @@
     --text-secondary: #4A5568;
     --text-muted: #718096;
 
-    /* Brand Green (Extracted from Official Shipvera Logo) */
-    --brand-green: #058A5E;
-    --brand-green-hover: #04724D;
-    --brand-green-dark: #034D35;
-    --brand-green-light: #EBF7F2;
-    --brand-green-border: #A3E0C8;
+    /* Brand Oxblood (TrustOrder) */
+    --brand-green: #6B1228;
+    --brand-green-hover: #4E0D1E;
+    --brand-green-dark: #4E0D1E;
+    --brand-green-light: #FBE9EC;
+    --brand-green-border: #E8DDD6;
 
     /* Cohesive Theme Remapping (Eliminating random rainbow colors) */
-    --brand-indigo: #058A5E;
-    --brand-indigo-light: #EBF7F2;
-    --brand-teal: #058A5E;
-    --brand-teal-light: #EBF7F2;
+    --brand-indigo: #6B1228;
+    --brand-indigo-light: #FBE9EC;
+    --brand-teal: #6B1228;
+    --brand-teal-light: #FBE9EC;
     --brand-amber: #0A0A0A;
     --brand-amber-light: #F4F4F5;
     --brand-rose: #0A0A0A;
     --brand-rose-light: #F4F4F5;
-    --brand-emerald: #058A5E;
-    --brand-emerald-light: #EBF7F2;
+    --brand-emerald: #6B1228;
+    --brand-emerald-light: #FBE9EC;
 
     /* Gradients: Black & Emerald Green Precision */
-    --gradient-hero: linear-gradient(135deg, #0A0A0A 0%, #058A5E 100%);
-    --gradient-hero-2: linear-gradient(135deg, #058A5E 0%, #10B981 100%);
+    --gradient-hero: linear-gradient(135deg, #0A0A0A 0%, #6B1228 100%);
+    --gradient-hero-2: linear-gradient(135deg, #6B1228 0%, #B9975B 100%);
     --gradient-card: linear-gradient(135deg, rgba(5,138,94,0.05) 0%, rgba(10,10,10,0.02) 100%);
-    --gradient-glow: linear-gradient(135deg, #058A5E, #10B981, #04724D);
+    --gradient-glow: linear-gradient(135deg, #6B1228, #B9975B, #4E0D1E);
 
     /* Typography */
     --font-heading: 'Mona Sans', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -77,15 +77,15 @@ html {
 
 /* Text Selection Mastery */
 ::selection {
-    background: #058A5E;
+    background: #6B1228;
     color: #FFFFFF;
 }
 
 body {
     font-family: var(--font-body);
-    background-color: #FFFFFF;
+    background-color: #FAF7F2;
     background-image: 
-        radial-gradient(circle at 50% -80px, rgba(5, 138, 94, 0.08) 0%, transparent 60%),
+        radial-gradient(circle at 50% -80px, rgba(107, 18, 40, 0.08) 0%, transparent 60%),
         radial-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px);
     background-size: 100% 100%, 32px 32px;
     background-position: 0 0, 0 0;
@@ -433,7 +433,7 @@ img {
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    background: linear-gradient(135deg, #058A5E 0%, #046A48 55%, #034E35 100%);
+    background: linear-gradient(135deg, #6B1228 0%, #4E0D1E 55%, #034E35 100%);
     border: 1px solid rgba(52, 211, 153, 0.45);
     border-radius: 999px;
     padding: 10px 22px;
@@ -484,7 +484,7 @@ img {
     font-family: var(--font-mono);
     font-size: 0.75rem;
     font-weight: 900;
-    color: #058A5E;
+    color: #6B1228;
     background: #FFFFFF;
     width: 26px;
     height: 26px;
@@ -623,7 +623,7 @@ img {
     border-color: rgba(5, 138, 94, 0.3);
     box-shadow: 
         0 0 0 1px rgba(5, 138, 94, 0.2),
-        0 4px 12px rgba(5, 138, 94, 0.08),
+        0 4px 12px rgba(107, 18, 40, 0.08),
         0 20px 40px -8px rgba(0, 0, 0, 0.08),
         inset 0 1px 0 rgba(255, 255, 255, 1);
 }
@@ -1617,7 +1617,7 @@ strong, b {
     position: absolute;
     top: 0; left: 0; right: 0;
     height: 3px;
-    background: linear-gradient(90deg, #058A5E 0%, #10B981 50%, #058A5E 100%);
+    background: linear-gradient(90deg, #6B1228 0%, #B9975B 50%, #6B1228 100%);
 }
 
 .wvc-top {
@@ -1692,7 +1692,7 @@ strong, b {
 .wvc-progress-fill {
     width: 86%;
     height: 100%;
-    background: linear-gradient(90deg, #058A5E, #10B981);
+    background: linear-gradient(90deg, #6B1228, #B9975B);
     border-radius: 999px;
     box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
 }
@@ -1896,7 +1896,7 @@ strong, b {
 .btn-terminal-submit {
     width: 100%;
     padding: 16px 24px;
-    background: #058A5E;
+    background: #6B1228;
     color: #FFFFFF;
     border: 1px solid #10B981;
     border-radius: 12px;
@@ -2358,7 +2358,7 @@ strong, b {
     display: flex;
     align-items: center;
     gap: 8px;
-    background: rgba(5, 138, 94, 0.08);
+    background: rgba(107, 18, 40, 0.08);
     border: 1px solid rgba(5, 138, 94, 0.25);
     padding: 6px 14px;
     border-radius: 999px;
@@ -2478,7 +2478,7 @@ strong, b {
 
 /* Infinite Marquee Ribbon in Official Shipvera Emerald Green (Strictly Green, No Lime) */
 .infra-ribbon {
-    background: #058A5E;
+    background: #6B1228;
     padding: 16px 0;
     overflow: hidden;
     position: relative;
@@ -2579,7 +2579,7 @@ strong, b {
     border-color: rgba(5, 138, 94, 0.35);
     box-shadow: 
         0 0 0 1px rgba(5, 138, 94, 0.2),
-        0 8px 24px -4px rgba(5, 138, 94, 0.08),
+        0 8px 24px -4px rgba(107, 18, 40, 0.08),
         inset 0 1px 0 rgba(255, 255, 255, 1);
 }
 
@@ -2738,7 +2738,7 @@ strong, b {
 
 .badge-green {
     background: rgba(16, 185, 129, 0.15);
-    color: #058A5E;
+    color: #6B1228;
 }
 .decision-tab-item.active .badge-green {
     background: rgba(16, 185, 129, 0.25);
@@ -2771,7 +2771,7 @@ strong, b {
 }
 
 .status-safe {
-    background: #ECFDF5;
+    background: #FBE9EC;
     color: #047857;
 }
 
@@ -2924,7 +2924,7 @@ strong, b {
 }
 
 .crc-metric-block.highlight {
-    background: #ECFDF5;
+    background: #FBE9EC;
     border-color: #6EE7B7;
 }
 
@@ -2944,7 +2944,7 @@ strong, b {
 }
 
 .crc-metric-block .crc-val.green {
-    color: #058A5E;
+    color: #6B1228;
 }
 
 .crc-footer {
@@ -3475,7 +3475,7 @@ strong, b {
 }
 
 .box-saved {
-    background: linear-gradient(135deg, #ECFDF5 0%, #F0FDF4 100%);
+    background: linear-gradient(135deg, #FBE9EC 0%, #F0FDF4 100%);
     border-color: rgba(5, 138, 94, 0.4);
     box-shadow: var(--shadow-md);
     position: relative;
@@ -3984,8 +3984,8 @@ strong, b {
 }
 
 .courier-badge.delhivery {
-    background: #EBF7F2;
-    color: #034D35;
+    background: #FBE9EC;
+    color: #4E0D1E;
 }
 
 .courier-badge.shiprocket {
@@ -4249,7 +4249,7 @@ strong, b {
 }
 
 .badge-teal { background: #CCFBF1; color: #0F766E; }
-.badge-indigo { background: #EBF7F2; color: #034D35; }
+.badge-indigo { background: #FBE9EC; color: #4E0D1E; }
 .badge-amber { background: #FEF3C7; color: #92400E; }
 .badge-emerald { background: #D1FAE5; color: #065F46; }
 
@@ -4834,7 +4834,7 @@ strong, b {
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
     border-radius: inherit;
-    background: radial-gradient(350px circle at var(--mouse-x, -200px) var(--mouse-y, -200px), rgba(5, 138, 94, 0.08), transparent 60%);
+    background: radial-gradient(350px circle at var(--mouse-x, -200px) var(--mouse-y, -200px), rgba(107, 18, 40, 0.08), transparent 60%);
     pointer-events: none;
     opacity: 0;
     transition: opacity 0.3s ease;

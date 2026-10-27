@@ -16,15 +16,15 @@
     --text-muted: #71717A;
 
     /* Signature Brand Colors */
-    --brand-green: #058A5E;
-    --brand-green-hover: #04724D;
-    --brand-green-light: #ECFDF5;
-    --brand-green-border: #A7F3D0;
+    --brand-green: #6B1228;
+    --brand-green-hover: #4E0D1E;
+    --brand-green-light: #FBE9EC;
+    --brand-green-border: #E8DDD6;
 
     /* Status Tokens */
     --status-verified-text: #047857;
-    --status-verified-bg: #ECFDF5;
-    --status-verified-border: #A7F3D0;
+    --status-verified-bg: #FBE9EC;
+    --status-verified-border: #E8DDD6;
 
     --status-warn-text: #92400E;
     --status-warn-bg: #FFFBEB;
@@ -560,7 +560,7 @@ body.dashboard-body {
 }
 
 .dmc-pill.highlight-green {
-    background: #ECFDF5;
+    background: #FBE9EC;
     color: var(--brand-green);
     border: 1px solid var(--brand-green-border);
 }
@@ -636,9 +636,9 @@ body.dashboard-body {
 }
 
 .dcc-badge.highlight {
-    background: #ECFDF5;
+    background: #FBE9EC;
     color: #047857;
-    border-color: #A7F3D0;
+    border-color: #E8DDD6;
 }
 
 .chart-svg-wrap {
@@ -1528,9 +1528,9 @@ tr.diff-accordion-row.open {
 .mab-status-tag {
     font-size: 0.7rem;
     font-weight: 600;
-    background: #ECFDF5;
+    background: #FBE9EC;
     color: #047857;
-    border: 1px solid #A7F3D0;
+    border: 1px solid #E8DDD6;
     padding: 2px 7px;
     border-radius: 4px;
 }
@@ -1717,8 +1717,8 @@ tr.diff-accordion-row.open {
 }
 
 .lcm-status-box {
-    background: #ECFDF5;
-    border: 1px solid #A7F3D0;
+    background: #FBE9EC;
+    border: 1px solid #E8DDD6;
     border-radius: 6px;
     padding: 10px;
     margin-top: 10px;
@@ -1736,7 +1736,7 @@ tr.diff-accordion-row.open {
 .lcm-spinner {
     width: 14px;
     height: 14px;
-    border: 2px solid #A7F3D0;
+    border: 2px solid #E8DDD6;
     border-top-color: #047857;
     border-radius: 50%;
     animation: lcmSpin 0.8s linear infinite;
@@ -2038,7 +2038,7 @@ tr.diff-accordion-row.open {
 }
 
 .backend-status-dot.online {
-    background: #058A5E;
+    background: #6B1228;
     box-shadow: 0 0 0 2px rgba(5, 138, 94, 0.25);
     animation: pulseDot 2.2s infinite;
 }
@@ -2163,7 +2163,7 @@ tr.diff-accordion-row.open {
 }
 
 .bpr-badge.success {
-    background: #ECFDF5;
+    background: #FBE9EC;
     color: #065F46;
 }
 
@@ -2181,7 +2181,7 @@ tr.diff-accordion-row.open {
     font-family: var(--font-mono);
     font-size: 0.74rem;
     font-weight: 600;
-    color: #058A5E;
+    color: #6B1228;
 }
 
 .bcm-coldstart-tip {
@@ -2260,7 +2260,7 @@ tr.diff-accordion-row.open {
     width: 26px;
     height: 26px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #058A5E, #034D34);
+    background: linear-gradient(135deg, #6B1228, #4E0D1E);
     color: #FFFFFF;
     font-size: 0.72rem;
     font-weight: 700;
@@ -2284,7 +2284,7 @@ tr.diff-accordion-row.open {
 
 .dpp-status {
     font-size: 0.68rem;
-    color: #058A5E;
+    color: #6B1228;
     font-weight: 600;
 }
 
@@ -2354,9 +2354,9 @@ tr.diff-accordion-row.open {
 }
 
 .dib-status-tag.active {
-    background: #ECFDF5;
+    background: #FBE9EC;
     color: #047857;
-    border: 1px solid #A7F3D0;
+    border: 1px solid #E8DDD6;
 }
 
 .dib-status-tag.blue {
@@ -2385,14 +2385,14 @@ tr.diff-accordion-row.open {
 }
 
 .dib-card-clickable:hover {
-    border-color: #058A5E;
-    box-shadow: 0 4px 14px rgba(5, 138, 94, 0.08);
+    border-color: #6B1228;
+    box-shadow: 0 4px 14px rgba(107, 18, 40, 0.08);
     transform: translateY(-1px);
 }
 
 .dib-manage-hint {
     font-size: 0.65rem;
-    color: #058A5E;
+    color: #6B1228;
     font-weight: 600;
     margin-left: auto;
     background: #F0FDF4;
@@ -2403,9 +2403,9 @@ tr.diff-accordion-row.open {
 }
 
 .dib-card-clickable:hover .dib-manage-hint {
-    background: #058A5E;
+    background: #6B1228;
     color: #FFFFFF;
-    border-color: #058A5E;
+    border-color: #6B1228;
 }
 
 /* Logistics Provider Selector Grid */
@@ -2435,9 +2435,9 @@ tr.diff-accordion-row.open {
 }
 
 .lp-card.selected {
-    border-color: #058A5E;
+    border-color: #6B1228;
     background: #F0FDF4;
-    box-shadow: 0 0 0 1px #058A5E;
+    box-shadow: 0 0 0 1px #6B1228;
 }
 
 .lp-card-header {
@@ -2514,7 +2514,7 @@ tr.diff-accordion-row.open {
     left: 0;
     right: 0;
     height: 3px;
-    background: linear-gradient(90deg, #10B981, #058A5E);
+    background: linear-gradient(90deg, #B9975B, #6B1228);
 }
 
 .odb-top {
@@ -2575,7 +2575,7 @@ tr.diff-accordion-row.open {
 
 .btn-oneclick-connect {
     width: 100%;
-    background: #058A5E;
+    background: #6B1228;
     color: #FFFFFF;
     border: none;
     border-radius: 8px;
@@ -2623,7 +2623,7 @@ tr.diff-accordion-row.open {
 .oc-progress-fill {
     height: 100%;
     width: 0%;
-    background: #058A5E;
+    background: #6B1228;
     border-radius: 9999px;
     transition: width 0.3s ease;
 }
@@ -2632,7 +2632,7 @@ tr.diff-accordion-row.open {
     display: block;
     font-size: 0.74rem;
     font-weight: 600;
-    color: #058A5E;
+    color: #6B1228;
     margin-top: 6px;
     text-align: center;
 }
