@@ -13,10 +13,14 @@ services:
         value: 10000
       - key: NODE_ENV
         value: production
-      - key: BOLNA_API_KEY
+      - key: SARVAM_API_KEY
         sync: false # Set in Render Dashboard
-      - key: BOLNA_AGENT_ID
-        sync: false # Set in Render Dashboard
+      - key: SARVAM_AGENT_ID
+        sync: false # Set in Render Dashboard (create agent in Sarvam dashboard)
+      - key: SARVAM_PHONE_NUMBER_ID
+        sync: false # Set in Render Dashboard (rent/attach number in Sarvam dashboard)
+      - key: SARVAM_VOICE_AGENT_DISPATCH_URL
+        sync: false # Only after confirming the outbound endpoint in Sarvam docs/dashboard
       - key: GOOGLE_MAPS_API_KEY
         sync: false
       - key: SUPABASE_URL
