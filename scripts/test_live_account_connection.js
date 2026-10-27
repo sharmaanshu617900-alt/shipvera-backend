@@ -1,5 +1,5 @@
 /**
- * Shipvera Production Backend Account Connection Audit Script
+ * TrustOrder Production Backend Account Connection Audit Script
  * Validates fail-closed production readiness:
  * 1. Shopify Credentials Verification (asserts fail-closed on dummy/empty; live on env)
  * 2. Shopify Webhook Auto-Installer (asserts fail-closed on unconfigured; live on env)
@@ -25,7 +25,7 @@ const { sanitizeAddress } = require('../services/geoSanitizer');
 
 async function runAudit() {
   console.log('================================================================');
-  console.log('🚀 AUDITING SHIPVERA PRODUCTION BACKEND ACCOUNT CONNECTION STACK');
+  console.log('🚀 AUDITING TRUSTORDER PRODUCTION BACKEND ACCOUNT CONNECTION STACK');
   console.log('================================================================\n');
 
   let passedTests = 0;
@@ -264,7 +264,7 @@ async function runAudit() {
   console.log('\n================================================================');
   if (passedTests === totalTests) {
     console.log(`🎉 ALL ${passedTests}/${totalTests} PRODUCTION BACKEND CONNECTION TESTS PASSED 100%!`);
-    console.log('Shipvera is rigorously fail-closed and ready for real merchant credentials.');
+    console.log('TrustOrder is rigorously fail-closed and ready for real merchant credentials.');
   } else {
     console.warn(`⚠️ ${passedTests}/${totalTests} Tests passed. Please check the logs.`);
   }

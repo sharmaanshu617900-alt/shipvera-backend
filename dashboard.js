@@ -1,16 +1,17 @@
 /**
- * Shipvera Dashboard Interactive Engine
+ * TrustOrder Dashboard Interactive Engine
  * Professional Enterprise Operations Console
  * Connected to Render Cloud Backend (/api/orders, /api/analytics, /api/wallet, /api/calls/trigger)
  */
 
 // Centralized API Base Resolver for Render Cloud Backend
 function getApiUrl(path) {
-    if (typeof window !== 'undefined' && window.ShipveraConfig && typeof window.ShipveraConfig.getApiUrl === 'function') {
-        return window.ShipveraConfig.getApiUrl(path);
+    const config = window.TrustOrderConfig || window.ShipveraConfig;
+    if (typeof window !== 'undefined' && config && typeof config.getApiUrl === 'function') {
+        return config.getApiUrl(path);
     }
-    const saved = localStorage.getItem('SHIPVERA_BACKEND_URL');
-    const base = (saved && saved.trim()) ? saved.trim().replace(/\/+$/, '') : 'https://shipvera-backend.onrender.com';
+    const saved = localStorage.getItem('TRUSTORDER_BACKEND_URL') || (localStorage.getItem('TRUSTORDER_BACKEND_URL') || localStorage.getItem('SHIPVERA_BACKEND_URL'));
+    const base = (saved && saved.trim()) ? saved.trim().replace(/\/+$/, '') : 'https://trustorder-backend.onrender.com';
     const cleanPath = path.startsWith('/') ? path : '/' + path;
     return `${base}${cleanPath}`;
 }
@@ -29,13 +30,13 @@ try {
     const paramSellerId = urlParams.get('seller_id');
     if (paramSellerId) {
         currentActiveSellerId = paramSellerId;
-        localStorage.setItem('shipvera_active_seller_id', paramSellerId);
+        localStorage.setItem('trustorder_active_seller_id', paramSellerId); localStorage.setItem('shipvera_active_seller_id', paramSellerId);
     } else {
-        const savedSellerId = localStorage.getItem('shipvera_active_seller_id');
+        const savedSellerId = (localStorage.getItem('trustorder_active_seller_id') || localStorage.getItem('shipvera_active_seller_id'));
         if (savedSellerId) currentActiveSellerId = savedSellerId;
     }
 
-    const savedSeller = localStorage.getItem('shipvera_active_seller');
+    const savedSeller = (localStorage.getItem('trustorder_active_seller') || localStorage.getItem('shipvera_active_seller'));
     if (savedSeller) {
         const parsed = JSON.parse(savedSeller);
         if (parsed.brand_name && (!currentActiveSellerId || parsed.id === currentActiveSellerId)) {
@@ -47,7 +48,7 @@ try {
 
 function getAuthHeaders() {
     const headers = { 'Content-Type': 'application/json' };
-    const userEmail = localStorage.getItem('shipvera_user_email');
+    const userEmail = (localStorage.getItem('trustorder_user_email') || localStorage.getItem('shipvera_user_email'));
     if (userEmail) {
         headers['x-seller-email'] = userEmail;
     }
@@ -63,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (storeNameEl) storeNameEl.textContent = currentActiveBrand;
     }
 
-    const founderName = localStorage.getItem('shipvera_founder_name');
+    const founderName = (localStorage.getItem('trustorder_founder_name') || localStorage.getItem('shipvera_founder_name'));
     if (founderName) {
         const dppFounderName = document.getElementById('dppFounderName');
         const dppAvatar = document.getElementById('dppAvatar');
@@ -215,7 +216,7 @@ function renderOrdersTable() {
                         </div>
                         <div style="font-size: 1.15rem; font-weight: 700; color: #0F172A; margin-bottom: 6px;">No COD Orders Dispatched Yet</div>
                         <p style="margin: 0 0 20px 0; font-size: 0.86rem; color: #64748B; max-width: 520px; margin-left: auto; margin-right: auto; line-height: 1.5;">
-                            Shipvera is standing by to protect your COD orders. When an order arrives, our autonomous Hinglish voice agent calls your buyer within 60 seconds to confirm purchase intent and enrich courier labels with missing landmarks.
+                            TrustOrder is standing by to protect your COD orders. When an order arrives, our autonomous Hinglish voice agent calls your buyer within 60 seconds to confirm purchase intent and enrich courier labels with missing landmarks.
                         </p>
                         <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
                             <button class="btn-dab btn-primary" onclick="openTestLiveCallModal()">
@@ -498,8 +499,8 @@ function toggleStoreDropdown() {
 
 async function loadRegisteredStores() {
     try {
-        const userEmail = localStorage.getItem('shipvera_user_email') || '';
-        const activeId = currentActiveSellerId || localStorage.getItem('shipvera_active_seller_id') || '';
+        const userEmail = (localStorage.getItem('trustorder_user_email') || localStorage.getItem('shipvera_user_email')) || '';
+        const activeId = currentActiveSellerId || (localStorage.getItem('trustorder_active_seller_id') || localStorage.getItem('shipvera_active_seller_id')) || '';
 
         const queryParams = new URLSearchParams();
         if (userEmail) queryParams.set('email', userEmail);
@@ -548,8 +549,8 @@ async function loadRegisteredStores() {
 function switchStore(brandName, sellerId) {
     currentActiveBrand = brandName;
     currentActiveSellerId = sellerId;
-    localStorage.setItem('shipvera_active_seller_id', sellerId);
-    localStorage.setItem('shipvera_active_brand', brandName);
+    localStorage.setItem('trustorder_active_seller_id', sellerId); localStorage.setItem('shipvera_active_seller_id', sellerId);
+    localStorage.setItem('trustorder_active_brand', brandName); localStorage.setItem('shipvera_active_brand', brandName);
 
     const storeNameEl = document.getElementById('storeName');
     if (storeNameEl) storeNameEl.textContent = brandName;
@@ -805,15 +806,15 @@ async function openTranscriptModal(orderId) {
             modalSub.textContent = `${o.city || 'India'} • Recorded via Sarvam Bulbul Engine`;
 
             const transcript = latestLog.transcript || [
-                { role: 'ai', speaker: 'Shipvera AI', text: `Namaste ${o.buyer_name} ji! Main ${currentActiveBrand} ke dispatch desk se Shipvera AI bol raha hoon. Aapka ₹${o.cod_amount} ka order pack ho gaya hai.` },
-                { role: 'ai', speaker: 'Shipvera AI', text: `Bhaiya aapne address me '${o.raw_address}' likha hai par landmark missing hai. Aas-paas konsi dukaan ya mandir hai bata dijiye?` },
+                { role: 'ai', speaker: 'TrustOrder AI', text: `Namaste ${o.buyer_name} ji! Main ${currentActiveBrand} ke dispatch desk se TrustOrder AI bol raha hoon. Aapka ₹${o.cod_amount} ka order pack ho gaya hai.` },
+                { role: 'ai', speaker: 'TrustOrder AI', text: `Bhaiya aapne address me '${o.raw_address}' likha hai par landmark missing hai. Aas-paas konsi dukaan ya mandir hai bata dijiye?` },
                 { role: 'user', speaker: `Buyer (${o.buyer_name})`, text: 'Haan bhaiya, Bikaner sweets ke samne safed gate hai 2nd floor, wahi deliver kar dena.' },
-                { role: 'ai', speaker: 'Shipvera AI', text: 'Acha note kar liya! 3-4 din me parcel mil jayega. Dhanyawad!' }
+                { role: 'ai', speaker: 'TrustOrder AI', text: 'Acha note kar liya! 3-4 din me parcel mil jayega. Dhanyawad!' }
             ];
 
             stream.innerHTML = transcript.map(t => `
                 <div class="t-bubble ${t.role === 'ai' ? 'ai' : 'user'}">
-                    <span class="t-bubble-speaker">${t.speaker || (t.role === 'ai' ? 'Shipvera AI' : 'Customer')}</span>
+                    <span class="t-bubble-speaker">${t.speaker || (t.role === 'ai' ? 'TrustOrder AI' : 'Customer')}</span>
                     <p style="margin: 0;">"${t.text || t.message || ''}"</p>
                 </div>
             `).join('');
@@ -858,7 +859,7 @@ function openTrustLockModal(orderId) {
     const msg = `Hi ${order.buyer_name}, humne aapka ₹${order.cod_amount} ka parcel dispatch karne ke liye call kiya tha par connect nahi hua. Parcel hold na ho isliye bas ₹19 ka chota token UPI karke apna address lock kar dein. Baaki ₹${remaining} delivery pe hi dena hai!`;
 
     document.getElementById('tlWaMessage').textContent = msg;
-    document.getElementById('tlRazorpayLink').textContent = `https://rzp.io/l/shipvera_tl_${order.id.slice(0, 6)}`;
+    document.getElementById('tlRazorpayLink').textContent = `https://rzp.io/l/trustorder_tl_${order.id.slice(0, 6)}`;
     document.getElementById('tlShopifyNote').textContent = `Prepaid Token: ₹19 | Remaining COD: ₹${remaining}`;
 
     document.getElementById('trustLockModal').classList.add('open');
@@ -995,7 +996,7 @@ function openBackendConfigModal() {
     if (input) {
         const currentUrl = (window.ShipveraConfig && typeof window.ShipveraConfig.getBackendBaseUrl === 'function')
             ? window.ShipveraConfig.getBackendBaseUrl()
-            : (localStorage.getItem('SHIPVERA_BACKEND_URL') || 'https://shipvera-backend.onrender.com');
+            : ((localStorage.getItem('TRUSTORDER_BACKEND_URL') || localStorage.getItem('SHIPVERA_BACKEND_URL')) || 'https://trustorder-backend.onrender.com');
         input.value = currentUrl;
     }
 
@@ -1016,7 +1017,7 @@ async function testBackendConnection() {
     const details = document.getElementById('bprDetails');
 
     if (!input || !resultBox) return;
-    const testUrl = input.value.trim() || 'https://shipvera-backend.onrender.com';
+    const testUrl = input.value.trim() || 'https://trustorder-backend.onrender.com';
 
     btn.disabled = true;
     btn.innerHTML = '<span>Pinging...</span>';
@@ -1037,7 +1038,7 @@ async function testBackendConnection() {
             const feats = ping.data.features || {};
             details.innerHTML = `
                 <div style="margin-top: 6px; line-height: 1.5; font-size: 0.8rem; color: #18181B;">
-                    <strong>Platform:</strong> ${ping.data.platform || 'Shipvera Voice AI Engine'}<br>
+                    <strong>Platform:</strong> ${ping.data.platform || 'TrustOrder Voice AI Engine'}<br>
                     <strong>Brand:</strong> ${seller.brand || 'Enterprise Workspace'}<br>
                     <strong>Wallet Balance:</strong> ${seller.wallet_balance || '₹0.00'} (${seller.available_verifications || 0} verifications)<br>
                     <strong>Voice AI Telephony:</strong> <span style="color: #058A5E;">${feats.landmark_interrogator_voice_ai || 'Active'}</span><br>
@@ -1073,14 +1074,14 @@ function saveBackendConfiguration() {
 
     const newUrl = input.value.trim();
     if (!newUrl) {
-        alert('Please enter a valid Render service URL (e.g., https://shipvera-backend.onrender.com)');
+        alert('Please enter a valid Render service URL (e.g., https://trustorder-backend.onrender.com)');
         return;
     }
 
     if (window.ShipveraConfig && typeof window.ShipveraConfig.setBackendUrl === 'function') {
         window.ShipveraConfig.setBackendUrl(newUrl);
     } else {
-        localStorage.setItem('SHIPVERA_BACKEND_URL', newUrl);
+        localStorage.setItem('TRUSTORDER_BACKEND_URL', newUrl); localStorage.setItem('SHIPVERA_BACKEND_URL', newUrl);
     }
 
     closeBackendConfigModal();
@@ -1111,11 +1112,11 @@ function openShopifyModal() {
     if (webhookInput) {
         const base = (window.ShipveraConfig && typeof window.ShipveraConfig.getBackendBaseUrl === 'function')
             ? window.ShipveraConfig.getBackendBaseUrl()
-            : (localStorage.getItem('SHIPVERA_BACKEND_URL') || window.location.origin);
+            : ((localStorage.getItem('TRUSTORDER_BACKEND_URL') || localStorage.getItem('SHIPVERA_BACKEND_URL')) || window.location.origin);
         webhookInput.value = `${base}/api/webhooks/shopify/orders-create`;
     }
 
-    const savedDomain = localStorage.getItem('shipvera_shopify_domain') || '';
+    const savedDomain = (localStorage.getItem('trustorder_shopify_domain') || localStorage.getItem('shipvera_shopify_domain')) || '';
     const domainInput = document.getElementById('shopifyDomainInput');
     if (domainInput && !domainInput.value) {
         domainInput.value = savedDomain;
@@ -1170,7 +1171,7 @@ async function executeOneClickShopify() {
     const domainInput = document.getElementById('shopifyDomainInput');
     const tokenInput = document.getElementById('shopifyTokenInput');
 
-    const domain = (domainInput && domainInput.value.trim()) || localStorage.getItem('shipvera_shopify_domain') || '';
+    const domain = (domainInput && domainInput.value.trim()) || (localStorage.getItem('trustorder_shopify_domain') || localStorage.getItem('shipvera_shopify_domain')) || '';
     const token = (tokenInput && tokenInput.value.trim()) || '';
 
     if (!domain || !token) {
@@ -1225,7 +1226,7 @@ async function executeOneClickShopify() {
             if (desc) {
                 desc.textContent = `Auto-syncing real-time COD checkouts from ${data.shopify_domain}`;
             }
-            localStorage.setItem('shipvera_shopify_domain', data.shopify_domain);
+            localStorage.setItem('trustorder_shopify_domain', data.shopify_domain); localStorage.setItem('shipvera_shopify_domain', data.shopify_domain);
 
             setTimeout(() => {
                 closeShopifyModal();
@@ -1326,7 +1327,7 @@ async function saveShopifyConnection() {
             if (desc) {
                 desc.textContent = `Auto-syncs shipping labels via official webhook from ${data.shopify_domain}`;
             }
-            localStorage.setItem('shipvera_shopify_domain', data.shopify_domain);
+            localStorage.setItem('trustorder_shopify_domain', data.shopify_domain); localStorage.setItem('shipvera_shopify_domain', data.shopify_domain);
             setTimeout(() => {
                 closeShopifyModal();
             }, 1200);
@@ -1373,7 +1374,7 @@ function openLogisticsModal() {
     if (btn) btn.disabled = false;
     if (btnText) btnText.textContent = '⚡ Activate 1-Click Courier Sync (Boom!) →';
 
-    const savedProvider = localStorage.getItem('shipvera_logistics_provider') || 'shiprocket';
+    const savedProvider = (localStorage.getItem('trustorder_logistics_provider') || localStorage.getItem('shipvera_logistics_provider')) || 'shiprocket';
     selectLogisticsProvider(savedProvider);
 
     modal.classList.add('open');
@@ -1445,8 +1446,8 @@ async function executeOneClickLogistics() {
             if (desc) {
                 desc.textContent = '1-Click Synced: Verified landmarks auto-print on Shiprocket & Delhivery AWB labels';
             }
-            localStorage.setItem('shipvera_logistics_provider', 'shopify_native');
-            localStorage.setItem('shipvera_logistics_name', '1-Click Courier Sync');
+            localStorage.setItem('trustorder_logistics_provider', 'shopify_native'); localStorage.setItem('shipvera_logistics_provider', 'shopify_native');
+            localStorage.setItem('trustorder_logistics_name', '1-Click Courier Sync'); localStorage.setItem('shipvera_logistics_name', '1-Click Courier Sync');
 
             setTimeout(() => {
                 closeLogisticsModal();
@@ -1548,8 +1549,8 @@ async function saveLogisticsConnection() {
             if (desc) {
                 desc.textContent = `Auto-rewrites verified landmarks onto ${data.providerName} AWB labels before pickup`;
             }
-            localStorage.setItem('shipvera_logistics_provider', selectedLogisticsProvider);
-            localStorage.setItem('shipvera_logistics_name', data.providerName);
+            localStorage.setItem('trustorder_logistics_provider', selectedLogisticsProvider); localStorage.setItem('shipvera_logistics_provider', selectedLogisticsProvider);
+            localStorage.setItem('trustorder_logistics_name', data.providerName); localStorage.setItem('shipvera_logistics_name', data.providerName);
             
             setTimeout(() => {
                 closeLogisticsModal();

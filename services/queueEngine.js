@@ -1,5 +1,5 @@
 /**
- * Shipvera Autonomous Background Queue Engine
+ * TrustOrder Autonomous Background Queue Engine
  * Billionaire Backend Architecture:
  * - 45s SLA Intentional Delay (Order placed -> wait 45s so customer puts phone down -> trigger voice call)
  * - TRAI Night Window Compliance Deferral (9:30 PM - 8:30 AM IST -> Auto-schedule 9:00 AM batch)
@@ -59,7 +59,7 @@ class QueueEngine {
   startWorker(pollIntervalMs = 2500) {
     if (this.isRunning) return;
     this.isRunning = true;
-    console.log(`[QUEUE] Shipvera Autonomous Queue Worker started (polling every ${pollIntervalMs}ms)`);
+    console.log(`[QUEUE] TrustOrder Autonomous Queue Worker started (polling every ${pollIntervalMs}ms)`);
 
     this.intervalId = setInterval(async () => {
       try {
@@ -144,7 +144,7 @@ class QueueEngine {
     console.log(`[QUEUE EXEC] Firing outbound voice interrogation for Order ${order.external_order_id} (Attempt ${job.attempts + 1})`);
 
     // Automated path is LIVE by default. triggerOutboundCall only
-    // simulates when SHIPVERA_ALLOW_SIMULATED_CALLS=true is set
+    // simulates when TRUSTORDER_ALLOW_SIMULATED_CALLS=true or SHIPVERA_ALLOW_SIMULATED_CALLS=true is set
     // explicitly for local testing; otherwise a live Bolna call is placed.
     let callResult;
     try {

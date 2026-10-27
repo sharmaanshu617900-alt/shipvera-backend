@@ -4,13 +4,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shipvera — Dispatch Intelligence & COD Verification</title>
+    <title>TrustOrder — Dispatch Intelligence & COD Verification</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
         href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
         rel="stylesheet">
-    <link rel="icon" type="image/png" href="assets/shipvera_icon.png">
+    <link rel="icon" type="image/jpeg" href="assets/trustorder_logo.jpg">
     <link rel="stylesheet" href="dashboard.css?v=3.0">
 </head>
 
@@ -20,13 +20,13 @@
     <header class="dash-header">
         <div class="dash-header-inner">
             <div class="dash-brand-wrap">
-                <a href="/" class="dash-logo" aria-label="Shipvera Home"
+                <a href="/" class="dash-logo" aria-label="TrustOrder Home"
                     style="display: flex; align-items: center; gap: 8px; text-decoration: none;">
-                    <img src="assets/shipvera_icon_transparent.png" alt="Shipvera Icon" width="28" height="28"
-                        style="border-radius: 7px; object-fit: contain;">
+                    <img src="assets/trustorder_logo.jpg" alt="TrustOrder Icon" width="28" height="28"
+                        style="border-radius: 7px; object-fit: cover;">
                     <span
-                        style="font-size: 1.25rem; font-weight: 800; letter-spacing: -0.03em; color: #0F172A; font-family: 'Plus Jakarta Sans', sans-serif;">ship<span
-                            style="color: #058A5E;">vera</span></span>
+                        style="font-size: 1.25rem; font-weight: 800; letter-spacing: -0.03em; color: var(--ink, #17130F); font-family: 'Plus Jakarta Sans', sans-serif;">Trust<span
+                            style="color: var(--oxblood, #6B1228);">Order</span></span>
                 </a>
 
                 <div class="header-divider"></div>
@@ -62,7 +62,7 @@
 
                 <!-- Active Founder / Workspace Indicator -->
                 <div class="dash-profile-pill" id="profilePill" title="Active Workspace Account">
-                    <div class="dpp-avatar" id="dppAvatar">SV</div>
+                    <div class="dpp-avatar" id="dppAvatar">TO</div>
                     <div class="dpp-info">
                         <span class="dpp-name" id="dppFounderName">Merchant</span>
                         <span class="dpp-status">● Live Protected</span>
@@ -70,7 +70,7 @@
                 </div>
 
                 <a href="/signup" class="dash-exit-btn"
-                    style="background: #F0FDF4; color: #058A5E; border-color: #BBF7D0; font-weight: 600;">+ New
+                    style="background: var(--oxblood-soft, #FBE9EC); color: var(--oxblood, #6B1228); border-color: var(--border, #E8DDD6); font-weight: 600;">+ New
                     Store</a>
                 <a href="/" class="dash-exit-btn">Exit</a>
             </div>
@@ -292,7 +292,7 @@
             <div class="modal-header">
                 <div>
                     <h3 class="modal-title">Quick-Paste Order</h3>
-                    <p class="modal-subtitle">Paste unformatted customer WhatsApp or Instagram chat text. Shipvera
+                    <p class="modal-subtitle">Paste unformatted customer WhatsApp or Instagram chat text. TrustOrder
                         extracts details and queues verification.</p>
                 </div>
                 <button class="modal-close-btn" onclick="closeQuickPasteModal()" aria-label="Close modal">×</button>
@@ -327,7 +327,7 @@
             <div class="modal-header">
                 <div>
                     <h3 class="modal-title" id="transcriptModalTitle">Call Recording & Dialogue</h3>
-                    <p class="modal-subtitle" id="transcriptModalSub">Shipvera AI Dispatch Verification</p>
+                    <p class="modal-subtitle" id="transcriptModalSub">TrustOrder AI Dispatch Verification</p>
                 </div>
                 <button class="modal-close-btn" onclick="closeTranscriptModal()" aria-label="Close modal">×</button>
             </div>
@@ -340,7 +340,7 @@
                             </svg>
                         </button>
                         <div class="mab-meta">
-                            <span class="mab-call-title" id="mabCallTitle">Call Recording // Shipvera AI & Buyer</span>
+                            <span class="mab-call-title" id="mabCallTitle">Call Recording // TrustOrder AI & Buyer</span>
                             <span class="mab-call-time" id="mabCallDuration">0:24 • Sarvam Bulbul Audio</span>
                         </div>
                     </div>
@@ -514,7 +514,7 @@
                 <div class="tl-details-grid">
                     <div class="tl-detail-card">
                         <span class="tl-dc-label">Dynamic Payment Link</span>
-                        <code id="tlRazorpayLink" class="tl-dc-link">https://rzp.io/l/shipvera_tl_9872</code>
+                        <code id="tlRazorpayLink" class="tl-dc-link">https://rzp.io/l/trustorder_tl_9872</code>
                     </div>
                     <div class="tl-detail-card">
                         <span class="tl-dc-label">Shopify Order Note</span>
@@ -538,7 +538,7 @@
             <div class="modal-header">
                 <div>
                     <h3 class="modal-title">Render Cloud Backend Connection</h3>
-                    <p class="modal-subtitle">Connect your Shipvera dashboard to your deployed Render backend for live
+                    <p class="modal-subtitle">Connect your TrustOrder dashboard to your deployed Render backend for live
                         order verification, Bolna Voice AI & Shopify sync.</p>
                 </div>
                 <button class="modal-close-btn" onclick="closeBackendConfigModal()" aria-label="Close modal">×</button>
@@ -548,12 +548,12 @@
                     <label class="modal-label" for="backendUrlInput">Render Backend Service URL:</label>
                     <div class="bcm-input-wrap">
                         <input type="url" id="backendUrlInput" class="modal-input"
-                            placeholder="https://shipvera-backend.onrender.com" spellcheck="false" autocomplete="off">
+                            placeholder="https://trustorder-backend.onrender.com" spellcheck="false" autocomplete="off">
                         <button class="btn-bcm-test" id="btnTestBackend" onclick="testBackendConnection()">
                             <span>Ping Health</span>
                         </button>
                     </div>
-                    <span class="bcm-hint">Default: <code>https://shipvera-backend.onrender.com</code> (or paste your
+                    <span class="bcm-hint">Default: <code>https://trustorder-backend.onrender.com</code> (or paste your
                         custom Render URL).</span>
                 </div>
 
@@ -583,7 +583,7 @@
                 <div class="bcm-presets">
                     <span class="bcm-presets-label">Quick Presets:</span>
                     <button class="bcm-preset-btn"
-                        onclick="applyBackendPreset('https://shipvera-backend.onrender.com')">Render Cloud
+                        onclick="applyBackendPreset('https://trustorder-backend.onrender.com')">Render Cloud
                         (Default)</button>
                     <button class="bcm-preset-btn" onclick="applyBackendPreset('http://localhost:3000')">Localhost (Port
                         3000)</button>
@@ -644,7 +644,7 @@
                     <div class="bcm-form-group">
                         <label class="modal-label">1. Official Shopify Orders Webhook URL:</label>
                         <div class="bcm-input-wrap">
-                            <input type="text" id="shopifyWebhookInput" class="modal-input" readonly value="https://shipvera-backend.onrender.com/api/webhooks/shopify/orders-create" style="background: #F8FAFC; font-family: monospace; font-size: 0.8rem; color: #0F172A;">
+                            <input type="text" id="shopifyWebhookInput" class="modal-input" readonly value="https://trustorder-backend.onrender.com/api/webhooks/shopify/orders-create" style="background: #F8FAFC; font-family: monospace; font-size: 0.8rem; color: #0F172A;">
                             <button class="btn-bcm-test" id="btnCopyShopifyWebhook" onclick="copyShopifyWebhookUrl()">
                                 <span>Copy URL</span>
                             </button>
@@ -704,7 +704,7 @@
                             <span class="odb-store-domain">Shiprocket • Delhivery • NimbusPost • Bluedart</span>
                         </div>
                     </div>
-                    <p class="odb-pitch">Your courier aggregator is already connected to Shopify. Shipvera automatically rewrites verified rooftop landmarks directly onto Shopify orders, so your courier shipping labels print with verified landmarks automatically. <strong>Zero courier API keys required!</strong></p>
+                    <p class="odb-pitch">Your courier aggregator is already connected to Shopify. TrustOrder automatically rewrites verified rooftop landmarks directly onto Shopify orders, so your courier shipping labels print with verified landmarks automatically. <strong>Zero courier API keys required!</strong></p>
                     <button class="btn-oneclick-connect" id="btnOneClickLogistics" onclick="executeOneClickLogistics()" style="background: #2563EB;">
                         <span id="btnOneClickLogisticsText">⚡ Activate 1-Click Courier Sync (Boom!) →</span>
                     </button>
@@ -803,9 +803,9 @@
 
                         <!-- Shopify Native Sync Fields -->
                         <div id="lpFieldsShopifyNative" style="display: none;">
-                            <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 8px; padding: 14px; color: #166534; font-size: 0.84rem; line-height: 1.5;">
+                            <div style="background: var(--oxblood-soft, #FBE9EC); border: 1px solid var(--border, #E8DDD6); border-radius: 8px; padding: 14px; color: var(--oxblood, #6B1228); font-size: 0.84rem; line-height: 1.5;">
                                 <strong>No external API key needed!</strong><br>
-                                Shipvera will directly update the <code>shipping_address.address2</code> and order notes in your connected Shopify store. Whichever app you use (Shiprocket, Delhivery, Bluedart, or Shipway), it will automatically import the modified verified address and print it on the label!
+                                TrustOrder will directly update the <code>shipping_address.address2</code> and order notes in your connected Shopify store. Whichever app you use (Shiprocket, Delhivery, Bluedart, or Shipway), it will automatically import the modified verified address and print it on the label!
                             </div>
                         </div>
                     </div>

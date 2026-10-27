@@ -1,5 +1,5 @@
 /**
- * Shipvera Shopify Admin Integration Client
+ * TrustOrder Shopify Admin Integration Client
  * Production-ready REST & GraphQL connector
  * Auto-syncs cleaned addresses, tags, and cancellation triggers directly into Shopify.
  */
@@ -51,7 +51,7 @@ async function updateShopifyOrderAddress({ shopifyDomain, accessToken, externalO
         zip: shippingAddress.zip
       },
       tags: Array.isArray(tags) ? tags.join(', ') : tags,
-      note: note || 'Verified & Cleaned by Shipvera Voice AI'
+      note: note || 'Verified & Cleaned by TrustOrder Voice AI'
     }
   };
 
@@ -122,7 +122,7 @@ async function cancelShopifyOrder({ shopifyDomain, accessToken, externalOrderId,
   const payload = {
     reason,
     email: false,
-    note: 'Cancelled by Shipvera AI: Buyer confirmed cancellation during dispatch phone call.'
+    note: 'Cancelled by TrustOrder AI: Buyer confirmed cancellation during dispatch phone call.'
   };
 
   const postData = JSON.stringify(payload);

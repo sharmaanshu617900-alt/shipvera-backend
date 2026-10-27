@@ -1,5 +1,5 @@
 /**
- * Shipvera 4 Core Backend Features Validation Script
+ * TrustOrder 4 Core Backend Features Validation Script
  * Tests:
  * 1. Shopify Webhook 60s Ingestion & COD Filter
  * 2. Hinglish Voice AI Landmark Interrogator Prompt & Payload
@@ -15,7 +15,7 @@ const { sanitizeAddress } = require('../services/geoSanitizer');
 
 async function runValidation() {
   console.log('========================================================');
-  console.log('🧪 SHIPVERA 4 CORE BACKEND FEATURES AUDIT & VERIFICATION');
+  console.log('🧪 TRUSTORDER 4 CORE BACKEND FEATURES AUDIT & VERIFICATION');
   console.log('========================================================\n');
 
   // Ensure test seller exists with valid balance for testing
@@ -93,11 +93,11 @@ async function runValidation() {
     missingFields: order.missing_fields.join(', ')
   });
 
-  const hasHinglish = systemPrompt.includes('dispatch desk se Shipvera AI bol raha hoon') &&
+  const hasHinglish = (systemPrompt.includes('TrustOrder AI bol raha hoon') || systemPrompt.includes('Shipvera AI bol raha hoon')) &&
                       systemPrompt.includes('aas-paas konsi mashhoor dukaan, mandir ya makan ka number');
   console.log(`   ✓ Colloquial Hinglish Dialog Persona: ${hasHinglish ? 'PASS (100% Native Hinglish)' : 'FAIL'}`);
   console.log(`   ✓ Strict 2-Sentence Constraint Included: ${systemPrompt.includes('Never speak long paragraphs') ? 'PASS' : 'FAIL'}`);
-  console.log(`   ✓ Sample Greeting Preview: "Namaste ${order.buyer_name} ji! Main Snitch Apparel ke dispatch desk se Shipvera AI bol raha hoon..."\n`);
+  console.log(`   ✓ Sample Greeting Preview: "Namaste ${order.buyer_name} ji! Main Snitch Apparel ke dispatch desk se TrustOrder AI bol raha hoon..."\n`);
 
   // --- FEATURE 3: Courier Label Rewrite (Shopify & Shiprocket) ---
   console.log('🔹 [3/4] Testing Courier Label AWB Rewrite Brain:');

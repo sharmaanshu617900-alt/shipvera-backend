@@ -1,5 +1,5 @@
 /**
- * Shipvera WhatsApp Business Service
+ * TrustOrder WhatsApp Business Service
  * Integrates with Meta WhatsApp Cloud API & Indian BSPs (AiSensy / Interakt / Gupshup)
  * Used for Feature 4: ₹19 Trust Lock & Address Confirmation Messages
  */
@@ -35,7 +35,7 @@ async function sendWhatsAppTrustLock({ buyerPhone, buyerName, codAmount, tokenAm
     to: phone,
     type: 'template',
     template: {
-      name: process.env.WHATSAPP_TEMPLATE_NAME || 'shipvera_trust_lock',
+      name: process.env.WHATSAPP_TEMPLATE_NAME || 'trustorder_trust_lock',
       language: { code: 'en' },
       components: [
         {
