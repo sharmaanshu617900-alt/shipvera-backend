@@ -9,13 +9,13 @@
     --bg-card: #FFFFFF;
     
     /* Emerald Spectrum */
-    --emerald-deepest: #01120B;
-    --emerald-dark: #032014;
-    --emerald-mid: #053322;
-    --emerald-primary: #058A5E;
-    --emerald-accent: #10B981;
-    --emerald-mint: #34D399;
-    --emerald-tint: #ECFDF5;
+    --emerald-deepest: #2A0810;
+    --emerald-dark: #4E0D1E;
+    --emerald-mid: #6B1228;
+    --emerald-primary: #6B1228;
+    --emerald-accent: #B9975B;
+    --emerald-mint: #6B1228;
+    --emerald-tint: #FBE9EC;
     
     /* Daylight Neutrals */
     --text-primary: #0F172A;
@@ -703,8 +703,8 @@ html, body {
 }
 
 .auth-alert.success {
-    background: #ECFDF5;
-    border: 1px solid #A7F3D0;
+    background: #FBE9EC;
+    border: 1px solid #E8DDD6;
     color: #065F46;
 }
 
