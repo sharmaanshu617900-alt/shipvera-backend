@@ -74,11 +74,11 @@ app.post('/api/waitlist', (req, res) => {
     const seller = db.getSeller();
     res.status(200).json({
       success: true,
-      message: 'Early access reserved! Zero monthly software fees. Pure ₹6/order pay-as-you-go.',
+      message: 'Early access reserved! Zero monthly software fees. Paid trial ₹99 / 10 credits / 14 days, no free credits; voice ₹12 ex-GST, OTP ₹3 ex-GST.',
       lead: { phone, name, email, volume, source },
       wallet: {
         balance_inr: seller.wallet_balance_inr,
-        available_verifications: Math.floor(seller.wallet_balance_inr / 6)
+        available_verifications: Math.floor(seller.wallet_balance_inr / 12)
       }
     });
   } catch (err) {
@@ -97,8 +97,8 @@ app.get('/api/health', (req, res) => {
     seller: {
       brand: seller.brand_name,
       wallet_balance: `₹${seller.wallet_balance_inr}`,
-      available_verifications: Math.floor(seller.wallet_balance_inr / 6),
-      pricing_model: 'Pure Pay-As-You-Go (₹6/Order)'
+      available_verifications: Math.floor(seller.wallet_balance_inr / 12),
+      pricing_model: 'PAYG voice ₹12 ex-GST, OTP ₹3 ex-GST, trial ₹99 / 10 credits / 14 days, no free credits'
     },
     features: {
       pre_call_geo_sanitizer: 'active (Google Maps Geocoding REST API)',

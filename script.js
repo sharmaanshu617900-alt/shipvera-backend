@@ -428,11 +428,13 @@ window.updateCalculator = function() {
     const returnedOrders = Math.round(orders * (rtoRate / 100));
     const monthlyBurn = returnedOrders * lossPerReturn;
 
-    // Shipvera cuts RTO by 70%
-    const monthlySavings = Math.round(monthlyBurn * 0.70);
-    const toolCost = orders * 6; // ₹6 per verified order
-    const netProfit = monthlySavings - toolCost;
-    const roiMultiplier = (monthlySavings / (toolCost || 1)).toFixed(1);
+    // No RTO-reduction percentage is promised here: the old code hard-coded
+    // a fixed-percentage saving. This box now shows only the input-driven burn and the
+    // locked PAYG tool cost, and is labelled illustrative on the page.
+    const toolCost = orders * 12; // PAYG voice ₹12 ex-GST per call
+    const monthlySavings = toolCost; // placeholder so the box shows tool cost, not a saving
+    const netProfit = 0;
+    const roiMultiplier = '0.0';
 
     const fmtBurn = '₹' + monthlyBurn.toLocaleString('en-IN');
     const fmtSaved = '₹' + monthlySavings.toLocaleString('en-IN');
@@ -442,9 +444,9 @@ window.updateCalculator = function() {
     if (burningAmount) burningAmount.textContent = fmtBurn;
     if (burningOrders) burningOrders.textContent = `${returnedOrders.toLocaleString('en-IN')} failed deliveries/mo`;
     if (savedAmount) savedAmount.textContent = fmtSaved;
-    if (netRoiText) netRoiText.textContent = `${roiMultiplier}x ROI • ₹${netProfit.toLocaleString('en-IN')} net margin recovered`;
+    if (netRoiText) netRoiText.textContent = `Illustrative tool cost only • Voice ₹12 ex-GST, OTP ₹3 ex-GST • No reduction % promised`;
     if (calcCtaBtn) {
-        calcCtaBtn.innerHTML = `<span>Claim Your ${fmtSaved} Monthly Savings →</span>`;
+        calcCtaBtn.innerHTML = `<span>Start ₹99 Trial →</span>`;
     }
 };
 

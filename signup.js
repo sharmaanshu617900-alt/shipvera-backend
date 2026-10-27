@@ -245,8 +245,8 @@ function toggleAuthMode() {
         if (document.getElementById('sellerPhone')) document.getElementById('sellerPhone').required = false;
     } else {
         formHeading.textContent = 'Create your seller workspace';
-        formSubheading.textContent = 'Pure Pay-As-You-Go billing. No monthly software retainer. Billed strictly ₹6 per verified order.';
-        btnText.textContent = 'Create Workspace — ₹0 Upfront →';
+        formSubheading.textContent = 'Paid trial ₹99 / 10 credits / 14 days / 1 per store. No free credits. Voice ₹12 ex-GST, OTP ₹3 ex-GST.';
+        btnText.textContent = 'Create Workspace — ₹99 Trial →';
         toggleLink.textContent = 'Sign In';
         switchPrompt.textContent = 'Already have a seller account?';
         if (dividerText) dividerText.textContent = 'Or register with work email';
@@ -329,7 +329,7 @@ async function handleAuthSubmit(event) {
             alertBox.style.display = 'block';
             alertBox.textContent = data.error || 'Authentication failed. Please verify your credentials.';
             btn.disabled = false;
-            btnText.textContent = isLoginMode ? 'Sign In to Workspace →' : 'Create Workspace — ₹0 Upfront →';
+            btnText.textContent = isLoginMode ? 'Sign In to Workspace →' : 'Create Workspace — ₹99 Trial →';
         }
 
     } catch (err) {
@@ -337,7 +337,7 @@ async function handleAuthSubmit(event) {
         alertBox.style.display = 'block';
         alertBox.textContent = `Backend notice: ${err.message}. If the server is restarting, please retry in a few seconds.`;
         btn.disabled = false;
-        btnText.textContent = isLoginMode ? 'Sign In to Workspace →' : 'Create Workspace — ₹0 Upfront →';
+        btnText.textContent = isLoginMode ? 'Sign In to Workspace →' : 'Create Workspace — ₹99 Trial →';
     }
 }
 
