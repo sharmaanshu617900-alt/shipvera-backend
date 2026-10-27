@@ -65,7 +65,7 @@
                     <div class="dpp-avatar" id="dppAvatar">SV</div>
                     <div class="dpp-info">
                         <span class="dpp-name" id="dppFounderName">Merchant</span>
-                        <span class="dpp-status">● Live Protected</span>
+                        <span class="dpp-status" id="dppStatus">● Not connected yet</span>
                     </div>
                 </div>
 
@@ -107,15 +107,6 @@
                     </svg>
                     <span>Quick-Paste Order</span>
                 </button>
-                <button class="btn-dab btn-ghost" onclick="simulateShopifyOrder()">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                        <polyline points="7 10 12 15 17 10" />
-                        <line x1="12" y1="15" x2="12" y2="3" />
-                    </svg>
-                    <span>Simulate Incoming Order</span>
-                </button>
             </div>
         </section>
 
@@ -133,11 +124,10 @@
                 </div>
                 <div>
                     <strong>Wallet Balance: ₹0.00 (Pure Pay-As-You-Go Mode)</strong>
-                    <p>Automated buyer verification calls are on standby. Add funds to verify COD orders at ₹6.00 per
-                        connected call.</p>
+                    <p>Automated buyer verification calls are on standby. Add funds to verify COD orders at ₹12.00 ex-GST per connected voice call (OTP ₹3 ex-GST).</p>
                 </div>
             </div>
-            <button class="btn-recharge-urgent" onclick="openRechargeModal()">Add Funds (₹999) →</button>
+            <button class="btn-recharge-urgent" onclick="openRechargeModal()">Add Funds →</button>
         </div>
 
         <!-- 4 Key Institutional Metric Cards -->
@@ -145,7 +135,7 @@
             <div class="dash-metric-card">
                 <div class="dmc-top">
                     <span class="dmc-label">Orders Evaluated</span>
-                    <span class="dmc-pill" id="metricInspectedPill">100% Inspected</span>
+                    <span class="dmc-pill" id="metricInspectedPill">No orders yet</span>
                 </div>
                 <div class="dmc-value" id="metricTotalOrders">0</div>
                 <div class="dmc-sub" id="metricOrdersSub">Assessed before courier label printing</div>
@@ -163,7 +153,7 @@
             <div class="dash-metric-card">
                 <div class="dmc-top">
                     <span class="dmc-label">RTO Reduction Rate</span>
-                    <span class="dmc-pill" id="metricRtoPill">Active</span>
+                    <span class="dmc-pill" id="metricRtoPill">No data yet</span>
                 </div>
                 <div class="dmc-value" id="metricRtoCut">0%</div>
                 <div class="dmc-sub" id="metricRtoSub">Based on verified address dispatches</div>
@@ -174,8 +164,8 @@
                     <span class="dmc-label">Pricing Rate</span>
                     <span class="dmc-pill">No Retainer</span>
                 </div>
-                <div class="dmc-value">₹6.00</div>
-                <div class="dmc-sub">Billed strictly per completed phone verification</div>
+                <div class="dmc-value">₹12.00</div>
+                <div class="dmc-sub">Voice ₹12 ex-GST; OTP ₹3 ex-GST. Charged only on a connected call or a verified OTP step. All prices +18% GST.</div>
             </div>
         </section>
 
@@ -189,7 +179,7 @@
                 <div class="dib-info">
                     <div class="dib-title-row">
                         <strong>Shopify Store Webhook</strong>
-                        <span class="dib-status-tag active" id="shopifyWebhookTag">Active</span>
+                        <span class="dib-status-tag" id="shopifyWebhookTag">Not connected yet</span>
                         <span class="dib-manage-hint">Manage ⚙</span>
                     </div>
                     <span class="dib-desc" id="shopifyDomainDisplay">Auto-syncs shipping labels via official webhook on
@@ -226,7 +216,7 @@
                 <div class="dib-info">
                     <div class="dib-title-row">
                         <strong>60-Second Hinglish Dialer</strong>
-                        <span class="dib-status-tag green">₹6.00 / Call</span>
+                        <span class="dib-status-tag green">₹12.00 ex-GST / voice call</span>
                         <span class="dib-manage-hint">Test ⚡</span>
                     </div>
                     <span class="dib-desc">Confirms buyer intent within 60 seconds to auto-cancel fake COD orders</span>
@@ -370,42 +360,52 @@
             <div class="modal-header">
                 <div>
                     <h3 class="modal-title">Wallet Recharge</h3>
-                    <p class="modal-subtitle">Pay-As-You-Go. ₹6.00 deducted only on completed phone connections.</p>
+                    <p class="modal-subtitle">Pay-As-You-Go. Voice ₹12.00 ex-GST deducted only on a connected call; OTP ₹3 ex-GST. All prices +18% GST. Payments are coming soon — Razorpay approval is pending, so no payment is taken from this screen until Razorpay is activated.</p>
                 </div>
                 <button class="modal-close-btn" onclick="closeRechargeModal()" aria-label="Close modal">×</button>
             </div>
             <div class="modal-body">
+                <p id="razorpayPendingNotice" style="background:#FBE9EC;border:1px solid #E8DDD6;border-radius:8px;padding:12px;font-size:0.85rem;color:#6B1228;">Payments coming soon — Razorpay approval pending. No payment will be taken from this screen until Razorpay is activated.</p>
                 <div class="recharge-cards-grid">
-                    <div class="recharge-card" onclick="selectRechargePack('starter', 999)">
+                    <div class="recharge-card" onclick="selectRechargePack('voice100', 999)">
                         <div class="rc-radio-row">
-                            <input type="radio" name="rechargePack" id="packStarter" value="starter">
-                            <label for="packStarter" class="rc-title">Starter Pack</label>
+                            <input type="radio" name="rechargePack" id="packStarter" value="voice100">
+                            <label for="packStarter" class="rc-title">Voice Pack — 100</label>
                         </div>
                         <div class="rc-price">₹999</div>
-                        <div class="rc-desc">180 Verified Orders (Effective <strong>₹5.50/Order</strong>)</div>
+                        <div class="rc-desc">100 voice credits (voice pack)</div>
                     </div>
 
-                    <div class="recharge-card selected" onclick="selectRechargePack('growth', 2999)">
+                    <div class="recharge-card selected" onclick="selectRechargePack('voice500', 4499)">
                         <div class="rc-popular-tag">MOST POPULAR</div>
                         <div class="rc-radio-row">
-                            <input type="radio" name="rechargePack" id="packGrowth" value="growth" checked>
-                            <label for="packGrowth" class="rc-title">Growth Pack</label>
+                            <input type="radio" name="rechargePack" id="packGrowth" value="voice500" checked>
+                            <label for="packGrowth" class="rc-title">Voice Pack — 500</label>
                         </div>
-                        <div class="rc-price">₹2,999</div>
-                        <div class="rc-desc">600 Verified Orders (Effective <strong>₹5.00/Order</strong>)</div>
+                        <div class="rc-price">₹4,499</div>
+                        <div class="rc-desc">500 voice credits (voice pack)</div>
                     </div>
                 </div>
 
+                    <div class="recharge-card" onclick="selectRechargePack('voice1000', 7999)">
+                        <div class="rc-radio-row">
+                            <input type="radio" name="rechargePack" id="packScale" value="voice1000">
+                            <label for="packScale" class="rc-title">Voice Pack — 1,000</label>
+                        </div>
+                        <div class="rc-price">₹7,999</div>
+                        <div class="rc-desc">1,000 voice credits (voice pack)</div>
+                    </div>
+
                 <div class="recharge-trust-notes">
-                    <span>• Failed carrier connections = ₹0.00 charge</span>
-                    <span>• Balance never expires</span>
-                    <span>• Automated GST invoice issued</span>
+                    <span>• Unanswered / failed connections are not charged as a connected call</span>
+                    <span>• Pack and subscription terms are on the pricing page; maximum rollover is 50 credits</span>
+                    <span>• All prices shown are +18% GST</span>
                 </div>
             </div>
             <div class="modal-footer">
                 <button class="btn-modal btn-cancel" onclick="closeRechargeModal()">Cancel</button>
                 <button class="btn-modal btn-confirm" id="btnConfirmRecharge" onclick="executeRecharge()">
-                    <span>Pay ₹2,999 & Activate Credits →</span>
+                    <span>Pay ₹4,499 & Activate Credits →</span>
                 </button>
             </div>
         </div>
@@ -524,9 +524,7 @@
             </div>
             <div class="modal-footer">
                 <button class="btn-modal btn-cancel" onclick="closeTrustLockModal()">Close</button>
-                <button class="btn-modal btn-confirm" id="btnSimulatePayment" onclick="simulateTrustLockPayment()">
-                    <span>Simulate Token Payment →</span>
-                </button>
+                    <p style="font-size:0.85rem;color:#5C534D;">A Trust Lock payment is confirmed only by a real Razorpay webhook. No simulated payment is offered in production.</p>
             </div>
         </div>
     </div>
@@ -619,7 +617,7 @@
                             <img src="https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/shopify.svg" alt="Shopify" width="22" height="22">
                         </div>
                         <div class="odb-text">
-                            <span class="odb-detected-badge">⚡ Auto-Detected Active Store</span>
+                            <span class="odb-detected-badge">⚡ Store connection — check status below</span>
                             <div class="odb-store-name" id="odbStoreName">Snitch Apparel & Streetwear</div>
                             <span class="odb-store-domain" id="odbStoreDomain">snitch-streetwear.myshopify.com</span>
                         </div>

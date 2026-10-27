@@ -4,6 +4,10 @@
  * Connected to Render Cloud Backend (/api/orders, /api/analytics, /api/wallet, /api/calls/trigger)
  */
 
+// TrustOrder website-fix: simulation is OFF by default in production.
+// A simulation runs ONLY if the page explicitly sets
+// window.TRUSTORDER_ALLOW_SIMULATION = true (local dev only).
+// Never set that flag on a deployed / public page.
 // Centralized API Base Resolver for Render Cloud Backend
 function getApiUrl(path) {
     if (typeof window !== 'undefined' && window.ShipveraConfig && typeof window.ShipveraConfig.getApiUrl === 'function') {
@@ -17,8 +21,8 @@ function getApiUrl(path) {
 
 let allOrders = [];
 let activeFilter = 'all';
-let selectedPack = 'growth';
-let selectedPackAmount = 2999;
+let selectedPack = 'voice500';
+let selectedPackAmount = 4499;
 let currentModalOrderId = null;
 let currentActiveSellerId = null;
 let currentActiveBrand = 'Snitch Apparel & Streetwear';
@@ -124,8 +128,8 @@ async function fetchAnalytics() {
                 if (inspectedPillEl) inspectedPillEl.textContent = `${totalOrders} Inspected`;
             } else {
                 if (rtoCutEl) rtoCutEl.textContent = '0%';
-                if (rtoPillEl) rtoPillEl.textContent = 'Protected';
-                if (inspectedPillEl) inspectedPillEl.textContent = 'Ready';
+                if (rtoPillEl) rtoPillEl.textContent = 'No data yet';
+                if (inspectedPillEl) inspectedPillEl.textContent = 'No orders yet';
             }
 
             if (a.seller_brand) {
@@ -215,7 +219,7 @@ function renderOrdersTable() {
                         </div>
                         <div style="font-size: 1.15rem; font-weight: 700; color: #0F172A; margin-bottom: 6px;">No COD Orders Dispatched Yet</div>
                         <p style="margin: 0 0 20px 0; font-size: 0.86rem; color: #64748B; max-width: 520px; margin-left: auto; margin-right: auto; line-height: 1.5;">
-                            Shipvera is standing by to protect your COD orders. When an order arrives, our autonomous Hinglish voice agent calls your buyer within 60 seconds to confirm purchase intent and enrich courier labels with missing landmarks.
+                            TrustOrder is standing by to check your COD orders. When an order arrives, our autonomous Hinglish voice agent calls your buyer within 60 seconds to confirm purchase intent and enrich courier labels with missing landmarks.
                         </p>
                         <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
                             <button class="btn-dab btn-primary" onclick="openTestLiveCallModal()">
@@ -223,9 +227,6 @@ function renderOrdersTable() {
                             </button>
                             <button class="btn-dab btn-secondary" onclick="openQuickPasteModal()">
                                 <span>+ Quick-Paste WhatsApp Address</span>
-                            </button>
-                            <button class="btn-dab btn-ghost" onclick="simulateShopifyOrder()">
-                                <span>⚡ Simulate Incoming Order</span>
                             </button>
                         </div>
                     </td>
@@ -647,6 +648,10 @@ async function submitQuickPaste() {
 
 // ---------- 7. Simulate Incoming Shopify COD Webhook ----------
 async function simulateShopifyOrder() {
+    if (typeof window === 'undefined' || window.TRUSTORDER_ALLOW_SIMULATION !== true) {
+        alert('Simulation is disabled in production. This button is not offered on the live dashboard.');
+        return;
+    }
     const cities = [
         { city: 'Indore', zip: '452001', addr: 'gali no 3 near main chowk' },
         { city: 'Lucknow', zip: '226010', addr: 'Gomti nagar sector 6 behind hospital' },
@@ -714,7 +719,7 @@ function openTestLiveCallModal() {
     if (allOrders.length > 0) {
         openLiveCallModal(allOrders[0].id);
     } else {
-        alert('No orders available to test. Please simulate an order first.');
+        alert('No orders available to test. Please add an order first via Quick-Paste or a real Shopify order.');
     }
 }
 
@@ -858,7 +863,9 @@ function openTrustLockModal(orderId) {
     const msg = `Hi ${order.buyer_name}, humne aapka ₹${order.cod_amount} ka parcel dispatch karne ke liye call kiya tha par connect nahi hua. Parcel hold na ho isliye bas ₹19 ka chota token UPI karke apna address lock kar dein. Baaki ₹${remaining} delivery pe hi dena hai!`;
 
     document.getElementById('tlWaMessage').textContent = msg;
-    document.getElementById('tlRazorpayLink').textContent = `https://rzp.io/l/shipvera_tl_${order.id.slice(0, 6)}`;
+    // No payment link is invented here. A real link comes only from the
+    // backend after Razorpay is activated; until then this is explicit.
+    document.getElementById('tlRazorpayLink').textContent = 'Not generated yet — Razorpay approval pending. No payment link is shown until a real Razorpay link is created by the backend.';
     document.getElementById('tlShopifyNote').textContent = `Prepaid Token: ₹19 | Remaining COD: ₹${remaining}`;
 
     document.getElementById('trustLockModal').classList.add('open');
@@ -869,7 +876,12 @@ function closeTrustLockModal() {
 }
 
 async function simulateTrustLockPayment() {
+    if (typeof window === 'undefined' || window.TRUSTORDER_ALLOW_SIMULATION !== true) {
+        alert('Simulation is disabled in production. A Trust Lock payment is confirmed only by a real Razorpay webhook.');
+        return;
+    }
     const btn = document.getElementById('btnSimulatePayment');
+    if (!btn) return; // button is not offered in production UI
     btn.disabled = true;
     btn.innerHTML = '<span>Processing Token...</span>';
 
@@ -899,8 +911,31 @@ async function simulateTrustLockPayment() {
 }
 
 // ---------- 11. Wallet Recharge Modal ----------
-function openRechargeModal() {
+// Fail closed: the confirm button stays disabled and the pending notice
+// stays visible unless /api/health reports Razorpay as configured.
+// No fake payment success is ever shown from this modal.
+let razorpayConfigured = false;
+async function refreshRazorpayStatus() {
+    try {
+        const res = await fetch(getApiUrl('/api/health'));
+        const data = await res.json();
+        razorpayConfigured = Boolean(data && data.configured && data.configured.razorpay);
+    } catch (e) {
+        razorpayConfigured = false;
+    }
+    const notice = document.getElementById('razorpayPendingNotice');
+    const btn = document.getElementById('btnConfirmRecharge');
+    if (notice) notice.style.display = razorpayConfigured ? 'none' : 'block';
+    if (btn) {
+        btn.disabled = !razorpayConfigured;
+        if (!razorpayConfigured) btn.innerHTML = '<span>Payments coming soon — Razorpay approval pending</span>';
+        else btn.innerHTML = `<span>Pay ₹${selectedPackAmount.toLocaleString('en-IN')} & Activate Credits →</span>`;
+    }
+    return razorpayConfigured;
+}
+async function openRechargeModal() {
     document.getElementById('rechargeModal').classList.add('open');
+    await refreshRazorpayStatus();
 }
 
 function closeRechargeModal() {
@@ -911,19 +946,24 @@ function selectRechargePack(packKey, amount) {
     selectedPack = packKey;
     selectedPackAmount = amount;
     document.querySelectorAll('.recharge-card').forEach(c => c.classList.remove('selected'));
-
-    if (packKey === 'starter') {
-        document.getElementById('packStarter').checked = true;
-        document.querySelector('.recharge-card:nth-child(1)').classList.add('selected');
-        document.getElementById('btnConfirmRecharge').innerHTML = '<span>Pay ₹999 & Activate Credits →</span>';
-    } else {
-        document.getElementById('packGrowth').checked = true;
-        document.querySelector('.recharge-card:nth-child(2)').classList.add('selected');
-        document.getElementById('btnConfirmRecharge').innerHTML = '<span>Pay ₹2,999 & Activate Credits →</span>';
+    // Locked voice packs only: 100 @ ₹999, 500 @ ₹4,499, 1,000 @ ₹7,999 (all +18% GST).
+    const card = document.querySelector(`.recharge-card[onclick*="'${packKey}'"]`);
+    if (card) card.classList.add('selected');
+    const radio = document.querySelector(`.recharge-card input[value="${packKey}"]`);
+    if (radio) radio.checked = true;
+    // Button text is re-applied by refreshRazorpayStatus(); while Razorpay
+    // is pending it must stay on the pending message, never on "Pay".
+    if (razorpayConfigured) {
+        document.getElementById('btnConfirmRecharge').innerHTML = `<span>Pay ₹${amount.toLocaleString('en-IN')} & Activate Credits →</span>`;
     }
 }
 
 async function executeRecharge() {
+    const ok = await refreshRazorpayStatus();
+    if (!ok) {
+        alert('Payments coming soon — Razorpay approval pending. No payment has been taken.');
+        return;
+    }
     const btn = document.getElementById('btnConfirmRecharge');
     btn.disabled = true;
     btn.innerHTML = '<span>Processing Recharge...</span>';
@@ -1578,6 +1618,11 @@ async function fetchIntegrationsStatus() {
                 if (desc) desc.textContent = `Auto-syncs shipping labels via official webhook from ${s.shopify_domain}`;
                 const domainInput = document.getElementById('shopifyDomainInput');
                 if (domainInput && !domainInput.value) domainInput.value = s.shopify_domain;
+            } else {
+                const tag = document.getElementById('shopifyWebhookTag');
+                const desc = document.getElementById('shopifyDomainDisplay');
+                if (tag) tag.textContent = 'Not connected yet';
+                if (desc) desc.textContent = 'Connect a Shopify store to sync shipping labels via webhook.';
             }
             if (s.logistics_provider) {
                 const providerNames = {
