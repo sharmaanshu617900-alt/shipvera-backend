@@ -14,6 +14,17 @@ const crypto = require('crypto');
 const DATA_DIR = path.join(__dirname, 'data');
 const DB_FILE = path.join(DATA_DIR, 'shipvera_database.json');
 
+// MIGRATION GUARD (PR: agent/supabase-migration):
+// This local JSON engine is DEPRECATED. The Supabase adapter is
+// services/supabaseDb.js (async, SUPABASE_URL + SUPABASE_SERVICE_KEY).
+// In production, local JSON must never be used: if Supabase is not
+// configured, init() below throws SUPABASE_NOT_CONFIGURED instead of
+// creating a local file. Local JSON survives only for local dev when
+// SUPABASE_ALLOW_LOCAL_JSON=true is set explicitly, and only until
+// every route is converted to supabaseDb (see SUPABASE_MIGRATION.md).
+// Do not copy local JSON rows to Supabase: old ids are sel_/ord_
+// strings, Supabase ids are UUIDs, and local passwords are plaintext.
+
 // Ensure data directory exists
 if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -48,6 +59,16 @@ class Database {
   }
 
   init() {
+    const supabaseConfigured = Boolean(
+      process.env.SUPABASE_URL
+      && (process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY),
+    );
+    if (process.env.NODE_ENV === 'production' && !supabaseConfigured) {
+      throw new Error('SUPABASE_NOT_CONFIGURED: local JSON is disabled in production. Set SUPABASE_URL and SUPABASE_SERVICE_KEY in env only.');
+    }
+    if (process.env.NODE_ENV !== 'production' && !supabaseConfigured && process.env.SUPABASE_ALLOW_LOCAL_JSON !== 'true') {
+      console.warn('[DB] WARNING: Supabase is not configured and local JSON is deprecated. Set SUPABASE_ALLOW_LOCAL_JSON=true only for local dev, or configure Supabase and use services/supabaseDb.js.');
+    }
     if (!fs.existsSync(DB_FILE)) {
       const initial = getEmptyData();
       fs.writeFileSync(DB_FILE, JSON.stringify(initial, null, 2), 'utf-8');

@@ -91,7 +91,7 @@ app.post('/api/waitlist', (req, res) => {
 // It never claims a feature is active when its provider is not configured.
 app.get('/api/health', (req, res) => {
   const configured = {
-    supabase: Boolean(process.env.SUPABASE_URL && (process.env.SUPABASE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY)),
+    supabase: Boolean(process.env.SUPABASE_URL && (process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY)),
     sarvam: Boolean(process.env.SARVAM_API_KEY),
     sarvam_agent: Boolean(process.env.SARVAM_AGENT_ID && process.env.SARVAM_PHONE_NUMBER_ID),
     shopify: Boolean(process.env.SHOPIFY_SHOP_DOMAIN && process.env.SHOPIFY_ADMIN_ACCESS_TOKEN),
