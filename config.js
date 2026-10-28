@@ -125,6 +125,8 @@
         pingBackend
     };
 
+    window.TrustOrderConfig = window.ShipveraConfig;
+
     // Helper alias
     window.getApiUrl = getApiUrl;
 

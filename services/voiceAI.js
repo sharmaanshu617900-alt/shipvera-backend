@@ -1,7 +1,6 @@
 /**
- * DEPRECATED SHIM — kept only so existing imports keep working.
- * All voice logic now lives in services/sarvamVoice.js (Sarvam only).
- * There is no old-provider code path here. New code should import
- * services/sarvamVoice.js directly.
+ * DEPRECATED SHIM — redirects to services/sarvamVoice.js (Sarvam only).
+ * All voice verification uses Sarvam Voice Agents with OTP-first routing,
+ * 60s hard cap, and Hinglish dialogue script.
  */
 module.exports = require('./sarvamVoice');

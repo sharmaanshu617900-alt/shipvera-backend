@@ -77,7 +77,14 @@ async function runAudit() {
     }
   };
 
-  const seller = db.getSeller();
+  let seller = db.getSeller();
+  if (!seller) {
+    seller = db.createSeller({
+      id: 'sel_audit_test_' + Date.now(),
+      brand_name: 'Audit Store',
+      email: 'audit@store.in'
+    });
+  }
   const sanitation = sanitizeAddress({
     rawAddress: mockShopifyOrder.shipping_address.address1,
     city: mockShopifyOrder.shipping_address.city,

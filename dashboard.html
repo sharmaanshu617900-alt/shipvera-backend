@@ -4,13 +4,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shipvera — Dispatch Intelligence & COD Verification</title>
+    <title>TrustOrder — Dispatch Intelligence & COD Verification</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
         href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
         rel="stylesheet">
-    <link rel="icon" type="image/png" href="assets/shipvera_icon.png">
+    <link rel="icon" type="image/jpeg" href="assets/trustorder_logo.jpg">
     <link rel="stylesheet" href="dashboard.css?v=3.0">
 </head>
 
@@ -20,13 +20,13 @@
     <header class="dash-header">
         <div class="dash-header-inner">
             <div class="dash-brand-wrap">
-                <a href="/" class="dash-logo" aria-label="Shipvera Home"
+                <a href="/" class="dash-logo" aria-label="TrustOrder Home"
                     style="display: flex; align-items: center; gap: 8px; text-decoration: none;">
-                    <img src="assets/shipvera_icon_transparent.png" alt="Shipvera Icon" width="28" height="28"
+                    <img src="assets/trustorder_logo.jpg" alt="TrustOrder Icon" width="28" height="28"
                         style="border-radius: 7px; object-fit: contain;">
                     <span
-                        style="font-size: 1.25rem; font-weight: 800; letter-spacing: -0.03em; color: #0F172A; font-family: 'Plus Jakarta Sans', sans-serif;">ship<span
-                            style="color: #058A5E;">vera</span></span>
+                        style="font-size: 1.25rem; font-weight: 800; letter-spacing: -0.03em; color: var(--ink, #17130F); font-family: 'Plus Jakarta Sans', sans-serif;">Trust<span
+                            style="color: var(--oxblood, #6B1228);">Order</span></span>
                 </a>
 
                 <div class="header-divider"></div>
@@ -70,7 +70,7 @@
                 </div>
 
                 <a href="/signup" class="dash-exit-btn"
-                    style="background: #F0FDF4; color: #058A5E; border-color: #BBF7D0; font-weight: 600;">+ New
+                    style="background: var(--oxblood-soft, #FBE9EC); color: var(--oxblood, #6B1228); border-color: var(--border, #E8DDD6); font-weight: 600;">+ New
                     Store</a>
                 <a href="/" class="dash-exit-btn">Exit</a>
             </div>
@@ -144,7 +144,7 @@
             <div class="dash-metric-card">
                 <div class="dmc-top">
                     <span class="dmc-label">Freight Loss Prevented</span>
-                    <span class="dmc-pill highlight-green">+₹180 / Cancel</span>
+                    <span class="dmc-pill highlight-green">Freight Saved</span>
                 </div>
                 <div class="dmc-value dmc-highlight" id="metricMoneySaved">₹0</div>
                 <div class="dmc-sub">Saved by auto-canceling fake COD orders</div>
@@ -266,6 +266,94 @@
                         <tbody id="ordersTableBody">
                             <tr>
                                 <td colspan="9" class="table-loading">Loading dispatch orders...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- RTO Recovery Console Section (Part 2) -->
+        <section class="dash-recovery-section" id="recoverySection" style="margin-top: 32px;">
+            <div class="dos-header" style="align-items: flex-start; justify-content: space-between;">
+                <div>
+                    <div class="dos-title-wrap" style="gap: 12px; align-items: center;">
+                        <h2 class="dos-title" style="color: var(--oxblood, #6B1228);">RTO Recovery Console</h2>
+                        <span class="dos-badge" style="background: var(--oxblood-soft, #FBE9EC); color: var(--oxblood, #6B1228); font-weight: 700;">Prepaid Recovery Only • COD Never</span>
+                    </div>
+                    <p style="margin: 6px 0 0; font-size: 0.9rem; color: var(--ink-muted, #7A726A);">
+                        Turn failed COD delivery losses into 100% upfront prepaid revenue. Strict Return QC Gate + Worth-It Gate (P &gt; F + PK + C + CALL + NEW) before buyer contact.
+                    </p>
+                </div>
+
+                <div class="recovery-policy-bar" style="display: flex; gap: 12px; align-items: center; background: var(--surface, #FFFFFF); padding: 8px 16px; border: 1px solid var(--border, #E8DDD6); border-radius: 8px;">
+                    <div style="display: flex; align-items: center; gap: 6px; font-size: 0.82rem;">
+                        <label for="recoveryDiscountMax"><strong>Max Discount:</strong></label>
+                        <select id="recoveryDiscountMax" onchange="saveRecoverySettings()" style="border: 1px solid var(--border, #E8DDD6); border-radius: 4px; padding: 2px 6px;">
+                            <option value="5">5%</option>
+                            <option value="10" selected>10% (Default Max)</option>
+                        </select>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 6px; font-size: 0.82rem;">
+                        <label for="recoveryMinPrice"><strong>Min Price:</strong> ₹</label>
+                        <input type="number" id="recoveryMinPrice" value="300" min="200" step="50" onchange="saveRecoverySettings()" style="width: 60px; border: 1px solid var(--border, #E8DDD6); border-radius: 4px; padding: 2px 4px;">
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 6px; font-size: 0.82rem;">
+                        <label for="recoveryAutoApprove"><strong>Auto-Approve Reship:</strong></label>
+                        <input type="checkbox" id="recoveryAutoApprove" onchange="saveRecoverySettings()">
+                        <span style="color: var(--ink-muted, #7A726A); font-size: 0.75rem;">(Default: OFF)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recovery Institutional Metric Strip -->
+            <div class="dash-metrics-grid" style="grid-template-columns: repeat(3, 1fr); margin-top: 16px;">
+                <div class="dash-metric-card">
+                    <div class="dmc-top">
+                        <span class="dmc-label">Total Recovered Revenue</span>
+                        <span class="dmc-pill highlight-green">Prepaid Paid</span>
+                    </div>
+                    <div class="dmc-value dmc-highlight" id="recoveryTotalRevenue">₹0.00</div>
+                    <div class="dmc-sub">100% upfront captured via Razorpay</div>
+                </div>
+
+                <div class="dash-metric-card">
+                    <div class="dmc-top">
+                        <span class="dmc-label">Recovery Commission Paid</span>
+                        <span class="dmc-pill">10% Success Fee</span>
+                    </div>
+                    <div class="dmc-value" id="recoveryTotalCommission">₹0.00</div>
+                    <div class="dmc-sub">Billed ONLY when order is recovery_paid</div>
+                </div>
+
+                <div class="dash-metric-card">
+                    <div class="dmc-top">
+                        <span class="dmc-label">Sunk RTO Loss Avoided</span>
+                        <span class="dmc-pill highlight-green">Net Capital Saved</span>
+                    </div>
+                    <div class="dmc-value dmc-highlight" id="recoveryLossAvoided">₹0.00</div>
+                    <div class="dmc-sub">Inventory restocked or reshipped prepaid</div>
+                </div>
+            </div>
+
+            <div class="dos-table-card" style="margin-top: 16px;">
+                <div class="table-responsive">
+                    <table class="dash-table">
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Buyer & Phone</th>
+                                <th>Selling Price (P)</th>
+                                <th>Sunk RTO Loss</th>
+                                <th>Return QC Gate</th>
+                                <th>Worth-It Gate Formula</th>
+                                <th>Payment Status</th>
+                                <th style="text-align: right;">1-Click Reship Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recoveryOrdersTableBody">
+                            <tr>
+                                <td colspan="8" class="table-loading">Loading RTO recovery pipeline...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -514,7 +602,7 @@
                 <div class="tl-details-grid">
                     <div class="tl-detail-card">
                         <span class="tl-dc-label">Dynamic Payment Link</span>
-                        <code id="tlRazorpayLink" class="tl-dc-link">https://rzp.io/l/shipvera_tl_9872</code>
+                        <code id="tlRazorpayLink" class="tl-dc-link">Not configured — Razorpay approval pending</code>
                     </div>
                     <div class="tl-detail-card">
                         <span class="tl-dc-label">Shopify Order Note</span>

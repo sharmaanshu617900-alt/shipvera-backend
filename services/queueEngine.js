@@ -9,7 +9,7 @@
 
 const { db } = require('../db');
 const { checkCallingWindow } = require('./nightWindow');
-const { triggerOutboundCall } = require('./voiceAI');
+const { triggerOutboundCall } = require('./sarvamVoice');
 const { applyPostCallDecision } = require('./addressRewriter');
 const { generateTrustLock } = require('./trustLock');
 
@@ -136,6 +136,19 @@ class QueueEngine {
       db.updateOrder(order.id, { verification_status: 'payment_required' });
       db.updateJob(job.id, { status: 'failed', error: 'Wallet balance insufficient (₹0.00)' });
       console.warn(`[QUEUE] Order ${order.external_order_id} halted: Zero wallet balance.`);
+      return;
+    }
+
+    // Part 1 H: Low-risk repeat buyer skips voice call and credit deduction
+    const buyerTrust = db.getBuyerTrust ? db.getBuyerTrust(order.buyer_phone) : null;
+    if (order.risk_score < 30 && buyerTrust && buyerTrust.global_risk_level === 'trusted') {
+      console.log(`[QUEUE] Low-risk repeat buyer detected for Order ${order.external_order_id}. Skipping voice call and credit deduction.`);
+      db.updateOrder(order.id, {
+        verification_status: 'verified_cleaned',
+        cleaned_address_line1: order.raw_address ? order.raw_address.substring(0, 35) : 'Verified Address',
+        cleaned_address_line2: order.raw_address || ''
+      });
+      db.updateJob(job.id, { status: 'completed', meta: { skipped_call: true, reason: 'low_risk_repeat_buyer' } });
       return;
     }
 

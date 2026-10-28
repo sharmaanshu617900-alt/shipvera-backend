@@ -1,16 +1,22 @@
 /**
- * Shipvera Wallet & Billing API
- * PRD Section 1.4 Pricing & Wallet Architecture
+ * TrustOrder Wallet & Billing API
+ * Exact Part 3 Pricing Implementation
+ * Razorpay Only, +18% GST at checkout, No Free Credits
  */
 
 const express = require('express');
 const router = express.Router();
 const { db } = require('../db');
-const { recordRechargeCredit } = require('../services/walletLedger');
+const {
+  PRICING,
+  calculateGstCheckout,
+  recordRechargeCredit,
+  settleTrustLockBalance
+} = require('../services/walletLedger');
 
 /**
  * GET /api/wallet
- * Returns current wallet balance, credit value, and plan tier
+ * Returns current wallet balance, credit values, trial status, and Trust Lock funds
  */
 router.get('/', (req, res) => {
   try {
@@ -19,28 +25,91 @@ router.get('/', (req, res) => {
       id: sellerId || 'sel_guest',
       brand_name: 'My Store',
       wallet_balance_inr: 0.00,
-      plan_tier: 'pay_as_you_go',
-      upi_trust_lock_amount: 19
+      trust_lock_balance_inr: 0.00,
+      plan_tier: 'free_rto_audit',
+      trial_used: false,
+      trial_active: false
     };
-    const availableVerifications = Math.floor((seller.wallet_balance_inr || 0) / 6);
+
+    const balance = Number(seller.wallet_balance_inr) || 0.00;
+    const voiceVerifications = Math.floor(balance / PRICING.VOICE_RATE_EX_GST);
+    const otpVerifications = Math.floor(balance / PRICING.OTP_RATE_EX_GST);
 
     return res.status(200).json({
       success: true,
       wallet: {
         seller_id: seller.id,
-        balance_inr: seller.wallet_balance_inr || 0.00,
-        available_verifications: availableVerifications,
-        cost_per_order_inr: 6.00,
-        plan_tier: seller.plan_tier || 'pay_as_you_go',
-        upi_trust_lock_amount: seller.upi_trust_lock_amount || 19,
+        balance_inr: balance,
+        trust_lock_balance_inr: Number(seller.trust_lock_balance_inr) || 0.00,
+        voice_rate_ex_gst: PRICING.VOICE_RATE_EX_GST,
+        otp_rate_ex_gst: PRICING.OTP_RATE_EX_GST,
+        voice_floor_ex_gst: PRICING.VOICE_FLOOR_EX_GST,
+        available_voice_verifications: voiceVerifications,
+        available_otp_verifications: otpVerifications,
+        plan_tier: seller.plan_tier || 'free_rto_audit',
+        trial_used: Boolean(seller.trial_used),
+        trial_active: Boolean(seller.trial_active),
+        trial_expires_at: seller.trial_expires_at || null,
         brand_name: seller.brand_name || 'My Store'
       },
-      recharge_packs: [
-        { id: 'starter', name: 'Starter Pack', price_inr: 999, credits: 180, per_order_effective: '₹5.50' },
-        { id: 'growth', name: 'Growth Pack (Popular)', price_inr: 2999, credits: 600, per_order_effective: '₹5.00' },
-        { id: 'scale', name: 'Scale Enterprise', price_inr: 8999, credits: 2000, per_order_effective: '₹4.50' }
-      ]
+      pricing: {
+        free_tier: {
+          name: 'Free RTO Audit',
+          description: 'Risk score for all orders, no free credits',
+          credits: 0
+        },
+        trial: PRICING.TRIAL,
+        pay_as_you_go: {
+          voice_rate_ex_gst: PRICING.VOICE_RATE_EX_GST,
+          otp_rate_ex_gst: PRICING.OTP_RATE_EX_GST,
+          minimum_recharge_ex_gst: PRICING.MINIMUM_RECHARGE_EX_GST,
+          gst_percent: PRICING.GST_RATE_PERCENT
+        },
+        packs: PRICING.PACKS,
+        subscriptions: PRICING.SUBSCRIPTIONS,
+        annual_discount: 'Pay 10 months, get 12 months (2 months free)',
+        rollover_rule: 'Maximum 50 credits on subscriptions, rest expire'
+      }
     });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * POST /api/wallet/quote
+ * Calculates checkout price with +18% GST for Razorpay
+ */
+router.post('/quote', (req, res) => {
+  try {
+    const { pack_id, custom_amount_ex_gst } = req.body;
+    let baseAmount = 0;
+
+    if (pack_id) {
+      const pack = PRICING.PACKS.find(p => p.id === pack_id);
+      if (pack) {
+        baseAmount = pack.price_ex_gst;
+      } else {
+        const sub = PRICING.SUBSCRIPTIONS.find(s => s.id === pack_id);
+        if (sub) {
+          baseAmount = sub.price_ex_gst;
+        } else {
+          return res.status(400).json({ error: `Unknown pack_id: ${pack_id}` });
+        }
+      }
+    } else if (custom_amount_ex_gst) {
+      baseAmount = Number(custom_amount_ex_gst);
+      if (baseAmount < PRICING.MINIMUM_RECHARGE_EX_GST) {
+        return res.status(400).json({
+          error: `Minimum PAYG recharge is ₹${PRICING.MINIMUM_RECHARGE_EX_GST} ex-GST (+18% GST).`
+        });
+      }
+    } else {
+      return res.status(400).json({ error: 'pack_id or custom_amount_ex_gst is required' });
+    }
+
+    const quote = calculateGstCheckout(baseAmount);
+    return res.status(200).json({ success: true, quote });
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
@@ -68,49 +137,83 @@ router.get('/transactions', (req, res) => {
 
 /**
  * POST /api/wallet/recharge
- * Adds credits via recharge pack with double-entry ledger entry
+ * Processes recharge or pack credit addition with double-entry ledger entry
  */
 router.post('/recharge', (req, res) => {
   try {
-    const { pack_id, custom_amount, payment_id } = req.body;
-    let amountToAdd = 0;
-    let packName = 'Custom';
+    const { pack_id, custom_amount_ex_gst, payment_id } = req.body;
+    let baseAmount = 0;
 
-    if (pack_id === 'starter') {
-      amountToAdd = 999;
-      packName = 'Starter';
-    } else if (pack_id === 'growth') {
-      amountToAdd = 2999;
-      packName = 'Growth';
-    } else if (pack_id === 'scale') {
-      amountToAdd = 8999;
-      packName = 'Scale';
-    } else if (custom_amount && Number(custom_amount) >= 100) {
-      amountToAdd = Number(custom_amount);
-      packName = 'Custom Amount';
+    if (pack_id === 'trial') {
+      baseAmount = PRICING.TRIAL.PRICE_EX_GST;
+    } else if (pack_id) {
+      const pack = PRICING.PACKS.find(p => p.id === pack_id);
+      if (!pack) {
+        const sub = PRICING.SUBSCRIPTIONS.find(s => s.id === pack_id);
+        if (!sub) return res.status(400).json({ error: `Unknown pack_id: ${pack_id}` });
+        baseAmount = sub.price_ex_gst;
+      } else {
+        baseAmount = pack.price_ex_gst;
+      }
+    } else if (custom_amount_ex_gst) {
+      baseAmount = Number(custom_amount_ex_gst);
+      if (baseAmount < PRICING.MINIMUM_RECHARGE_EX_GST) {
+        return res.status(400).json({
+          error: `Minimum recharge is ₹${PRICING.MINIMUM_RECHARGE_EX_GST} ex-GST (+18% GST).`
+        });
+      }
     } else {
-      return res.status(400).json({ error: 'Valid pack_id ("starter" | "growth" | "scale") or custom_amount >= ₹100 required' });
+      return res.status(400).json({ error: 'Valid pack_id or custom_amount_ex_gst is required' });
     }
 
-    const seller = db.getSeller();
-    const txn = recordRechargeCredit({
+    const sellerId = req.headers['x-seller-id'] || req.body.seller_id;
+    if (!sellerId) {
+      return res.status(400).json({ error: 'seller_id is required in body or x-seller-id header' });
+    }
+    const seller = db.getSeller(sellerId);
+    if (!seller) {
+      return res.status(404).json({ error: 'Seller workspace not found' });
+    }
+
+    const result = recordRechargeCredit({
       sellerId: seller.id,
-      amount: amountToAdd,
-      packName,
-      paymentId: payment_id || `razorpay_${Date.now()}`
+      amountExGst: baseAmount,
+      packId: pack_id || 'custom',
+      paymentId: payment_id || null
     });
 
     const updatedSeller = db.getSeller(seller.id);
 
     return res.status(200).json({
       success: true,
-      message: `Successfully recharged ₹${amountToAdd}. New balance: ₹${updatedSeller.wallet_balance_inr}`,
+      message: `Successfully recharged ₹${baseAmount} ex-GST. Paid with GST: ₹${result.checkout.total_amount_inr}. New balance: ₹${updatedSeller.wallet_balance_inr}`,
       wallet_balance_inr: updatedSeller.wallet_balance_inr,
-      available_verifications: Math.floor(updatedSeller.wallet_balance_inr / 6),
-      transaction: txn
+      available_voice_verifications: Math.floor(updatedSeller.wallet_balance_inr / PRICING.VOICE_RATE_EX_GST),
+      checkout: result.checkout,
+      transaction: result.transaction
     });
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    const status = err.code === 'TRIAL_ALREADY_USED' ? 409 : 500;
+    return res.status(status).json({ error: err.message, code: err.code });
+  }
+});
+
+/**
+ * POST /api/wallet/settle-trust-lock
+ * Bulk weekly settlement of ₹19 Trust Lock payments.
+ * Minimum ₹500 required. Payout fee borne by seller.
+ */
+router.post('/settle-trust-lock', (req, res) => {
+  try {
+    const sellerId = req.headers['x-seller-id'] || req.body.seller_id;
+    if (!sellerId) {
+      return res.status(400).json({ error: 'seller_id is required' });
+    }
+    const result = settleTrustLockBalance({ sellerId });
+    return res.status(200).json({ success: true, result });
+  } catch (err) {
+    const status = err.code === 'MINIMUM_SETTLEMENT_NOT_MET' ? 400 : 500;
+    return res.status(status).json({ error: err.message, code: err.code });
   }
 });
 

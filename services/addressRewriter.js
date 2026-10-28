@@ -206,11 +206,11 @@ async function applyPostCallDecision({ orderId, buyerIntent, spokenText, sellerI
       tags: ['RTO-Shield-Verified', 'Address-Cleaned']
     });
 
-    // Deduct ₹6 via Financial Ledger
+    // Deduct voice verification charge via Financial Ledger
     try {
       recordUsageDebit({
         sellerId: seller.id,
-        amount: 6.00,
+        amount: 12.00,
         purpose: 'VOICE_AI_VERIFICATION',
         referenceId: order.external_order_id,
         meta: { orderId: order.id, buyerPhone: order.buyer_phone }
@@ -278,11 +278,11 @@ async function applyPostCallDecision({ orderId, buyerIntent, spokenText, sellerI
       tags: ['RTO-Shield-Fake-Cancelled']
     });
 
-    // Deduct ₹6 verification charge
+    // Deduct voice verification charge
     try {
       recordUsageDebit({
         sellerId: seller.id,
-        amount: 6.00,
+        amount: 12.00,
         purpose: 'VOICE_AI_FAKE_BLOCKED',
         referenceId: order.external_order_id,
         meta: { orderId: order.id, buyerPhone: order.buyer_phone }

@@ -111,8 +111,8 @@ async function runValidation() {
   console.log(`   ✓ Order Status Updated: ${verifiedResult.order.verification_status}`);
   console.log(`   ✓ Shopify Synced Tags: ${verifiedResult.order.tags.join(', ')}\n`);
 
-  // --- FEATURE 4: Fake/Refusal Cancellation & ₹180 Loss Shield ---
-  console.log('🔹 [4/4] Testing Fake / Impulse Cancellation & ₹180 Saved Shield:');
+  // --- FEATURE 4: Fake/Refusal Cancellation & Freight Loss Shield ---
+  console.log('🔹 [4/4] Testing Fake / Impulse Cancellation & Freight Loss Shield:');
   const fakeOrder = db.createOrder({
     seller_id: 'sel_d2c_enterprise_001',
     external_order_id: '#UK-99402',

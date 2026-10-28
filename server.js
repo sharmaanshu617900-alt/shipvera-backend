@@ -25,6 +25,8 @@ const ordersRouter = require('./routes/orders');
 const analyticsRouter = require('./routes/analytics');
 const walletRouter = require('./routes/wallet');
 const authRouter = require('./routes/auth');
+const recoveryRouter = require('./routes/recovery');
+const notificationsRouter = require('./routes/notifications');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -66,6 +68,8 @@ app.use('/api/webhooks', webhooksRouter);
 app.use('/api/orders', ordersRouter);
 app.use('/api/analytics', analyticsRouter);
 app.use('/api/wallet', walletRouter);
+app.use('/api/recovery', recoveryRouter);
+app.use('/api/notifications', notificationsRouter);
 
 // Lead Waitlist Endpoint. The lead is actually stored (db.addLead),
 // not just echoed back, and no seller wallet is invented for a lead.
@@ -101,11 +105,12 @@ app.get('/api/health', (req, res) => {
     google_maps: Boolean(process.env.GOOGLE_MAPS_API_KEY),
     shopify_webhook_secret: Boolean(process.env.SHOPIFY_WEBHOOK_SECRET),
     razorpay_webhook_secret: Boolean(process.env.RAZORPAY_WEBHOOK_SECRET),
-    llm: Boolean(process.env.LLM_API_KEY)
+    llm: Boolean(process.env.LLM_API_KEY),
+    resend: Boolean(process.env.RESEND_API_KEY)
   };
   res.status(200).json({
     status: 'healthy',
-    platform: 'Shipvera Autonomous Voice AI Dispatch Engine',
+    platform: 'TrustOrder Autonomous Voice AI Dispatch Engine',
     version: '2.0.0-enterprise',
     timestamp: new Date().toISOString(),
     configured,
@@ -118,6 +123,8 @@ app.get('/api/health', (req, res) => {
       shiprocket: configured.shiprocket ? 'configured' : 'not_configured',
       live_address_rewriter: 'rule_based_no_llm - LLM extraction requires LLM_API_KEY (see REALITY_CHECKLIST.md)',
       upi_trust_lock: configured.razorpay && configured.whatsapp ? 'configured' : 'not_configured',
+      rto_recovery: 'prepaid_only_cod_never',
+      email_digest_and_alerts: configured.resend ? 'configured' : 'not_configured',
       quick_paste_mode: 'available - creates orders only with validated seller, phone, pincode and amount',
       trai_night_window_hold: 'available',
       autonomous_queue_worker: 'available - live calls only; simulation requires SHIPVERA_ALLOW_SIMULATED_CALLS=true',
@@ -144,12 +151,13 @@ app.get('*', (req, res) => {
 // Start Server and Autonomous Queue Engine
 const server = app.listen(PORT, () => {
   console.log(`====================================================`);
-  console.log(`🚀 SHIPVERA BILLIONAIRE ENTERPRISE BACKEND IS LIVE!`);
+  console.log(`🚀 TRUSTORDER ENTERPRISE BACKEND IS LIVE!`);
   console.log(`📡 URL: http://localhost:${PORT}`);
   console.log(`📊 Health Endpoint: http://localhost:${PORT}/api/health`);
   console.log(`📦 Orders API:      http://localhost:${PORT}/api/orders`);
   console.log(`⚡ Analytics API:   http://localhost:${PORT}/api/analytics`);
   console.log(`💰 Wallet API:      http://localhost:${PORT}/api/wallet`);
+  console.log(`🔄 Recovery API:    http://localhost:${PORT}/api/recovery`);
   console.log(`⏳ Queue Inspector: http://localhost:${PORT}/api/orders/queue/jobs`);
   console.log(`====================================================`);
 
@@ -162,7 +170,7 @@ function handleShutdown(signal) {
   console.log(`\n[SYSTEM] Received ${signal}. Shutting down queue and server gracefully...`);
   queueEngine.stopWorker();
   server.close(() => {
-    console.log('[SYSTEM] Shipvera server terminated cleanly.');
+    console.log('[SYSTEM] TrustOrder server terminated cleanly.');
     process.exit(0);
   });
 }

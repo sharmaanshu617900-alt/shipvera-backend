@@ -49,7 +49,7 @@ function parseQueryParams() {
             if (alertBox) {
                 alertBox.className = 'auth-alert success';
                 alertBox.style.display = 'block';
-                alertBox.innerHTML = `✨ <strong>Allocation Reserved:</strong> Details pre-filled. Create your password to finalize your workspace.`;
+                alertBox.innerHTML = `Details pre-filled. Create your password to finalize your workspace.`;
             }
         }
     } catch (e) {}
@@ -231,7 +231,7 @@ function toggleAuthMode() {
         formSubheading.textContent = 'Access your live dispatch console, orders stream, and billing ledger.';
         btnText.textContent = 'Sign In to Workspace →';
         toggleLink.textContent = 'Create Workspace';
-        switchPrompt.textContent = "New to Shipvera?";
+        switchPrompt.textContent = "New to TrustOrder?";
         if (dividerText) dividerText.textContent = 'Or sign in with work email';
         if (forgotLink) forgotLink.style.display = 'block';
 
@@ -350,7 +350,7 @@ function checkExistingSession() {
             if (alertBox && seller && seller.brand_name) {
                 alertBox.className = 'auth-alert success';
                 alertBox.style.display = 'block';
-                alertBox.innerHTML = `Active workspace: <strong>${seller.brand_name}</strong>. <a href="/dashboard" style="color: #065F46; font-weight: 700; text-decoration: underline;">Open Console →</a>`;
+                alertBox.innerHTML = `Active workspace: <strong>${seller.brand_name}</strong>. <a href="/dashboard" style="color: var(--oxblood, #6B1228); font-weight: 700; text-decoration: underline;">Open Console →</a>`;
             }
         }
     } catch (e) {}
@@ -364,9 +364,24 @@ function socialAuthNotice(provider) {
             const alertBox = document.getElementById('authAlert');
             alertBox.className = 'auth-alert success';
             alertBox.style.display = 'block';
-            alertBox.innerHTML = `<strong>Shopify Fast Connect:</strong> Enter your store domain below and choose a password to instantly link Shipvera's webhook engine.`;
+            alertBox.innerHTML = `<strong>Shopify Fast Connect:</strong> Enter your store domain below and choose a password to link TrustOrder's webhook engine.`;
         }
     } else {
         alert(`${provider} Single Sign-On connects with your official ${provider} account. Use email registration to configure your custom COD voice prompts.`);
     }
+}
+
+function showForgotPasswordNotice() {
+    alert('Please contact support via contact.html to reset your workspace password.');
+}
+
+// Global browser window bindings
+if (typeof window !== 'undefined') {
+    window.toggleOccAudio = toggleOccAudio;
+    window.socialAuthNotice = socialAuthNotice;
+    window.handleAuthSubmit = handleAuthSubmit;
+    window.selectPlatform = selectPlatform;
+    window.togglePasswordVisibility = togglePasswordVisibility;
+    window.toggleAuthMode = toggleAuthMode;
+    window.showForgotPasswordNotice = showForgotPasswordNotice;
 }

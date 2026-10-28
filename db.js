@@ -42,6 +42,10 @@ function getEmptyData() {
     call_logs: [],
     buyer_trust_graph: {},
     wallet_transactions: [],
+    wallet_ledger: [],
+    trust_lock_payments: [],
+    subscriptions: [],
+    recovery_attempts: [],
     queue_jobs: [],
     leads: []
   };
@@ -137,7 +141,7 @@ class Database {
       shopify_domain: sellerData.shopify_domain || '',
       shopify_access_token: null,
       shiprocket_token: null,
-      wallet_balance_inr: 0.00, // Strictly ₹0.00 (Pure Pay-As-You-Go, Zero Free Credits)
+      wallet_balance_inr: (typeof sellerData.wallet_balance_inr === 'number') ? sellerData.wallet_balance_inr : 0.00, // Zero free credits by default
       plan_tier: 'pay_as_you_go',
       upi_trust_lock_amount: 19,
       total_orders_processed: 0,
@@ -410,11 +414,167 @@ class Database {
     if (!Array.isArray(this.data.queue_jobs)) return [];
     return this.data.queue_jobs.slice(0, limit);
   }
+
+  // --- Trust Lock Payments & Bulk Weekly Settlement ---
+  createTrustLockPayment(paymentData) {
+    if (!Array.isArray(this.data.trust_lock_payments)) {
+      this.data.trust_lock_payments = [];
+    }
+    const id = paymentData.id || crypto.randomUUID();
+    const payment = {
+      id,
+      seller_id: paymentData.seller_id,
+      order_id: paymentData.order_id,
+      amount_inr: Number(paymentData.amount_inr) || 19.00,
+      razorpay_order_id: paymentData.razorpay_order_id || null,
+      razorpay_payment_id: paymentData.razorpay_payment_id || null,
+      razorpay_payment_link_id: paymentData.razorpay_payment_link_id || null,
+      status: paymentData.status || 'created',
+      settlement_batch_id: paymentData.settlement_batch_id || null,
+      settled_at: paymentData.settled_at || null,
+      created_at: new Date().toISOString()
+    };
+    this.data.trust_lock_payments.unshift(payment);
+    this.save();
+    return payment;
+  }
+
+  settleTrustLockPayments(sellerId, minThreshold = 500) {
+    if (!Array.isArray(this.data.trust_lock_payments)) {
+      this.data.trust_lock_payments = [];
+    }
+    const seller = this.getSeller(sellerId);
+    if (!seller) throw new Error(`Seller ${sellerId} not found`);
+
+    const eligible = this.data.trust_lock_payments.filter(
+      p => p.seller_id === sellerId && p.status === 'paid' && !p.settled_at
+    );
+    const totalAmount = eligible.reduce((sum, p) => sum + Number(p.amount_inr || 19), 0);
+
+    if (totalAmount < minThreshold) {
+      return {
+        success: false,
+        reason: `Settlement balance ₹${totalAmount} is below bulk minimum threshold of ₹${minThreshold}`,
+        settled_count: 0,
+        settled_amount: 0
+      };
+    }
+
+    const batchId = `batch_${crypto.randomUUID()}`;
+    const settledAt = new Date().toISOString();
+
+    eligible.forEach(p => {
+      p.status = 'settled';
+      p.settlement_batch_id = batchId;
+      p.settled_at = settledAt;
+    });
+
+    this.save();
+    return {
+      success: true,
+      batch_id: batchId,
+      settled_count: eligible.length,
+      settled_amount: totalAmount,
+      settled_at: settledAt
+    };
+  }
+
+  // --- RTO Recovery Operations ---
+  createRecoveryAttempt(data) {
+    if (!Array.isArray(this.data.recovery_attempts)) {
+      this.data.recovery_attempts = [];
+    }
+    const id = data.id || crypto.randomUUID();
+    const attempt = {
+      id,
+      seller_id: data.seller_id || data.sellerId,
+      original_order_id: data.original_order_id || data.originalOrderId,
+      rto_cost_sunk: Number(data.rto_cost_sunk !== undefined ? data.rto_cost_sunk : data.rtoCostSunk) || 0,
+      product_price: Number(data.product_price !== undefined ? data.product_price : data.productPrice) || 0,
+      discount_percent: Number(data.discount_percent !== undefined ? data.discount_percent : data.discountPercent) || 0,
+      forward_shipping: Number(data.forward_shipping !== undefined ? data.forward_shipping : data.forwardShipping) || 80,
+      packaging: Number(data.packaging !== undefined ? data.packaging : data.packaging) || 20,
+      commission: Number(data.commission !== undefined ? data.commission : data.commission) || 0,
+      call_cost: Number(data.call_cost !== undefined ? data.call_cost : data.callCost) || 0,
+      new_product_cost: Number(data.new_product_cost !== undefined ? data.new_product_cost : data.newProductCost) || 0,
+      qc_status: data.qc_status || data.qcStatus || 'unknown',
+      worth_it_result: Boolean(data.worth_it_result !== undefined ? data.worth_it_result : data.worthItResult),
+      total_cost: Number(data.total_cost !== undefined ? data.total_cost : data.totalCost) || 0,
+      net_margin: Number(data.net_margin !== undefined ? data.net_margin : data.netMargin) || 0,
+      buyer_contacted: Boolean(data.buyer_contacted !== undefined ? data.buyer_contacted : data.buyerContacted),
+      contact_channel: data.contact_channel || data.contactChannel || null,
+      buyer_response: data.buyer_response || data.buyerResponse || 'not_contacted',
+      razorpay_payment_link_id: data.razorpay_payment_link_id || data.razorpayPaymentLinkId || null,
+      razorpay_payment_link_url: data.razorpay_payment_link_url || data.razorpayPaymentLinkUrl || null,
+      payment_status: data.payment_status || data.paymentStatus || 'unpaid',
+      payment_id: data.payment_id || data.paymentId || null,
+      seller_approval: Boolean(data.seller_approval !== undefined ? data.seller_approval : data.sellerApproval),
+      reship_status: data.reship_status || data.reshipStatus || 'pending_payment',
+      reship_tracking_number: data.reship_tracking_number || data.reshipTrackingNumber || null,
+      corrected_address: data.corrected_address || data.correctedAddress || null,
+      meta: data.meta || {},
+      created_at: new Date().toISOString()
+    };
+
+    this.data.recovery_attempts.unshift(attempt);
+    this.save();
+    return attempt;
+  }
+
+  getRecoveryAttempts(sellerId = null) {
+    if (!Array.isArray(this.data.recovery_attempts)) return [];
+    if (sellerId) {
+      return this.data.recovery_attempts.filter(a => a.seller_id === sellerId).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    }
+    return [...this.data.recovery_attempts].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  }
+
+  getRecoveryAttemptById(id) {
+    if (!id || !Array.isArray(this.data.recovery_attempts)) return null;
+    return this.data.recovery_attempts.find(a => a.id === id) || null;
+  }
+
+  updateRecoveryAttempt(id, updates) {
+    const attempt = this.getRecoveryAttemptById(id);
+    if (!attempt) return null;
+    Object.assign(attempt, updates);
+    this.save();
+    return attempt;
+  }
+
+  getRecoveryStats(sellerId = null) {
+    const attempts = this.getRecoveryAttempts(sellerId);
+    const orders = this.getOrders(sellerId);
+    const rtoOrders = orders.filter(o => o.verification_status === 'rto_returned' || o.recovery_status !== 'none');
+
+    const paidAttempts = attempts.filter(a => a.payment_status === 'paid');
+    const totalRecoveredRevenue = paidAttempts.reduce((sum, a) => sum + Number(a.product_price), 0);
+    const totalCommissionPaid = paidAttempts.reduce((sum, a) => sum + Number(a.commission), 0);
+    const totalRtoLossAvoided = paidAttempts.reduce((sum, a) => sum + (Number(a.rto_cost_sunk) + Number(a.net_margin)), 0);
+
+    return {
+      total_rto_orders: rtoOrders.length,
+      total_recovery_attempts: attempts.length,
+      total_recovered_orders: paidAttempts.length,
+      total_recovered_revenue: Number(totalRecoveredRevenue.toFixed(2)),
+      total_recovered_revenue_inr: Number(totalRecoveredRevenue.toFixed(2)),
+      total_recovery_commission_paid: Number(totalCommissionPaid.toFixed(2)),
+      total_recovery_commission_paid_inr: Number(totalCommissionPaid.toFixed(2)),
+      total_rto_loss_avoided: Number(totalRtoLossAvoided.toFixed(2)),
+      total_rto_loss_avoided_inr: Number(totalRtoLossAvoided.toFixed(2)),
+      success_rate_pct: attempts.length > 0 ? Math.round((paidAttempts.length / attempts.length) * 100) : 0
+    };
+  }
+
+  getEmptyData() {
+    return getEmptyData();
+  }
 }
 
 const db = new Database();
 
 module.exports = {
   db,
-  hashPhone
+  hashPhone,
+  getEmptyData
 };
