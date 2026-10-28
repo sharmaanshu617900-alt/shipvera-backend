@@ -225,8 +225,10 @@ async function geocodeAddressGoogleMaps({ address, city, pincode }) {
           resolve({
             success: false,
             error: e.message,
-            coordinates: getCityCentroid(city, pincode),
-            deliverabilityScore: 50
+            coordinates: null,
+            deliverabilityScore: null,
+            accuracyLabel: 'MAPS_ERROR',
+            riskImpact: 'NEEDS_LANDMARK_VERIFICATION'
           });
         }
       });
@@ -236,25 +238,13 @@ async function geocodeAddressGoogleMaps({ address, city, pincode }) {
       resolve({
         success: false,
         error: err.message,
-        coordinates: getCityCentroid(city, pincode),
-        deliverabilityScore: 50
+        coordinates: null,
+        deliverabilityScore: null,
+        accuracyLabel: 'MAPS_REQUEST_FAILED',
+        riskImpact: 'NEEDS_LANDMARK_VERIFICATION'
       });
     });
   });
-}
-
-// NOTE: This helper is retained only for explicit display fallbacks.
-// It must never be returned as a geocoding result.
-function getCityCentroid(city = '', pincode = '') {
-  const c = city.toLowerCase();
-  if (c.includes('indore')) return { lat: 22.7196, lng: 75.8577 };
-  if (c.includes('rohtak')) return { lat: 28.8955, lng: 76.6066 };
-  if (c.includes('jaipur')) return { lat: 26.9124, lng: 75.7873 };
-  if (c.includes('lucknow')) return { lat: 26.8467, lng: 80.9462 };
-  if (c.includes('delhi')) return { lat: 28.6139, lng: 77.2090 };
-  if (c.includes('mumbai')) return { lat: 19.0760, lng: 72.8777 };
-  if (c.includes('bangalore') || c.includes('bengaluru')) return { lat: 12.9716, lng: 77.5946 };
-  return { lat: 20.5937, lng: 78.9629 };
 }
 
 module.exports = {

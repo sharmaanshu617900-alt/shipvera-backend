@@ -178,12 +178,21 @@ function handleTrustLockPaid({ orderId, paymentId, sellerId }) {
   });
 
   let walletDebitError = null;
+  let trustBalanceUpdate = null;
   try {
-    const { recordUsageDebit } = require('./walletLedger');
+    const { recordTrustLockCollection, recordUsageDebit } = require('./walletLedger');
+    trustBalanceUpdate = recordTrustLockCollection({
+      sellerId: sellerId || order.seller_id,
+      orderId: order.id,
+      paymentId: paymentId || `pay_${Date.now()}`,
+      amount: tokenAmount
+    });
+
     recordUsageDebit({
       sellerId: sellerId || order.seller_id,
-      amount: 6.00,
-      purpose: 'VOICE_AI_VERIFICATION',
+      channel: 'otp',
+      disposition: 'confirmed',
+      purpose: 'TRUST_LOCK_VERIFICATION',
       referenceId: order.external_order_id,
       meta: { orderId: order.id, buyerPhone: order.buyer_phone }
     });

@@ -1,29 +1,39 @@
 /**
- * Shipvera Editorial Logistics Style Sheet (v7.0)
+ * TrustOrder Editorial Logistics Style Sheet (v7.0)
  * Authentic Commercial Photography + High-Trust Institutional Architecture
  * Inspired by Stripe, Shopify, Wise, and Square
  */
 
 :root {
-    --bg-page: #FFFFFF;
-    --bg-card: #FFFFFF;
+    --paper: #FAF7F2;
+    --surface: #FFFFFF;
+    --ink: #17130F;
+    --text-secondary: #5C534D;
+    --oxblood: #6B1228;
+    --oxblood-dark: #4E0D1E;
+    --oxblood-soft: #FBE9EC;
+    --border: #E8DDD6;
+    --gold: #B9975B;
+
+    --bg-page: var(--paper);
+    --bg-card: var(--surface);
     
-    /* Emerald Spectrum */
-    --emerald-deepest: #01120B;
-    --emerald-dark: #032014;
-    --emerald-mid: #053322;
-    --emerald-primary: #058A5E;
-    --emerald-accent: #10B981;
-    --emerald-mint: #34D399;
-    --emerald-tint: #ECFDF5;
+    /* Oxblood & Ink Spectrum */
+    --emerald-deepest: #17130F;
+    --emerald-dark: #250810;
+    --emerald-mid: #3B0A16;
+    --emerald-primary: var(--oxblood);
+    --emerald-accent: var(--oxblood);
+    --emerald-mint: #C44560;
+    --emerald-tint: var(--oxblood-soft);
     
     /* Daylight Neutrals */
-    --text-primary: #0F172A;
-    --text-secondary: #475569;
-    --text-muted: #64748B;
-    --border-subtle: #E2E8F0;
-    --border-focus: #059669;
-    --input-surface: #F8FAFC;
+    --text-primary: var(--ink);
+    --text-secondary: var(--text-secondary);
+    --text-muted: #756C65;
+    --border-subtle: var(--border);
+    --border-focus: var(--oxblood);
+    --input-surface: #FFFFFF;
     
     /* Typography */
     --font-heading: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -153,7 +163,7 @@ html, body {
     padding: 6px 14px;
     border-radius: 9999px;
     background: rgba(3, 30, 20, 0.85);
-    border: 1px solid rgba(52, 211, 153, 0.35);
+    border: 1px solid rgba(107, 18, 40, 0.35);
     color: var(--emerald-mint);
     font-size: 0.76rem;
     font-weight: 700;
@@ -216,7 +226,7 @@ html, body {
 
 .order-confirm-card {
     background: rgba(2, 24, 16, 0.82);
-    border: 1px solid rgba(52, 211, 153, 0.32);
+    border: 1px solid rgba(107, 18, 40, 0.32);
     backdrop-filter: blur(24px);
     border-radius: 18px;
     padding: 18px 20px;
@@ -230,7 +240,7 @@ html, body {
 }
 
 .order-confirm-card:hover {
-    border-color: rgba(52, 211, 153, 0.5);
+    border-color: rgba(107, 18, 40, 0.5);
     transform: translateY(-2px);
 }
 
@@ -256,15 +266,15 @@ html, body {
     width: 7px;
     height: 7px;
     border-radius: 50%;
-    background: #10B981;
-    box-shadow: 0 0 8px #10B981;
+    background: #6B1228;
+    box-shadow: 0 0 8px #6B1228;
 }
 
 .occ-timer {
     font-size: 0.72rem;
     font-weight: 600;
     color: var(--emerald-mint);
-    background: rgba(16, 185, 129, 0.15);
+    background: rgba(107, 18, 40, 0.15);
     padding: 3px 8px;
     border-radius: 6px;
     font-family: var(--font-mono);
@@ -290,8 +300,8 @@ html, body {
     width: 22px;
     height: 22px;
     border-radius: 6px;
-    background: rgba(16, 185, 129, 0.2);
-    border: 1px solid rgba(52, 211, 153, 0.4);
+    background: rgba(107, 18, 40, 0.2);
+    border: 1px solid rgba(107, 18, 40, 0.4);
     color: var(--emerald-mint);
     font-size: 0.7rem;
     font-weight: 800;
@@ -330,9 +340,9 @@ html, body {
 }
 
 .tag-green {
-    background: rgba(16, 185, 129, 0.2);
+    background: rgba(107, 18, 40, 0.2);
     color: var(--emerald-mint);
-    border: 1px solid rgba(52, 211, 153, 0.35);
+    border: 1px solid rgba(107, 18, 40, 0.35);
 }
 
 .tag-blue {
@@ -374,7 +384,7 @@ html, body {
 
 .occ-addr-new {
     color: #FFFFFF;
-    background: rgba(16, 185, 129, 0.12);
+    background: rgba(107, 18, 40, 0.12);
     border-left: 2px solid var(--emerald-mint);
     padding: 3px 6px;
     border-radius: 4px;
@@ -387,7 +397,7 @@ html, body {
     align-items: center;
     gap: 10px;
     background: rgba(5, 51, 34, 0.45);
-    border: 1px solid rgba(52, 211, 153, 0.25);
+    border: 1px solid rgba(107, 18, 40, 0.25);
     border-radius: 9px;
     padding: 7px 12px;
     cursor: pointer;
@@ -397,7 +407,7 @@ html, body {
 
 .occ-audio-strip:hover {
     background: rgba(5, 51, 34, 0.7);
-    border-color: rgba(52, 211, 153, 0.45);
+    border-color: rgba(107, 18, 40, 0.45);
 }
 
 .occ-audio-play-btn {
@@ -452,7 +462,7 @@ html, body {
 .occ-audio-caption {
     font-size: 0.72rem;
     font-weight: 600;
-    color: #D1FAE5;
+    color: #FCE4E8;
     font-family: var(--font-mono);
     letter-spacing: -0.01em;
 }
@@ -496,7 +506,7 @@ html, body {
     position: relative;
     z-index: 3;
     background: rgba(1, 20, 13, 0.82);
-    border: 1px solid rgba(52, 211, 153, 0.24);
+    border: 1px solid rgba(107, 18, 40, 0.24);
     backdrop-filter: blur(16px);
     border-radius: 16px;
     padding: 14px 18px;
@@ -558,7 +568,7 @@ html, body {
    ========================================================= */
 
 .card-right-panel {
-    background: #FFFFFF;
+    background: var(--paper);
     border-radius: 0;
     height: 100vh;
     max-height: 100vh;
@@ -598,7 +608,7 @@ html, body {
 .bmb-text {
     font-size: 0.74rem;
     font-weight: 600;
-    color: #475569;
+    color: #5C534D;
     font-family: var(--font-mono);
 }
 
@@ -703,8 +713,8 @@ html, body {
 }
 
 .auth-alert.success {
-    background: #ECFDF5;
-    border: 1px solid #A7F3D0;
+    background: #FBE9EC;
+    border: 1px solid #F3CCD3;
     color: #065F46;
 }
 
@@ -794,7 +804,7 @@ html, body {
     background: #FFFFFF;
     border-color: var(--border-focus);
     box-shadow: 
-        0 0 0 3px rgba(16, 185, 129, 0.16),
+        0 0 0 3px rgba(107, 18, 40, 0.16),
         0 2px 4px rgba(0, 0, 0, 0.04);
 }
 
@@ -816,7 +826,7 @@ html, body {
 .phone-input-group:focus-within {
     background: #FFFFFF;
     border-color: var(--border-focus);
-    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.16);
+    box-shadow: 0 0 0 3px rgba(107, 18, 40, 0.16);
 }
 
 .country-badge {
@@ -967,8 +977,8 @@ html, body {
 }
 
 .custom-checkbox-wrap input[type="checkbox"]:checked + .custom-checkmark {
-    background: #0F172A;
-    border-color: #0F172A;
+    background: #17130F;
+    border-color: #17130F;
 }
 
 .custom-checkbox-wrap input[type="checkbox"]:checked + .custom-checkmark::after {
@@ -985,7 +995,7 @@ html, body {
     width: 100%;
     padding: 12px 20px;
     margin-top: 4px;
-    background: linear-gradient(180deg, #0F172A 0%, #022015 100%);
+    background: linear-gradient(180deg, #17130F 0%, #022015 100%);
     border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: 12px;
     color: #FFFFFF;

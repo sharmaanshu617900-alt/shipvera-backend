@@ -1,7 +1,7 @@
 /**
  * Shipvera Authentication & Multi-Tenant Seller Workspace API
  * Backed by Supabase Cloud PostgreSQL and Local In-Memory Fast Cache
- * Pure Pay-As-You-Go Architecture (Zero Free Credits, ₹6/Order)
+ * Pure Pay-As-You-Go Architecture (Zero Free Credits, Voice ₹12 ex-GST, OTP ₹3 ex-GST)
  */
 
 const express = require('express');
@@ -106,7 +106,7 @@ router.post('/signup', async (req, res) => {
 
     return res.status(201).json({
       success: true,
-      message: 'Workspace created successfully! Initialized in Pure Pay-As-You-Go mode (₹6/Order).',
+      message: 'Workspace created successfully! Initialized in Pure Pay-As-You-Go mode (Voice ₹12 ex-GST, OTP ₹3 ex-GST).',
       seller: {
         id: newSeller.id,
         name: newSeller.name,
@@ -645,7 +645,7 @@ router.get('/status', async (req, res) => {
       sellers_count: cloudSellerCount
     },
     local_sellers: db.getAllSellers().length,
-    pricing: 'Pure Pay-As-You-Go (₹6/Order, Starting Balance ₹0.00)'
+    pricing: 'Pure Pay-As-You-Go (Voice ₹12 ex-GST, OTP ₹3 ex-GST, Starting Balance ₹0.00)'
   });
 });
 
